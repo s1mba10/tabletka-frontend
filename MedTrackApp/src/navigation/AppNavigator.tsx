@@ -6,13 +6,26 @@ import MainScreen from "../screens/MainScreen";
 import UserInfoScreen from "../screens/UserInfoScreen";
 import EditReminderScreen from "../screens/EditReminderScreen";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { Reminder } from "../types"; 
+import { StackNavigationProp } from "@react-navigation/stack";
 
 // ✅ Define types for each screen's parameters
 export type RootStackParamList = {
     Main: undefined;
-    EditReminder: { reminder: Reminder };
+    EditReminder: {
+        reminder: Reminder;
+        updateReminder: (updatedReminder: Reminder) => void; // Add this
+    };
 };
+
+export interface Reminder {
+    id: string;
+    name: string;
+    dosage: string;
+    type: "tablet" | "capsule" | "liquid" | "injection";
+    time: string;
+    status: "taken" | "pending" | "missed";
+    date: string;
+}
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();

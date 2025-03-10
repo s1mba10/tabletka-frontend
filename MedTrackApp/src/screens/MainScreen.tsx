@@ -52,10 +52,10 @@ const sampleReminders: Reminder[] = [
 ];
 
 // Function to get current week's dates
-const getWeekDates = (weekOffset = 0) => {
+const getWeekDates = (weekOffset: number = 0) => {
     const today = new Date();
     const weekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 1 });
-    return Array.from({ length: 7 }).map((_, i) => {
+    return Array.from({ length: 7 }).map((_, i: number) => {
         const date = addDays(weekStart, i);
         return {
             dayLabel: ["пн", "вт", "ср", "чт", "пт", "сб", "вс"][i],
@@ -73,16 +73,22 @@ const MainScreen = () => {
     const weekDates = getWeekDates(weekOffset);
     const [reminders, setReminders] = useState<Reminder[]>(sampleReminders);
 
-    // Get reminders for the selected day
+    // Function to update a reminder
+    const updateReminder = (updatedReminder: Reminder) => {
+        setReminders((prevReminders) =>
+            prevReminders.map((reminder) =>
+                reminder.id === updatedReminder.id ? updatedReminder : reminder
+            )
+        );
+    };
+
     const filteredReminders = reminders.filter((reminder) => reminder.date === selectedDate);
 
-    // Get dots for each day
     const getDayStatusDots = (date: string) => {
         const dayReminders = reminders.filter((reminder) => reminder.date === date);
         return dayReminders.map((reminder) => ({ color: statusColors[reminder.status] }));
     };
 
-    // Function to mark a reminder as "taken"
     const markAsTaken = (id: string) => {
         setReminders((prevReminders) =>
             prevReminders.map((reminder) =>
@@ -94,19 +100,16 @@ const MainScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
-
             {/* Week Navigation */}
             <View style={styles.weekHeader}>
                 <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton}>
                     <Icon name="chevron-left" size={30} color="white" />
                 </TouchableOpacity>
-
                 <Text style={styles.weekText}>
                     {format(addWeeks(new Date(), weekOffset), "LLLL yyyy", { locale: ru }).charAt(0).toUpperCase() +
-                        format(addWeeks(new Date(), weekOffset), "LLLL yyyy ", { locale: ru }).slice(1)}
+                        format(addWeeks(new Date(), weekOffset), "LLLL yyyy", { locale: ru }).slice(1)}
                     • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
                 </Text>
-
                 <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton}>
                     <Icon name="chevron-right" size={30} color="white" />
                 </TouchableOpacity>
@@ -115,17 +118,20 @@ const MainScreen = () => {
             {/* Weekly Calendar */}
             <View style={styles.weekContainer}>
                 <View style={styles.weekdayRow}>
-                    {weekDates.map((day, index) => (
+                    {weekDates.map((day, index: number) => (
                         <Text key={index} style={styles.weekdayText}>{day.dayLabel}</Text>
                     ))}
                 </View>
-
                 <View style={styles.datesRow}>
                     {weekDates.map((day) => (
-                        <TouchableOpacity key={day.fullDate} onPress={() => setSelectedDate(day.fullDate)} style={styles.dayContainer}>
+                        <TouchableOpacity
+                            key={day.fullDate}
+                            onPress={() => setSelectedDate(day.fullDate)}
+                            style={styles.dayContainer}
+                        >
                             <Text style={styles.dayText}>{day.dateNumber}</Text>
                             <View style={styles.dotContainer}>
-                                {getDayStatusDots(day.fullDate).map((dot, index) => (
+                                {getDayStatusDots(day.fullDate).map((dot, index: number) => (
                                     <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
                                 ))}
                             </View>
@@ -139,21 +145,27 @@ const MainScreen = () => {
                 data={filteredReminders}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
-                        <Icon name={typeIcons[item.type]} size={24} color={statusColors[item.status]} style={styles.icon} />
-
-                        <View style={styles.textContainer}>
-                            <Text style={styles.reminderTitle}>{item.name}</Text>
-                            <Text style={styles.reminderDetails}>{item.dosage} @ {item.time}</Text>
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate("EditReminder", { reminder: item, updateReminder })
+                        }
+                    >
+                        <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
+                            <Icon name={typeIcons[item.type]} size={24} color={statusColors[item.status]} style={styles.icon} />
+                            <View style={styles.textContainer}>
+                                <Text style={styles.reminderTitle}>{item.name}</Text>
+                                <Text style={styles.reminderDetails}>{item.dosage} @ {item.time}</Text>
+                            </View>
+                            {item.status !== "taken" && (
+                                <TouchableOpacity
+                                    onPress={() => markAsTaken(item.id)}
+                                    style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
+                                >
+                                    <Text style={styles.buttonText}>Принять</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
-
-                        {/* "Принять" Button */}
-                        {item.status !== "taken" && (
-                            <TouchableOpacity onPress={() => markAsTaken(item.id)} style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}>
-                                <Text style={styles.buttonText}>Принять</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                    </TouchableOpacity>
                 )}
             />
         </SafeAreaView>
@@ -164,71 +176,65 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#121212",
-        paddingTop: Platform.OS === "ios" ? 10 : StatusBar.currentHeight
+        paddingTop: Platform.OS === "ios" ? 10 : StatusBar.currentHeight,
     },
     weekHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 10
+        marginBottom: 10,
     },
     weekText: {
         fontSize: 18,
         color: "white",
-        fontWeight: "bold"
+        fontWeight: "bold",
     },
     arrowButton: {
-        padding: 10
+        padding: 10,
     },
-
-    // Calendar styling
     weekContainer: {
         alignItems: "center",
-        marginBottom: 15
+        marginBottom: 15,
     },
     weekdayRow: {
         flexDirection: "row",
         justifyContent: "space-around",
         width: "100%",
-        marginBottom: 5
+        marginBottom: 5,
     },
     weekdayText: {
         fontSize: 14,
         color: "white",
         fontWeight: "bold",
         textAlign: "center",
-        width: "14%"
+        width: "14%",
     },
     datesRow: {
         flexDirection: "row",
         justifyContent: "space-around",
-        width: "100%"
+        width: "100%",
     },
     dayContainer: {
         alignItems: "center",
-        width: "14%"
+        width: "14%",
     },
     dayText: {
         fontSize: 16,
         color: "white",
-        fontWeight: "bold"
+        fontWeight: "bold",
     },
-
-    // Dots under the calendar
     dotContainer: {
         flexDirection: "row",
         justifyContent: "center",
         marginTop: 3,
-        minHeight: 8
+        minHeight: 8,
     },
     dot: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        marginHorizontal: 2
+        marginHorizontal: 2,
     },
-
-    // Reminder List Styling
     reminderItem: {
         flexDirection: "row",
         alignItems: "center",
@@ -236,40 +242,37 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         backgroundColor: "#1E1E1E",
         borderRadius: 10,
-        borderLeftWidth: 6
+        borderLeftWidth: 6,
     },
     icon: {
-        marginRight: 10
+        marginRight: 10,
     },
     textContainer: {
         flex: 1,
-        marginLeft: 10
+        marginLeft: 10,
     },
     reminderTitle: {
         fontSize: 18,
         color: "white",
-        fontWeight: "bold"
+        fontWeight: "bold",
     },
     reminderDetails: {
         fontSize: 14,
-        color: "#AAA"
+        color: "#AAA",
     },
-
-    // "Принять" Button
     takeButton: {
         paddingVertical: 5,
         paddingHorizontal: 10,
         borderRadius: 5,
         alignItems: "center",
         justifyContent: "center",
-        minWidth: 70
+        minWidth: 70,
     },
     buttonText: {
         color: "#fff",
         fontWeight: "bold",
-        fontSize: 14
-    }
+        fontSize: 14,
+    },
 });
-
 
 export default MainScreen;
