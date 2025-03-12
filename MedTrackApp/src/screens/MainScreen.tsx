@@ -1,3 +1,4 @@
+// src/screens/MainScreen.tsx
 import React, { useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform, StatusBar } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -8,16 +9,11 @@ import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Define the navigation prop type
 type NavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
-// Define possible status values
 type ReminderStatus = "taken" | "pending" | "missed";
-
-// Define medication types
 type MedicationType = "tablet" | "capsule" | "liquid" | "injection";
 
-// Define Reminder type
 interface Reminder {
     id: string;
     name: string;
@@ -25,17 +21,15 @@ interface Reminder {
     type: MedicationType;
     time: string;
     status: ReminderStatus;
-    date: string; // YYYY-MM-DD format
+    date: string;
 }
 
-// Status colors
 const statusColors: Record<ReminderStatus, string> = {
     taken: "green",
     pending: "gray",
     missed: "red",
 };
 
-// Icons for medication types
 const typeIcons: Record<MedicationType, string> = {
     tablet: "pill",
     capsule: "pill",
@@ -43,7 +37,6 @@ const typeIcons: Record<MedicationType, string> = {
     injection: "needle",
 };
 
-// Sample reminders
 const sampleReminders: Reminder[] = [
     { id: "1", name: "Vitamin D", dosage: "2 tablets", type: "tablet", time: "09:00", status: "pending", date: "2025-03-11" },
     { id: "2", name: "Omega 3", dosage: "1 capsule", type: "capsule", time: "12:00", status: "missed", date: "2025-03-11" },
@@ -51,7 +44,6 @@ const sampleReminders: Reminder[] = [
     { id: "4", name: "Insulin", dosage: "1 injection", type: "injection", time: "21:00", status: "pending", date: "2025-03-13" },
 ];
 
-// Function to get current week's dates
 const getWeekDates = (weekOffset: number = 0) => {
     const today = new Date();
     const weekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 1 });
@@ -73,13 +65,16 @@ const MainScreen = () => {
     const weekDates = getWeekDates(weekOffset);
     const [reminders, setReminders] = useState<Reminder[]>(sampleReminders);
 
-    // Function to update a reminder
     const updateReminder = (updatedReminder: Reminder) => {
         setReminders((prevReminders) =>
             prevReminders.map((reminder) =>
                 reminder.id === updatedReminder.id ? updatedReminder : reminder
             )
         );
+    };
+
+    const addReminder = (newReminder: Reminder) => {
+        setReminders((prevReminders) => [...prevReminders, newReminder]);
     };
 
     const filteredReminders = reminders.filter((reminder) => reminder.date === selectedDate);
@@ -168,6 +163,14 @@ const MainScreen = () => {
                     </TouchableOpacity>
                 )}
             />
+
+            {/* Floating Add Button */}
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => navigation.navigate("AddReminder", { addReminder })}
+            >
+                <Icon name="plus" size={30} color="white" />
+            </TouchableOpacity>
         </SafeAreaView>
     );
 };
@@ -272,6 +275,22 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "bold",
         fontSize: 14,
+    },
+    fab: {
+        position: "absolute",
+        bottom: 20,
+        right: 20,
+        backgroundColor: "#007AFF",
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: "center",
+        alignItems: "center",
+        elevation: 5, // Shadow for Android
+        shadowColor: "#000", // Shadow for iOS
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
     },
 });
 

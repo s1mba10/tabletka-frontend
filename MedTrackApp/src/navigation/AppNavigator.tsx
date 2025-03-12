@@ -1,19 +1,22 @@
+// src/navigation/AppNavigator.tsx
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createStackNavigator, StackScreenProps } from "@react-navigation/stack";
+import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
 import MainScreen from "../screens/MainScreen";
 import UserInfoScreen from "../screens/UserInfoScreen";
 import EditReminderScreen from "../screens/EditReminderScreen";
+import AddReminderScreen from "../screens/AddReminderScreen"; // Import new screen
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { StackNavigationProp } from "@react-navigation/stack";
 
-// ✅ Define types for each screen's parameters
 export type RootStackParamList = {
     Main: undefined;
     EditReminder: {
         reminder: Reminder;
-        updateReminder: (updatedReminder: Reminder) => void; // Add this
+        updateReminder: (updatedReminder: Reminder) => void;
+    };
+    AddReminder: {
+        addReminder: (newReminder: Reminder) => void; // Callback to add new reminder
     };
 };
 
@@ -34,6 +37,7 @@ const MainStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={MainScreen} />
         <Stack.Screen name="EditReminder" component={EditReminderScreen} />
+        <Stack.Screen name="AddReminder" component={AddReminderScreen} />
     </Stack.Navigator>
 );
 
