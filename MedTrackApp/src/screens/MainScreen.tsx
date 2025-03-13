@@ -1,6 +1,6 @@
 // src/screens/MainScreen.tsx
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform, StatusBar } from "react-native";
+import React, { useState, useRef } from "react";
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Platform, StatusBar, Alert } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { format, addWeeks, startOfWeek, addDays, getISOWeek } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -8,6 +8,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { GestureHandlerRootView, Swipeable, RectButton } from "react-native-gesture-handler";
 
 type NavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
@@ -65,6 +66,9 @@ const MainScreen = () => {
     const weekDates = getWeekDates(weekOffset);
     const [reminders, setReminders] = useState<Reminder[]>(sampleReminders);
 
+    // Reference to track open swipeables
+    const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+
     const updateReminder = (updatedReminder: Reminder) => {
         setReminders((prevReminders) =>
             prevReminders.map((reminder) =>
@@ -77,10 +81,40 @@ const MainScreen = () => {
         setReminders((prevReminders) => [...prevReminders, newReminder]);
     };
 
-    const filteredReminders = reminders.filter((reminder) => reminder.date === selectedDate);
+    const deleteReminder = (id: string) => {
+        Alert.alert(
+            "Удалить напоминание",
+            "Вы уверены, что хотите удалить это напоминание?",
+            [
+                { text: "Отмена", style: "cancel" },
+                {
+                    text: "Удалить",
+                    onPress: () => {
+                        // First close the swipeable if it's still open
+                        const swipeable = rowRefs.current.get(id);
+                        if (swipeable) {
+                            swipeable.close();
+                        }
+
+                        // Then remove the reminder from state
+                        setReminders(prev => prev.filter(item => item.id !== id));
+                    },
+                    style: "destructive"
+                }
+            ]
+        );
+    };
+
+    // Filter reminders by selected date and sort by time (earliest to latest)
+    const filteredReminders = reminders
+        .filter((reminder) => reminder.date === selectedDate)
+        .sort((a, b) => a.time.localeCompare(b.time));
 
     const getDayStatusDots = (date: string) => {
-        const dayReminders = reminders.filter((reminder) => reminder.date === date);
+        const dayReminders = reminders
+            .filter((reminder) => reminder.date === date)
+            .sort((a, b) => a.time.localeCompare(b.time))
+            .slice(0, 5);
         return dayReminders.map((reminder) => ({ color: statusColors[reminder.status] }));
     };
 
@@ -92,86 +126,128 @@ const MainScreen = () => {
         );
     };
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
-            {/* Week Navigation */}
-            <View style={styles.weekHeader}>
-                <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton}>
-                    <Icon name="chevron-left" size={30} color="white" />
-                </TouchableOpacity>
-                <Text style={styles.weekText}>
-                    {format(addWeeks(new Date(), weekOffset), "LLLL yyyy", { locale: ru }).charAt(0).toUpperCase() +
-                        format(addWeeks(new Date(), weekOffset), "LLLL yyyy", { locale: ru }).slice(1)}
-                    • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
-                </Text>
-                <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton}>
-                    <Icon name="chevron-right" size={30} color="white" />
-                </TouchableOpacity>
-            </View>
+    // Close all other open rows when opening a new one
+    const closeOtherRows = (id: string) => {
+        rowRefs.current.forEach((ref, key) => {
+            if (key !== id) {
+                ref.close();
+            }
+        });
+    };
 
-            {/* Weekly Calendar */}
-            <View style={styles.weekContainer}>
-                <View style={styles.weekdayRow}>
-                    {weekDates.map((day, index: number) => (
-                        <Text key={index} style={styles.weekdayText}>{day.dayLabel}</Text>
-                    ))}
-                </View>
-                <View style={styles.datesRow}>
-                    {weekDates.map((day) => (
-                        <TouchableOpacity
-                            key={day.fullDate}
-                            onPress={() => setSelectedDate(day.fullDate)}
-                            style={styles.dayContainer}
-                        >
-                            <Text style={styles.dayText}>{day.dateNumber}</Text>
-                            <View style={styles.dotContainer}>
-                                {getDayStatusDots(day.fullDate).map((dot, index: number) => (
-                                    <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
-                                ))}
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-
-            {/* Reminders List */}
-            <FlatList
-                data={filteredReminders}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        onPress={() =>
-                            navigation.navigate("EditReminder", { reminder: item, updateReminder })
-                        }
-                    >
-                        <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
-                            <Icon name={typeIcons[item.type]} size={24} color={statusColors[item.status]} style={styles.icon} />
-                            <View style={styles.textContainer}>
-                                <Text style={styles.reminderTitle}>{item.name}</Text>
-                                <Text style={styles.reminderDetails}>{item.dosage} @ {item.time}</Text>
-                            </View>
-                            {item.status !== "taken" && (
-                                <TouchableOpacity
-                                    onPress={() => markAsTaken(item.id)}
-                                    style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
-                                >
-                                    <Text style={styles.buttonText}>Принять</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    </TouchableOpacity>
-                )}
-            />
-
-            {/* Floating Add Button */}
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => navigation.navigate("AddReminder", { addReminder })}
+    // Render right actions (delete button)
+    const renderRightActions = (id: string) => {
+        return (
+            <RectButton
+                style={styles.deleteButton}
+                onPress={() => deleteReminder(id)}
             >
-                <Icon name="plus" size={30} color="white" />
-            </TouchableOpacity>
-        </SafeAreaView>
+                <Icon name="delete" size={24} color="white" />
+                <Text style={styles.deleteText}>Удалить</Text>
+            </RectButton>
+        );
+    };
+
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="light-content" />
+                {/* Week Navigation */}
+                <View style={styles.weekHeader}>
+                    <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton}>
+                        <Icon name="chevron-left" size={30} color="white" />
+                    </TouchableOpacity>
+                    <Text style={styles.weekText}>
+                        {format(addWeeks(new Date(), weekOffset), "LLLL yyyy", { locale: ru }).charAt(0).toUpperCase() +
+                            format(addWeeks(new Date(), weekOffset), "LLLL yyyy ", { locale: ru }).slice(1)}
+                        • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
+                    </Text>
+                    <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton}>
+                        <Icon name="chevron-right" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Weekly Calendar */}
+                <View style={styles.weekContainer}>
+                    <View style={styles.weekdayRow}>
+                        {weekDates.map((day, index: number) => (
+                            <Text key={index} style={styles.weekdayText}>{day.dayLabel}</Text>
+                        ))}
+                    </View>
+                    <View style={styles.datesRow}>
+                        {weekDates.map((day) => (
+                            <TouchableOpacity
+                                key={day.fullDate}
+                                onPress={() => setSelectedDate(day.fullDate)}
+                                style={styles.dayContainer}
+                            >
+                                <Text style={styles.dayText}>{day.dateNumber}</Text>
+                                <View style={styles.dotContainer}>
+                                    {getDayStatusDots(day.fullDate).map((dot, index: number) => (
+                                        <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
+                                    ))}
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {/* Reminders List with Swipeable */}
+                <FlatList
+                    data={filteredReminders}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <Swipeable
+                            ref={(ref) => {
+                                if (ref) {
+                                    rowRefs.current.set(item.id, ref);
+                                }
+                            }}
+                            renderRightActions={() => renderRightActions(item.id)}
+                            onSwipeableOpen={() => closeOtherRows(item.id)}
+                            friction={2}
+                            overshootRight={false}
+                        >
+                            <View
+                                style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}
+                            >
+                                <TouchableWithoutFeedback
+                                    onPress={() => navigation.navigate("EditReminder", { reminder: item, updateReminder })}
+                                >
+                                    <View style={styles.reminderContent}>
+                                        <Icon name={typeIcons[item.type]} size={24} color={statusColors[item.status]} style={styles.icon} />
+                                        <View style={styles.textContainer}>
+                                            <Text style={styles.reminderTitle}>{item.name}</Text>
+                                            <Text style={styles.reminderDetails}>{item.dosage} @ {item.time}</Text>
+                                        </View>
+                                    </View>
+                                </TouchableWithoutFeedback>
+
+                                {item.status !== "taken" && (
+                                    <TouchableOpacity
+                                        onPress={() => markAsTaken(item.id)}
+                                        style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
+                                    >
+                                        <Text style={styles.buttonText}>Принять</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </Swipeable>
+                    )}
+                />
+
+                {/* Floating Add Button */}
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={() => {
+                        // Fixed navigation to AddReminder screen with proper params
+                        navigation.navigate("AddReminder", { addReminder });
+                    }}
+                >
+                    <Icon name="plus" size={30} color="white" />
+                </TouchableOpacity>
+            </SafeAreaView>
+        </GestureHandlerRootView>
     );
 };
 
@@ -247,6 +323,11 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderLeftWidth: 6,
     },
+    reminderContent: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+    },
     icon: {
         marginRight: 10,
     },
@@ -275,6 +356,19 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "bold",
         fontSize: 14,
+    },
+    deleteButton: {
+        backgroundColor: "#FF3B30",
+        width: 100,
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    deleteText: {
+        color: "white",
+        fontSize: 14,
+        fontWeight: "bold",
+        marginTop: 5,
     },
     fab: {
         position: "absolute",

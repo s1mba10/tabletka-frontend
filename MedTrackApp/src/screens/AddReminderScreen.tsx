@@ -308,5 +308,4 @@ const styles = StyleSheet.create({
 
 export default AddReminderScreen;
 
-// selector should be almost full screen.
 // there should be ability to delete scheduled reminder by swiping it to the left.
