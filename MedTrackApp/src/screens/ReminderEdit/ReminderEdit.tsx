@@ -1,0 +1,142 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  StatusBar,
+  Modal,
+  TouchableWithoutFeedback,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
+
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Reminder } from '../../navigation';
+
+import { styles } from './styles';
+import { EditReminderScreenNavigationProp, EditReminderScreenRouteProp } from './types';
+
+const ReminderEdit: React.FC = () => {
+  const navigation = useNavigation<EditReminderScreenNavigationProp>();
+  const route = useRoute<EditReminderScreenRouteProp>();
+  const { reminder } = route.params;
+
+  const [name, setName] = useState(reminder.name);
+  const [dosage, setDosage] = useState(reminder.dosage);
+  const [time, setTime] = useState(reminder.time);
+
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(() => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  });
+
+  const handleTimeChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+
+    if (selectedDate) {
+      setSelectedTime(selectedDate);
+
+      const hours = selectedDate.getHours().toString().padStart(2, '0');
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+      setTime(`${hours}:${minutes}`);
+    }
+  };
+
+  const openTimePicker = () => {
+    setShowTimePicker(true);
+  };
+
+  const closeTimePicker = () => {
+    setShowTimePicker(false);
+  };
+
+  const saveReminder = () => {
+    const updatedReminder: Reminder = {
+      ...reminder,
+      name,
+      dosage,
+      time,
+    };
+
+    navigation.navigate('Main', {
+      updatedReminder,
+      forceRefresh: Date.now(),
+    });
+
+    Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      <Text style={styles.label}>Название</Text>
+      <TextInput style={styles.input} value={name} onChangeText={setName} />
+
+      <Text style={styles.label}>Дозировка</Text>
+      <TextInput style={styles.input} value={dosage} onChangeText={setDosage} />
+
+      <Text style={styles.label}>Время</Text>
+      <TouchableOpacity onPress={openTimePicker} style={styles.timePickerButton}>
+        <Text style={styles.timeText}>{time}</Text>
+        <Icon name="clock-outline" size={24} color="#007AFF" />
+      </TouchableOpacity>
+
+      {Platform.OS === 'ios' && showTimePicker && (
+        <Modal transparent={true} animationType="slide" visible={showTimePicker}>
+          <TouchableWithoutFeedback onPress={closeTimePicker}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <TouchableOpacity onPress={closeTimePicker}>
+                      <Text style={styles.cancelButton}>Отмена</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.modalTitle}>Выберите время</Text>
+                    <TouchableOpacity onPress={closeTimePicker}>
+                      <Text style={styles.doneButton}>Готово</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={handleTimeChange}
+                    style={styles.timePickerIOS}
+                    textColor="white"
+                    themeVariant="dark"
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      )}
+
+      {Platform.OS === 'android' && showTimePicker && (
+        <DateTimePicker
+          value={selectedTime}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={handleTimeChange}
+        />
+      )}
+
+      <TouchableOpacity onPress={saveReminder} style={styles.saveButton}>
+        <Text style={styles.buttonText}>Сохранить</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+};
+
+export default ReminderEdit;
