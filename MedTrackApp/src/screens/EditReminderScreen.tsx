@@ -17,13 +17,15 @@ import { RootStackParamList, Reminder } from "../navigation/AppNavigator"; // Im
 import { RouteProp } from "@react-navigation/native";
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 type EditReminderScreenRouteProp = RouteProp<RootStackParamList, "EditReminder">;
+type EditReminderScreenNavigationProp = StackNavigationProp<RootStackParamList, "EditReminder">;
 
 const EditReminderScreen = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<EditReminderScreenNavigationProp>();
     const route = useRoute<EditReminderScreenRouteProp>();
-    const { reminder, updateReminder } = route.params;
+    const { reminder } = route.params;
 
     const [name, setName] = useState(reminder.name);
     const [dosage, setDosage] = useState(reminder.dosage);
@@ -73,9 +75,13 @@ const EditReminderScreen = () => {
             time,
         };
 
-        updateReminder(updatedReminder);
+        // Navigate back to Main screen with updated reminder
+        navigation.navigate('Main', {
+            updatedReminder,
+            forceRefresh: Date.now() // Force refresh with timestamp
+        });
+
         Alert.alert("Сохранено", "Напоминание успешно обновлено!");
-        navigation.goBack();
     };
 
     return (

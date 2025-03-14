@@ -1,29 +1,21 @@
 // src/screens/MainScreen.tsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Platform, StatusBar, Alert } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { format, addWeeks, startOfWeek, addDays, getISOWeek } from "date-fns";
 import { ru } from "date-fns/locale";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { RootStackParamList, Reminder } from "../navigation/AppNavigator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView, Swipeable, RectButton } from "react-native-gesture-handler";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute, RouteProp } from "@react-navigation/native";
 
 type NavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
 type ReminderStatus = "taken" | "pending" | "missed";
 type MedicationType = "tablet" | "capsule" | "liquid" | "injection";
-
-interface Reminder {
-    id: string;
-    name: string;
-    dosage: string;
-    type: MedicationType;
-    time: string;
-    status: ReminderStatus;
-    date: string;
-}
 
 const statusColors: Record<ReminderStatus, string> = {
     taken: "green",
@@ -61,6 +53,7 @@ const getWeekDates = (weekOffset: number = 0) => {
 
 const MainScreen = () => {
     const navigation = useNavigation<NavigationProp>();
+    const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
     const [weekOffset, setWeekOffset] = useState(0);
     const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
     const weekDates = getWeekDates(weekOffset);
@@ -68,7 +61,94 @@ const MainScreen = () => {
 
     // Reference to track open swipeables
     const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+    const resetStorage = async () => {
+        try {
+            Alert.alert(
+                "Reset Storage",
+                "This will delete all your reminders and replace them with sample data. Are you sure?",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel"
+                    },
+                    {
+                        text: "Reset",
+                        style: "destructive",
+                        onPress: async () => {
+                            try {
+                                // Clear all storage
+                                await AsyncStorage.clear();
+                                console.log("Storage cleared");
 
+                                // Set sample data
+                                await AsyncStorage.setItem('reminders', JSON.stringify(sampleReminders));
+                                console.log("Sample data saved to storage");
+
+                                // Update state
+                                setReminders(sampleReminders);
+
+                                // Force refresh app state
+                                setSelectedDate(format(new Date(), "yyyy-MM-dd"));
+
+                                Alert.alert(
+                                    "Storage Reset",
+                                    "Your storage has been reset to sample data. The app will now show the sample reminders."
+                                );
+                            } catch (error) {
+                                console.error("Failed to reset storage:", error);
+                                Alert.alert("Error", "Failed to reset storage: " + String(error));
+                            }
+                        }
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error("Reset dialog error:", error);
+        }
+    };
+
+    // Add a second debug button for resetting:
+    <TouchableOpacity
+        style={[styles.fab, { bottom: 160, backgroundColor: '#FF3B30' }]}
+        onPress={resetStorage}
+    >
+        <Icon name="restart" size={30} color="white" />
+    </TouchableOpacity>
+    // Load reminders from AsyncStorage when component mounts
+    useEffect(() => {
+        const loadReminders = async () => {
+            try {
+                const storedReminders = await AsyncStorage.getItem('reminders');
+                if (storedReminders) {
+                    console.log("Loaded reminders from storage");
+                    setReminders(JSON.parse(storedReminders));
+                }
+            } catch (error) {
+                console.error("Failed to load reminders:", error);
+            }
+        };
+
+        loadReminders();
+    }, []);
+
+    // Save reminders to AsyncStorage whenever they change
+    useEffect(() => {
+        const saveReminders = async () => {
+            try {
+                await AsyncStorage.setItem('reminders', JSON.stringify(reminders));
+                console.log("Saved reminders to storage, count:", reminders.length);
+            } catch (error) {
+                console.error("Failed to save reminders:", error);
+            }
+        };
+
+        // Only save if different from initial sample reminders to avoid unnecessary storage writes
+        if (JSON.stringify(reminders) !== JSON.stringify(sampleReminders)) {
+            saveReminders();
+        }
+    }, [reminders]);
+
+    // Functions for managing reminders
     const updateReminder = (updatedReminder: Reminder) => {
         setReminders((prevReminders) =>
             prevReminders.map((reminder) =>
@@ -78,6 +158,7 @@ const MainScreen = () => {
     };
 
     const addReminder = (newReminder: Reminder) => {
+        console.log("Adding new reminder:", newReminder);
         setReminders((prevReminders) => [...prevReminders, newReminder]);
     };
 
@@ -105,10 +186,82 @@ const MainScreen = () => {
         );
     };
 
+    // Handle navigation events
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            console.log("MainScreen focused with date:", selectedDate);
+
+            // Get parameters from the route
+            const params = route.params;
+            console.log("Route params from useRoute:", params);
+
+            // Check if we have params
+            if (params) {
+                // Handle multiple reminders
+                if (params.newReminders && params.newReminders.length > 0) {
+                    console.log("Processing new reminders array:", params.newReminders.length);
+                    console.log("New reminders:", JSON.stringify(params.newReminders));
+
+                    // Check if any reminders have today's date to auto-select that date
+                    const reminderDates = params.newReminders.map(r => r.date);
+                    console.log("Reminder dates:", reminderDates);
+
+                    // If any reminder has the same date as the selected date, it will show up
+                    // Otherwise, we should select the date of the first reminder
+                    if (!reminderDates.includes(selectedDate) && reminderDates.length > 0) {
+                        console.log("Auto-selecting date:", reminderDates[0]);
+                        setSelectedDate(reminderDates[0]);
+                    }
+
+                    // Add each reminder in the array by creating a new array with all existing reminders plus new ones
+                    setReminders(currentReminders => {
+                        const newArray = [...currentReminders, ...params.newReminders!];
+                        console.log("New reminders array length:", newArray.length);
+                        return newArray;
+                    });
+
+                    // Clear the parameter after processing
+                    navigation.setParams({
+                        newReminders: undefined,
+                    });
+                }
+                // Keep backward compatibility for single reminders
+                else if (params.newReminder) {
+                    console.log("Processing single new reminder");
+
+                    // Check if we need to change the selected date
+                    if (params.newReminder.date !== selectedDate) {
+                        console.log("Auto-selecting date for single reminder:", params.newReminder.date);
+                        setSelectedDate(params.newReminder.date);
+                    }
+
+                    setReminders(currentReminders => [...currentReminders, params.newReminder!]);
+                    // Clear the parameter after processing
+                    navigation.setParams({
+                        newReminder: undefined,
+                    });
+                }
+
+                if (params.updatedReminder) {
+                    console.log("Processing updated reminder");
+                    updateReminder(params.updatedReminder);
+                    // Clear the parameter after processing
+                    navigation.setParams({
+                        updatedReminder: undefined,
+                    });
+                }
+            }
+        });
+
+        return unsubscribe;
+    }, [navigation, selectedDate, route.params]); // Add selectedDate as a dependency
+
     // Filter reminders by selected date and sort by time (earliest to latest)
     const filteredReminders = reminders
         .filter((reminder) => reminder.date === selectedDate)
         .sort((a, b) => a.time.localeCompare(b.time));
+
+    console.log(`Filtered reminders for ${selectedDate}:`, filteredReminders.length);
 
     const getDayStatusDots = (date: string) => {
         const dayReminders = reminders
@@ -179,9 +332,18 @@ const MainScreen = () => {
                             <TouchableOpacity
                                 key={day.fullDate}
                                 onPress={() => setSelectedDate(day.fullDate)}
-                                style={styles.dayContainer}
+                                style={[
+                                    styles.dayContainer,
+                                    day.fullDate === selectedDate && styles.selectedDay
+                                ]}
                             >
-                                <Text style={styles.dayText}>{day.dateNumber}</Text>
+                                <Text style={[
+                                    styles.dayText,
+                                    day.fullDate === selectedDate && styles.selectedDayText,
+                                    day.isToday && styles.todayText
+                                ]}>
+                                    {day.dateNumber}
+                                </Text>
                                 <View style={styles.dotContainer}>
                                     {getDayStatusDots(day.fullDate).map((dot, index: number) => (
                                         <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
@@ -212,7 +374,9 @@ const MainScreen = () => {
                                 style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}
                             >
                                 <TouchableWithoutFeedback
-                                    onPress={() => navigation.navigate("EditReminder", { reminder: item, updateReminder })}
+                                    onPress={() => navigation.navigate("EditReminder", {
+                                        reminder: item
+                                    })}
                                 >
                                     <View style={styles.reminderContent}>
                                         <Icon name={typeIcons[item.type]} size={24} color={statusColors[item.status]} style={styles.icon} />
@@ -234,14 +398,21 @@ const MainScreen = () => {
                             </View>
                         </Swipeable>
                     )}
+                    ListEmptyComponent={() => (
+                        <View style={styles.emptyListContainer}>
+                            <Icon name="pill-off" size={60} color="#444" />
+                            <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+                            <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+                        </View>
+                    )}
                 />
 
                 {/* Floating Add Button */}
                 <TouchableOpacity
                     style={styles.fab}
                     onPress={() => {
-                        // Fixed navigation to AddReminder screen with proper params
-                        navigation.navigate("AddReminder", { addReminder });
+                        // Pass selectedDate instead of addReminder
+                        navigation.navigate("AddReminder", { selectedDate });
                     }}
                 >
                     <Icon name="plus" size={30} color="white" />
@@ -296,11 +467,22 @@ const styles = StyleSheet.create({
     dayContainer: {
         alignItems: "center",
         width: "14%",
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    selectedDay: {
+        backgroundColor: "#323232",
     },
     dayText: {
         fontSize: 16,
         color: "white",
         fontWeight: "bold",
+    },
+    selectedDayText: {
+        color: "white",
+    },
+    todayText: {
+        color: "#007AFF",
     },
     dotContainer: {
         flexDirection: "row",
@@ -385,6 +567,23 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 3,
+    },
+    emptyListContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 50,
+    },
+    emptyListText: {
+        color: '#AAA',
+        fontSize: 18,
+        marginTop: 20,
+        fontWeight: 'bold',
+    },
+    emptyListSubText: {
+        color: '#666',
+        fontSize: 14,
+        marginTop: 10,
     },
 });
 

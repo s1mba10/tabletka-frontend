@@ -6,20 +6,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import MainScreen from "../screens/MainScreen";
 import UserInfoScreen from "../screens/UserInfoScreen";
 import EditReminderScreen from "../screens/EditReminderScreen";
-import AddReminderScreen from "../screens/AddReminderScreen"; // Import new screen
+import AddReminderScreen from "../screens/AddReminderScreen";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-export type RootStackParamList = {
-    Main: undefined;
-    EditReminder: {
-        reminder: Reminder;
-        updateReminder: (updatedReminder: Reminder) => void;
-    };
-    AddReminder: {
-        addReminder: (newReminder: Reminder) => void; // Callback to add new reminder
-    };
-};
-
+// Define Reminder type
 export interface Reminder {
     id: string;
     name: string;
@@ -29,6 +19,21 @@ export interface Reminder {
     status: "taken" | "pending" | "missed";
     date: string;
 }
+
+export type RootStackParamList = {
+    Main: {
+        updatedReminder?: Reminder;
+        newReminder?: Reminder;
+        newReminders?: Reminder[];
+        forceRefresh?: number; // Add this line to fix the type error
+    } | undefined;
+    EditReminder: {
+        reminder: Reminder;
+    };
+    AddReminder: {
+        selectedDate?: string;
+    };
+};
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
