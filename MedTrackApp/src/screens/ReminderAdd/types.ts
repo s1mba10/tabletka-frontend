@@ -1,8 +1,7 @@
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation';
-
-export type MedicationType = 'tablet' | 'capsule' | 'liquid' | 'injection';
+import { MedicationType } from '../../types';
 
 export const typeIcons: Record<MedicationType, string> = {
   tablet: 'pill',

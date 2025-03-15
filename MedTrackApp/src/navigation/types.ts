@@ -1,12 +1,4 @@
-export type Reminder = {
-  id: string;
-  name: string;
-  dosage: string;
-  type: 'tablet' | 'capsule' | 'liquid' | 'injection';
-  time: string;
-  status: 'taken' | 'pending' | 'missed';
-  date: string;
-};
+import { Reminder } from '../types';
 
 export type RootStackParamList = {
   Main:
@@ -23,4 +15,16 @@ export type RootStackParamList = {
   ReminderAdd: {
     selectedDate?: string;
   };
+  Profile: {
+    userData: {
+      email: string;
+      full_name: string;
+      timezone: string;
+      is_active: boolean;
+      total_taken: number;
+      total_missed: number;
+      adherence_percentage: number;
+    };
+  };
+  AuthAndInfo: undefined;
 };

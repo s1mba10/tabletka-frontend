@@ -12,7 +12,8 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 
 import { styles } from './styles';
 import { NavigationProp } from './types';
-import { Reminder, RootStackParamList } from '../../navigation';
+import { RootStackParamList } from '../../navigation';
+import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { sampleReminders, statusColors, typeIcons } from './constants';
 

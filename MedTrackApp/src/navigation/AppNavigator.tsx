@@ -3,12 +3,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import { RootStackParamList } from './types';
 import ReminderEdit from '../screens/ReminderEdit';
 import ReminderAdd from '../screens/ReminderAdd';
 import Main from '../screens/Main';
 import AuthAndInfo from '../screens/AuthAndInfo';
+import Profile from '../screens/Profile';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -18,6 +18,13 @@ const MainStack = () => (
     <Stack.Screen name="Main" component={Main} />
     <Stack.Screen name="ReminderEdit" component={ReminderEdit} />
     <Stack.Screen name="ReminderAdd" component={ReminderAdd} />
+  </Stack.Navigator>
+);
+
+const ProfileStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="AuthAndInfo" component={AuthAndInfo} />
+    <Stack.Screen name="Profile" component={Profile} />
   </Stack.Navigator>
 );
 
@@ -32,7 +39,7 @@ const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="Профиль"
-          component={AuthAndInfo}
+          component={ProfileStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="account" size={30} color={color} /> }}
         />
       </Tab.Navigator>

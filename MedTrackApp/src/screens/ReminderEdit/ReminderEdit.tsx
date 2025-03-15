@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Reminder } from '../../navigation';
+import { Reminder } from '../../types';
 
 import { styles } from './styles';
 import { EditReminderScreenNavigationProp, EditReminderScreenRouteProp } from './types';

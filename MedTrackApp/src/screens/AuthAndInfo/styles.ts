@@ -58,6 +58,10 @@ export const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
   },
+  disabledButton: {
+  backgroundColor: '#3A5D7E', // Dimmed version of the blue
+  opacity: 0.7,
+  },
   submitText: {
     color: '#fff',
     fontWeight: 'bold',

@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, Alert, StatusBar, ScrollView } from 'react-native';
+import { Text, TextInput, TouchableOpacity, Alert, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 import { styles } from './styles';
-import { FormType } from './types';
+import { FormType, AuthNavigationProp } from './types';
 import { validateEmail, validateFullName, validatePassword } from './validators';
-import { BASE_URL } from '../../api';
+import { AUTH_ENDPOINT, USERS_ENDPOINT } from '../../api';
 
 const AuthAndInfo: React.FC = () => {
+  const navigation = useNavigation<AuthNavigationProp>();
   const [formType, setFormType] = useState<FormType>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -62,44 +65,74 @@ const AuthAndInfo: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      let requestData;
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      if (formType === 'register') {
-        requestData = {
-          email,
-          password,
-          full_name: fullName,
-          timezone: timeZone,
-        };
-      } else {
-        requestData = {
+      setIsLoading(true);
+      try {
+        // Get user's timezone
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        // Prepare request data based on form type
+        const requestData = {
           email,
           password,
           timezone: timeZone,
         };
-      }
+        
+        // Add full_name only when registering
+        if (formType === 'register') {
+          Object.assign(requestData, { full_name: fullName });
+        }
 
-      Alert.alert(formType === 'register' ? 'Registration Data' : 'Login Data', JSON.stringify(requestData, null, 2));
-
-      fetch(`${BASE_URL}/auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          // Переходим на экран профиля в случае успеха
-          console.log(data);
-        })
-        .catch((error) => {
-          // Выводим ErrorStub
-          console.log(error);
+        // Make authentication request
+        const response = await fetch(AUTH_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Authentication failed');
+        }
+
+        // Get access token from response
+        const accessToken = data.access_token;
+        const tokenType = data.token_type; // 'bearer'
+        
+        if (accessToken) {
+          // Fetch user information with the correct token format
+          const userResponse = await fetch(`${USERS_ENDPOINT}/me`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `${tokenType} ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!userResponse.ok) {
+            throw new Error('Failed to fetch user data');
+          }
+
+          const userData = await userResponse.json();
+          
+          // Navigate to Profile with user data
+          navigation.navigate('Profile', { userData });
+        } else {
+          throw new Error('No authentication token received');
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        Alert.alert(
+          'Authentication Error', 
+          error instanceof Error ? error.message : 'Failed to authenticate'
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -122,6 +155,7 @@ const AuthAndInfo: React.FC = () => {
           placeholderTextColor="#666"
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!isLoading}
         />
         {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
@@ -133,6 +167,7 @@ const AuthAndInfo: React.FC = () => {
           placeholder="Ваш пароль"
           placeholderTextColor="#666"
           secureTextEntry
+          editable={!isLoading}
         />
         {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
@@ -145,13 +180,24 @@ const AuthAndInfo: React.FC = () => {
               onChangeText={setFullName}
               placeholder="Иван Иванов"
               placeholderTextColor="#666"
+              editable={!isLoading}
             />
             {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
           </>
         )}
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitText}>Отправить</Text>
+        <TouchableOpacity 
+          style={[styles.submitButton, isLoading && { backgroundColor: '#3A5D7E', opacity: 0.7 }]} 
+          onPress={handleSubmit}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.submitText}>
+              {formType === 'register' ? 'Зарегистрироваться' : 'Войти'}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

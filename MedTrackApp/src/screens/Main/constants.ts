@@ -1,5 +1,4 @@
-import { Reminder } from '../../navigation';
-import { MedicationType, ReminderStatus } from './types';
+import { Reminder, MedicationType, ReminderStatus } from '../../types';
 
 export const statusColors: Record<ReminderStatus, string> = {
   taken: 'green',

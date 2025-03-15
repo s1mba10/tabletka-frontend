@@ -20,8 +20,8 @@ import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { styles } from './styles';
-import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, MedicationType, typeIcons } from './types';
-import { Reminder } from '../../navigation';
+import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, typeIcons } from './types';
+import { Reminder, MedicationType } from '../../types';
 
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
@@ -211,6 +211,7 @@ const ReminderAdd: React.FC = () => {
       <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          {/* Сделать чтобы было похоже на листание с правой станицы на левую, а не наоборот */}
           <TouchableOpacity onPress={() => navigation.navigate('Main')}>
             <Icon name="arrow-left" size={28} color="#007AFF" />
           </TouchableOpacity>
