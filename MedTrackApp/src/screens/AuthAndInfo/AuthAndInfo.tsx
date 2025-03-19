@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, Alert, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { styles } from './styles';
 import { FormType, AuthNavigationProp } from './types';
@@ -104,6 +105,10 @@ const AuthAndInfo: React.FC = () => {
         const tokenType = data.token_type; // 'bearer'
         
         if (accessToken) {
+          // Save token to AsyncStorage
+          await AsyncStorage.setItem('authToken', accessToken);
+          await AsyncStorage.setItem('tokenType', tokenType || 'Bearer');
+          
           // Fetch user information with the correct token format
           const userResponse = await fetch(`${USERS_ENDPOINT}/me`, {
             method: 'GET',

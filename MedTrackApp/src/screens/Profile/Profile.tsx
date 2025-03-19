@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { BarChart } from 'react-native-chart-kit';
 import Svg, { Circle } from 'react-native-svg';
-// import AsyncStorage from '@react-native-async-storage/async-storage'; // Uncomment when implementing real token storage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { styles } from './styles';
 import { ProfileScreenRouteProp, RootNavigationProp } from './types';
@@ -113,37 +113,57 @@ const Profile: React.FC = () => {
     try {
       setIsRefreshing(true);
       
-      // For demo purposes - simulating a loading delay and data update
-      // In a real app, you would retrieve token from AsyncStorage:
-      // const token = await AsyncStorage.getItem('authToken');
+      // Get authentication token from storage
+      const token = await AsyncStorage.getItem('authToken');
+      const tokenType = await AsyncStorage.getItem('tokenType') || 'Bearer';
       
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!token) {
+        console.log('Токен авторизации не найден');
+        Alert.alert(
+          'Ошибка авторизации', 
+          'Сессия истекла. Пожалуйста, войдите снова.'
+        );
+        
+        // Redirect to login screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AuthAndInfo' }],
+        });
+        return;
+      }
       
-      // Generate some random updated stats for demonstration purposes
-      const currentTaken = user.total_taken;
-      const currentMissed = user.total_missed;
-      const newTaken = currentTaken + Math.floor(Math.random() * 3); // Add 0-2 taken meds
-      const newMissed = currentMissed + (Math.random() > 0.7 ? 1 : 0); // Occasionally add a missed med
-      const total = newTaken + newMissed;
-      const newAdherence = total > 0 ? Math.round((newTaken / total) * 100) : 0;
-      
-      const updatedUserData = {
-        ...user,
-        total_taken: newTaken,
-        total_missed: newMissed,
-        adherence_percentage: newAdherence
-      };
-      
+      // Make API request to get user data with proper token format
+      const response = await fetch(`${USERS_ENDPOINT}/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `${tokenType} ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        // If unauthorized (401), token might be expired
+        if (response.status === 401) {
+          await AsyncStorage.removeItem('authToken');
+          await AsyncStorage.removeItem('tokenType');
+          throw new Error('Токен авторизации истек. Пожалуйста, войдите снова.');
+        }
+        
+        const errorData = await response.json().catch(() => null);
+        console.error('API error response:', errorData);
+        throw new Error(`Ошибка получения данных: ${response.status} ${response.statusText}`);
+      }
+
+      // Parse the response and update state
+      const updatedUserData = await response.json();
       setUser(updatedUserData);
       
       Alert.alert("Готово!", "Статистика была обновена!");
-      
     } catch (error) {
       console.error('Error refreshing user data:', error);
       Alert.alert(
-        'Update Failed', 
-        'Unable to refresh your statistics. Please try again later.'
+        'Ошибка обновления', 
+        error instanceof Error ? error.message : 'Не удалось обновить статистику. Пожалуйста, попробуйте позже.'
       );
     } finally {
       setIsRefreshing(false);
@@ -152,22 +172,30 @@ const Profile: React.FC = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Выход',
+      'Вы уверены, что хотите выйти?',
       [
         {
-          text: 'Cancel',
+          text: 'Отмена',
           style: 'cancel'
         },
         {
-          text: 'Logout',
-          onPress: () => {
-            // Clear auth token and redirect to login
-            // You would typically clear AsyncStorage here
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'AuthAndInfo' }],
-            });
+          text: 'Выйти',
+          onPress: async () => {
+            try {
+              // Clear the auth tokens from storage
+              await AsyncStorage.removeItem('authToken');
+              await AsyncStorage.removeItem('tokenType');
+              
+              // Navigate to auth screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'AuthAndInfo' }],
+              });
+            } catch (error) {
+              console.error('Error during logout:', error);
+              Alert.alert('Ошибка', 'Не удалось выйти из системы. Пожалуйста, попробуйте еще раз.');
+            }
           },
           style: 'destructive'
         }
@@ -332,7 +360,7 @@ const Profile: React.FC = () => {
             <Icon name="pill" size={24} color="#007AFF" />
             <Text style={styles.actionText}>Управление лекарствами</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Settings', 'Settings page would open here')}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Настройки', 'Здесь откроется страница настроек')}>
             <Icon name="cog" size={24} color="#007AFF" />
             <Text style={styles.actionText}>Настройки</Text>
           </TouchableOpacity>

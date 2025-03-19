@@ -1,3 +1,4 @@
+// src/screens/Main/Main.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
