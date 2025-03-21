@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -59,20 +60,43 @@ const ReminderEdit: React.FC = () => {
     setShowTimePicker(false);
   };
 
-  const saveReminder = () => {
-    const updatedReminder: Reminder = {
-      ...reminder,
-      name,
-      dosage,
-      time,
-    };
+  const saveReminder = async () => {
+    try {
+      // Create updated reminder
+      const updatedReminder: Reminder = {
+        ...reminder,
+        name,
+        dosage,
+        time,
+      };
 
-    navigation.navigate('Main', {
-      updatedReminder,
-      forceRefresh: Date.now(),
-    });
+      // Retrieve existing reminders from AsyncStorage
+      const storedRemindersJson = await AsyncStorage.getItem('reminders');
+      
+      if (storedRemindersJson) {
+        // Parse stored reminders
+        const storedReminders: Reminder[] = JSON.parse(storedRemindersJson);
 
-    Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
+        // Find and replace the updated reminder
+        const updatedReminders = storedReminders.map(r => 
+          r.id === reminder.id ? updatedReminder : r
+        );
+
+        // Save updated reminders back to AsyncStorage
+        await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));
+      }
+
+      // Navigate back to Main screen with updated reminder
+      navigation.navigate('Main', {
+        updatedReminder,
+        forceRefresh: Date.now(),
+      });
+
+      Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
+    } catch (error) {
+      console.error('Error saving reminder:', error);
+      Alert.alert('Ошибка', 'Не удалось сохранить напоминание');
+    }
   };
 
   return (
