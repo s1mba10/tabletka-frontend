@@ -20,8 +20,16 @@ export const useReminders = () => {
   const scheduleReminders = async (items: Reminder[]) => {
     if (!items.length) return;
 
+    const first = items[0];
+
+    const medication = await post('/medications/', {
+      name: first.name,
+      dosage: first.dosage,
+      description: '',
+    });
+
     const payload = {
-      medication_id: 1,
+      medication_id: medication.id,
       selected_dates: Array.from(new Set(items.map((r) => r.date))),
       selected_times: Array.from(new Set(items.map((r) => r.time))),
       note: '',
