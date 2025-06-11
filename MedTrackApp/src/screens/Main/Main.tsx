@@ -17,6 +17,19 @@ import { getWeekDates } from './utils';
 import { sampleReminders, statusColors, typeIcons } from './constants';
 import { useCountdown } from '../../hooks';
 
+const applyStatusRules = (items: Reminder[]): Reminder[] => {
+  const now = Date.now();
+  return items.map((r) => {
+    if (r.status === 'taken') {
+      return r;
+    }
+    const due = new Date(`${r.date}T${r.time}`);
+    return now >= due.getTime() + 15 * 60 * 1000
+      ? { ...r, status: 'missed' }
+      : { ...r, status: 'pending' };
+  });
+};
+
 const Main: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
@@ -34,7 +47,8 @@ const Main: React.FC = () => {
       try {
         const storedReminders = await AsyncStorage.getItem('reminders');
         if (storedReminders) {
-          setReminders(JSON.parse(storedReminders));
+          const parsed: Reminder[] = JSON.parse(storedReminders);
+          setReminders(applyStatusRules(parsed));
         }
       } catch (error) {
         console.error('Failed to load reminders:', error);
@@ -42,6 +56,12 @@ const Main: React.FC = () => {
     };
 
     loadReminders();
+
+    const interval = setInterval(() => {
+      setReminders(prev => applyStatusRules(prev));
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Save reminders to storage when they change
@@ -66,7 +86,9 @@ const Main: React.FC = () => {
 
       if (params) {
         if (params.newReminders?.length) {
-          setReminders(prev => [...prev, ...params.newReminders!]);
+          setReminders(prev =>
+            applyStatusRules([...prev, ...params.newReminders!]),
+          );
           
           const reminderDates = params.newReminders.map(r => r.date);
           if (!reminderDates.includes(selectedDate) && reminderDates.length > 0) {
@@ -79,16 +101,18 @@ const Main: React.FC = () => {
             setSelectedDate(params.newReminder.date);
           }
 
-          setReminders(prev => [...prev, params.newReminder!]);
+          setReminders(prev => applyStatusRules([...prev, params.newReminder!]));
           navigation.setParams({ newReminder: undefined });
         }
 
         if (params.updatedReminder) {
-          setReminders(prev => 
-            prev.map(reminder => 
-              reminder.id === params.updatedReminder!.id 
-                ? params.updatedReminder! 
-                : reminder
+          setReminders(prev =>
+            applyStatusRules(
+              prev.map(reminder =>
+                reminder.id === params.updatedReminder!.id
+                  ? params.updatedReminder!
+                  : reminder
+              )
             )
           );
           navigation.setParams({ updatedReminder: undefined });
@@ -126,7 +150,7 @@ const Main: React.FC = () => {
 
           // Remove the reminder from state
           const updatedReminders = reminders.filter(item => item.id !== id);
-          setReminders(updatedReminders);
+          setReminders(applyStatusRules(updatedReminders));
 
           // Update AsyncStorage with the filtered reminders
           await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));

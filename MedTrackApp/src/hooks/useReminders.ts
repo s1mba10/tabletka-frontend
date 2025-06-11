@@ -21,22 +21,30 @@ export const useReminders = () => {
   const scheduleReminders = async (items: Reminder[]) => {
     if (!items.length) return;
 
-    const first = items[0];
+    const token = await AsyncStorage.getItem('authToken');
 
-    const medication = await post('/medications/', {
-      name: first.name,
-      dosage: first.dosage,
-      description: '',
-    });
+    if (token) {
+      try {
+        const first = items[0];
 
-    const payload = {
-      medication_id: medication.id,
-      selected_dates: Array.from(new Set(items.map((r) => r.date))),
-      selected_times: Array.from(new Set(items.map((r) => r.time))),
-      note: '',
-    };
+        const medication = await post('/medications/', {
+          name: first.name,
+          dosage: first.dosage,
+          description: '',
+        });
 
-    await post('/reminders/schedule/', payload);
+        const payload = {
+          medication_id: medication.id,
+          selected_dates: Array.from(new Set(items.map((r) => r.date))),
+          selected_times: Array.from(new Set(items.map((r) => r.time))),
+          note: '',
+        };
+
+        await post('/reminders/schedule/', payload);
+      } catch (e) {
+        console.warn('Failed to schedule reminders via API', e);
+      }
+    }
 
     const stored = await AsyncStorage.getItem('reminders');
     let current: Reminder[] = [];
