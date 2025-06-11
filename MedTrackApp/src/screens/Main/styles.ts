@@ -120,7 +120,7 @@ export const styles = StyleSheet.create({
   countdownText: {
     fontSize: 12,
     fontWeight: 'bold',
-    textAlign: 'right',
+    textAlign: 'left',
     marginTop: 2,
   },
   takeButton: {
