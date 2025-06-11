@@ -16,6 +16,7 @@ import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { sampleReminders, statusColors, typeIcons } from './constants';
 import { useCountdown } from '../../hooks';
+import { put } from '../../api';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -170,6 +171,22 @@ const Main: React.FC = () => {
     );
   };
 
+  const markAsTaken = async (item: Reminder) => {
+    setReminders(prev =>
+      prev.map(r => (r.id === item.id ? { ...r, status: 'taken' } : r)),
+    );
+
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const idNum = parseInt(item.id as string, 10);
+      if (token && !isNaN(idNum)) {
+        await put(`/reminders/${idNum}/status`, { status: 'taken' });
+      }
+    } catch (e) {
+      console.warn('Failed to sync taken status', e);
+    }
+  };
+
   // Close other open swipeable rows
   const closeOtherRows = (id: string) => {
     rowRefs.current.forEach((ref, key) => {
@@ -248,13 +265,7 @@ const Main: React.FC = () => {
 
           {item.status !== 'taken' && (
             <TouchableOpacity
-              onPress={() =>
-                setReminders((prev) =>
-                  prev.map((reminder) =>
-                    reminder.id === item.id ? { ...reminder, status: 'taken' } : reminder,
-                  ),
-                )
-              }
+              onPress={() => markAsTaken(item)}
               style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
             >
               <Text style={styles.buttonText}>Принять</Text>
