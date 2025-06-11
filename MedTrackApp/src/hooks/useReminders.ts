@@ -38,23 +38,34 @@ export const useReminders = () => {
 
     await post('/reminders/schedule/', payload);
 
-    setReminders((prev) => {
-      const all = [...prev, ...items];
-      AsyncStorage.setItem('reminders', JSON.stringify(all));
-      items.forEach((reminder) => {
-        const [hour, minute] = reminder.time.split(':').map(Number);
-        const notificationDate = new Date(reminder.date);
-        notificationDate.setHours(hour, minute, 0, 0);
-        if (notificationDate > new Date()) {
-          reminderNotification({
-            title: `Напоминание: ${reminder.name}`,
-            body: `Примите ${reminder.dosage}`,
-            date: notificationDate,
-          });
-        }
-      });
-      return all;
+    const stored = await AsyncStorage.getItem('reminders');
+    let current: Reminder[] = [];
+    if (stored) {
+      try {
+        current = JSON.parse(stored);
+      } catch {
+        current = [];
+      }
+    }
+
+    const existingIds = new Set(current.map((r) => r.id));
+    const all = [...current, ...items.filter((r) => !existingIds.has(r.id))];
+    await AsyncStorage.setItem('reminders', JSON.stringify(all));
+
+    items.forEach((reminder) => {
+      const [hour, minute] = reminder.time.split(':').map(Number);
+      const notificationDate = new Date(reminder.date);
+      notificationDate.setHours(hour, minute, 0, 0);
+      if (notificationDate > new Date()) {
+        reminderNotification({
+          title: `Напоминание: ${reminder.name}`,
+          body: `Примите ${reminder.dosage}`,
+          date: notificationDate,
+        });
+      }
     });
+
+    setReminders(all);
   };
 
   const updateReminderStatus = async (id: string | number, status: ReminderStatus) => {

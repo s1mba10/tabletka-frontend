@@ -181,15 +181,21 @@ const ReminderAdd: React.FC = () => {
         let allReminders: Reminder[] = [];
 
         if (storedReminders) {
-          allReminders = JSON.parse(storedReminders);
-
-          if (!Array.isArray(allReminders)) {
-            console.error('Invalid reminders format in storage, resetting');
+          try {
+            allReminders = JSON.parse(storedReminders);
+            if (!Array.isArray(allReminders)) {
+              allReminders = [];
+            }
+          } catch {
             allReminders = [];
           }
         }
 
-        allReminders = [...allReminders, ...newReminders];
+        const existingIds = new Set(allReminders.map((r) => r.id));
+        allReminders = [
+          ...allReminders,
+          ...newReminders.filter((r) => !existingIds.has(r.id)),
+        ];
         await AsyncStorage.setItem('reminders', JSON.stringify(allReminders));
         console.log('Successfully saved all reminders to storage');
 
