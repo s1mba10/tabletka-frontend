@@ -225,8 +225,9 @@ export const styles = StyleSheet.create({
   // Update statLabel styles to make Пропущено fit
   statLabel: {
     color: '#888',
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 5,
+    textAlign: 'center',
   },
   statIcon: {
     marginTop: 5,
