@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, Alert, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../hooks';
 
 import { styles } from './styles';
 import { FormType, AuthNavigationProp } from './types';
 import { validateEmail, validateFullName, validatePassword } from './validators';
-import { AUTH_ENDPOINT, USERS_ENDPOINT } from '../../api';
 
 const AuthAndInfo: React.FC = () => {
   const navigation = useNavigation<AuthNavigationProp>();
@@ -15,7 +14,7 @@ const AuthAndInfo: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, register, loading } = useAuth();
 
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -67,77 +66,19 @@ const AuthAndInfo: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (validateForm()) {
-      setIsLoading(true);
-      try {
-        // Get user's timezone
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
-        // Prepare request data based on form type
-        const requestData = {
-          email,
-          password,
-          timezone: timeZone,
-        };
-        
-        // Add full_name only when registering
-        if (formType === 'register') {
-          Object.assign(requestData, { full_name: fullName });
-        }
-
-        // Make authentication request
-        const response = await fetch(AUTH_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.detail || 'Authentication failed');
-        }
-
-        // Get access token from response
-        const accessToken = data.access_token;
-        const tokenType = data.token_type; // 'bearer'
-        
-        if (accessToken) {
-          // Save token to AsyncStorage
-          await AsyncStorage.setItem('authToken', accessToken);
-          await AsyncStorage.setItem('tokenType', tokenType || 'Bearer');
-          
-          // Fetch user information with the correct token format
-          const userResponse = await fetch(`${USERS_ENDPOINT}/me`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `${tokenType} ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!userResponse.ok) {
-            throw new Error('Failed to fetch user data');
-          }
-
-          const userData = await userResponse.json();
-          
-          // Navigate to Profile with user data
-          navigation.navigate('Profile', { userData });
-        } else {
-          throw new Error('No authentication token received');
-        }
-      } catch (error) {
-        console.error('Auth error:', error);
-        Alert.alert(
-          'Authentication Error', 
-          error instanceof Error ? error.message : 'Failed to authenticate'
-        );
-      } finally {
-        setIsLoading(false);
-      }
+    if (!validateForm()) return;
+    try {
+      const userData =
+        formType === 'register'
+          ? await register(email, password, fullName)
+          : await login(email, password);
+      navigation.navigate('Profile', { userData });
+    } catch (error) {
+      console.error('Auth error:', error);
+      Alert.alert(
+        'Authentication Error',
+        error instanceof Error ? error.message : 'Failed to authenticate'
+      );
     }
   };
 
@@ -160,7 +101,7 @@ const AuthAndInfo: React.FC = () => {
           placeholderTextColor="#666"
           keyboardType="email-address"
           autoCapitalize="none"
-          editable={!isLoading}
+          editable={!loading}
         />
         {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
@@ -172,7 +113,7 @@ const AuthAndInfo: React.FC = () => {
           placeholder="Ваш пароль"
           placeholderTextColor="#666"
           secureTextEntry
-          editable={!isLoading}
+          editable={!loading}
         />
         {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
@@ -185,18 +126,18 @@ const AuthAndInfo: React.FC = () => {
               onChangeText={setFullName}
               placeholder="Иван Иванов"
               placeholderTextColor="#666"
-              editable={!isLoading}
+              editable={!loading}
             />
             {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
           </>
         )}
 
         <TouchableOpacity 
-          style={[styles.submitButton, isLoading && { backgroundColor: '#3A5D7E', opacity: 0.7 }]} 
+          style={[styles.submitButton, loading && { backgroundColor: '#3A5D7E', opacity: 0.7 }]}
           onPress={handleSubmit}
-          disabled={isLoading}
+          disabled={loading}
         >
-          {isLoading ? (
+          {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.submitText}>
