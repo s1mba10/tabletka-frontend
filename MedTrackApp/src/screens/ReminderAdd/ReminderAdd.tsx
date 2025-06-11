@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,16 +17,22 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { styles } from './styles';
 import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, typeIcons } from './types';
 import { Reminder, MedicationType } from '../../types';
+import useReminders from '../../hooks/useReminders';
 
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
   const route = useRoute<AddReminderScreenRouteProp>();
   const { selectedDate } = route.params || {};
+
+  const { scheduleReminders, syncLocal } = useReminders();
+
+  useEffect(() => {
+    syncLocal();
+  }, [syncLocal]);
 
   console.log('AddReminderScreen opened with date:', selectedDate);
 
@@ -164,38 +170,10 @@ const ReminderAdd: React.FC = () => {
     console.log('Created reminders:', JSON.stringify(newReminders));
 
     try {
-      const storedReminders = await AsyncStorage.getItem('reminders');
-      let allReminders: Reminder[] = [];
-
-      if (storedReminders) {
-        allReminders = JSON.parse(storedReminders);
-        console.log('Existing reminders count:', allReminders.length);
-
-        if (!Array.isArray(allReminders)) {
-          console.error('Invalid reminders format in storage, resetting');
-          allReminders = [];
-        }
-      } else {
-        console.log('No existing reminders in storage');
-      }
-
-      allReminders = [...allReminders, ...newReminders];
-      console.log('New total reminders count:', allReminders.length);
-
-      await AsyncStorage.setItem('reminders', JSON.stringify(allReminders));
-      console.log('Successfully saved all reminders to storage');
-
-      const verification = await AsyncStorage.getItem('reminders');
-      if (verification) {
-        const parsed = JSON.parse(verification);
-        console.log('Verification: stored reminders count:', parsed.length);
-      }
+      await scheduleReminders(newReminders);
     } catch (error) {
-      console.error('Failed to update reminders in storage:', error);
-      Alert.alert(
-        'Storage Error',
-        'Failed to save your reminders. The app will try to add them to your list, but you may need to restart the app.',
-      );
+      console.error('Failed to schedule reminders:', error);
+      Alert.alert('Ошибка', 'Не удалось связаться с сервером. Напоминания сохранены локально.');
     }
 
     navigation.navigate('Main', {
