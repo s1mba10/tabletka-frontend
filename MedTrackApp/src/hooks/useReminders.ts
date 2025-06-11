@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { get, post, put, del } from '../api';
 import { Reminder, ReminderStatus } from '../types';
+import { reminderNotification } from '../utils/notifications';
 
 export const useReminders = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -36,7 +37,24 @@ export const useReminders = () => {
     };
 
     await post('/reminders/schedule/', payload);
-    setReminders((prev) => [...prev, ...items]);
+
+    setReminders((prev) => {
+      const all = [...prev, ...items];
+      AsyncStorage.setItem('reminders', JSON.stringify(all));
+      items.forEach((reminder) => {
+        const [hour, minute] = reminder.time.split(':').map(Number);
+        const notificationDate = new Date(reminder.date);
+        notificationDate.setHours(hour, minute, 0, 0);
+        if (notificationDate > new Date()) {
+          reminderNotification({
+            title: `Напоминание: ${reminder.name}`,
+            body: `Примите ${reminder.dosage}`,
+            date: notificationDate,
+          });
+        }
+      });
+      return all;
+    });
   };
 
   const updateReminderStatus = async (id: string | number, status: ReminderStatus) => {
@@ -57,7 +75,6 @@ export const useReminders = () => {
       const local: Reminder[] = JSON.parse(stored);
       if (local.length) {
         await scheduleReminders(local);
-        await AsyncStorage.removeItem('reminders');
       }
     } catch (e) {
       console.warn('Failed to sync local reminders', e);

@@ -19,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useReminders } from '../../hooks';
+import { reminderNotification } from '../../utils/notifications';
 
 import { styles } from './styles';
 import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, typeIcons } from './types';
@@ -190,7 +191,21 @@ const ReminderAdd: React.FC = () => {
 
         allReminders = [...allReminders, ...newReminders];
         await AsyncStorage.setItem('reminders', JSON.stringify(allReminders));
-        console.log('Saved reminders locally after API failure');
+        console.log('Successfully saved all reminders to storage');
+
+        newReminders.forEach((reminder) => {
+          const [hour, minute] = reminder.time.split(':').map(Number);
+          const notificationDate = new Date(reminder.date);
+          notificationDate.setHours(hour, minute, 0, 0);
+
+          if (notificationDate > new Date()) {
+            reminderNotification({
+              title: `Напоминание: ${reminder.name}`,
+              body: `Примите ${reminder.dosage}`,
+              date: notificationDate,
+            });
+          }
+        });
       } catch (storageError) {
         console.error('Failed to update reminders in storage:', storageError);
         Alert.alert(

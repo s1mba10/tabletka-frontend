@@ -11,6 +11,7 @@ export const typeIcons: Record<MedicationType, string> = {
   capsule: 'pill',
   liquid: 'bottle-tonic-plus',
   injection: 'needle',
+  other: 'pill'
 };
 
 export const sampleReminders: Reminder[] = [
