@@ -104,6 +104,25 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#AAA',
   },
+  countdownContainer: {
+    marginTop: 4,
+  },
+  progressBarBackground: {
+    height: 4,
+    backgroundColor: '#333',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  countdownText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'right',
+    marginTop: 2,
+  },
   takeButton: {
     paddingVertical: 5,
     paddingHorizontal: 10,

@@ -15,6 +15,7 @@ import { RootStackParamList } from '../../navigation';
 import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { sampleReminders, statusColors, typeIcons } from './constants';
+import { useCountdown } from '../../hooks';
 
 const Main: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -139,6 +140,12 @@ const Main: React.FC = () => {
   ]);
 };
 
+  const markAsMissed = (id: string) => {
+    setReminders(prev =>
+      prev.map(r => (r.id === id ? { ...r, status: 'missed' } : r)),
+    );
+  };
+
   // Close other open swipeable rows
   const closeOtherRows = (id: string) => {
     rowRefs.current.forEach((ref, key) => {
@@ -155,6 +162,84 @@ const Main: React.FC = () => {
       <Text style={styles.deleteText}>Удалить</Text>
     </RectButton>
   );
+
+  const ReminderCard: React.FC<{ item: Reminder }> = ({ item }) => {
+    const due = new Date(`${item.date}T${item.time}`);
+    const now = Date.now();
+    const active =
+      item.status === 'pending' && now >= due.getTime() && now < due.getTime() + 15 * 60 * 1000;
+    const { minutes, seconds, progress } = useCountdown(due, active, () => markAsMissed(item.id));
+    const progressColor = progress > 0.5 ? '#4CAF50' : progress > 0.2 ? '#FFEB3B' : '#F44336';
+
+    return (
+      <Swipeable
+        ref={(ref) => {
+          if (ref) {
+            rowRefs.current.set(item.id, ref);
+          }
+        }}
+        renderRightActions={() => renderRightActions(item.id)}
+        onSwipeableOpen={() => closeOtherRows(item.id)}
+        friction={2}
+        overshootRight={false}
+      >
+        <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
+          <TouchableWithoutFeedback
+            onPress={() =>
+              navigation.navigate('ReminderEdit', {
+                reminder: item,
+              })
+            }
+          >
+            <View style={styles.reminderContent}>
+              <Icon
+                name={typeIcons[item.type]}
+                size={24}
+                color={statusColors[item.status]}
+                style={styles.icon}
+              />
+              <View style={styles.textContainer}>
+                <Text style={styles.reminderTitle}>{item.name}</Text>
+                <Text style={styles.reminderDetails}>
+                  {item.dosage} @ {item.time}
+                </Text>
+                {active && (
+                  <View style={styles.countdownContainer}>
+                    <View style={styles.progressBarBackground}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          { width: `${progress * 100}%`, backgroundColor: progressColor },
+                        ]}
+                      />
+                    </View>
+                    <Text style={[styles.countdownText, { color: progressColor }]}>
+                      {minutes}:{seconds}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+
+          {item.status !== 'taken' && (
+            <TouchableOpacity
+              onPress={() =>
+                setReminders((prev) =>
+                  prev.map((reminder) =>
+                    reminder.id === item.id ? { ...reminder, status: 'taken' } : reminder,
+                  ),
+                )
+              }
+              style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
+            >
+              <Text style={styles.buttonText}>Принять</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Swipeable>
+    );
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -215,54 +300,7 @@ const Main: React.FC = () => {
         <FlatList
           data={filteredReminders}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Swipeable
-              ref={(ref) => {
-                if (ref) {
-                  rowRefs.current.set(item.id, ref);
-                }
-              }}
-              renderRightActions={() => renderRightActions(item.id)}
-              onSwipeableOpen={() => closeOtherRows(item.id)}
-              friction={2}
-              overshootRight={false}
-            >
-              <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
-                <TouchableWithoutFeedback
-                  onPress={() =>
-                    navigation.navigate('ReminderEdit', {
-                      reminder: item,
-                    })
-                  }
-                >
-                  <View style={styles.reminderContent}>
-                    <Icon name={typeIcons[item.type]} size={24} color={statusColors[item.status]} style={styles.icon} />
-                    <View style={styles.textContainer}>
-                      <Text style={styles.reminderTitle}>{item.name}</Text>
-                      <Text style={styles.reminderDetails}>
-                        {item.dosage} @ {item.time}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableWithoutFeedback>
-
-                {item.status !== 'taken' && (
-                  <TouchableOpacity
-                    onPress={() => setReminders(prev => 
-                      prev.map(reminder => 
-                        reminder.id === item.id 
-                          ? { ...reminder, status: 'taken' } 
-                          : reminder
-                      )
-                    )}
-                    style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
-                  >
-                    <Text style={styles.buttonText}>Принять</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </Swipeable>
-          )}
+          renderItem={({ item }) => <ReminderCard item={item} />}
           ListEmptyComponent={() => (
             <View style={styles.emptyListContainer}>
               <Icon name="pill-off" size={60} color="#444" />
