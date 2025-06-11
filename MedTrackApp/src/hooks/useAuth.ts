@@ -53,7 +53,13 @@ export const useAuth = () => {
     try {
       const reminders = JSON.parse(stored);
       if (Array.isArray(reminders) && reminders.length > 0) {
-        await post('/reminders/schedule/', { reminders });
+        const payload = {
+          medication_id: 1,
+          selected_dates: Array.from(new Set(reminders.map((r: any) => r.date))),
+          selected_times: Array.from(new Set(reminders.map((r: any) => r.time))),
+          note: '',
+        };
+        await post('/reminders/schedule/', payload);
         await AsyncStorage.removeItem('reminders');
       }
     } catch (e) {
