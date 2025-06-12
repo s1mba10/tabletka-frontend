@@ -15,7 +15,7 @@ import { RootStackParamList } from '../../navigation';
 import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { sampleReminders, statusColors, typeIcons } from './constants';
-import { useCountdown, useReminders } from '../../hooks';
+import { useCountdown } from '../../hooks';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -64,18 +64,27 @@ const Main: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Save reminders to storage when they change
+  // Save reminders and stats to storage when they change
   useEffect(() => {
-    const saveReminders = async () => {
+    const saveData = async () => {
       try {
         await AsyncStorage.setItem('reminders', JSON.stringify(reminders));
+
+        const total_taken = reminders.filter(r => r.status === 'taken').length;
+        const total_missed = reminders.filter(r => r.status === 'missed').length;
+        const total = total_taken + total_missed;
+        const adherence_percentage = total > 0 ? (total_taken / total) * 100 : 0;
+        await AsyncStorage.setItem(
+          'userStats',
+          JSON.stringify({ total_taken, total_missed, adherence_percentage })
+        );
       } catch (error) {
         console.error('Failed to save reminders:', error);
       }
     };
 
     if (reminders.length > 0) {
-      saveReminders();
+      saveData();
     }
   }, [reminders]);
 
@@ -170,24 +179,10 @@ const Main: React.FC = () => {
     );
   };
 
-  const { updateReminderStatus, syncLocal } = useReminders();
-
-  const markAsTaken = async (item: Reminder) => {
+  const markAsTaken = (item: Reminder) => {
     setReminders(prev =>
       prev.map(r => (r.id === item.id ? { ...r, status: 'taken' } : r)),
     );
-
-    try {
-      const idNum = Number(item.id);
-      if (!isNaN(idNum)) {
-        await updateReminderStatus(idNum, 'taken');
-      } else {
-        // reminder not yet synced - try to push local data first
-        await syncLocal();
-      }
-    } catch (e) {
-      console.warn('Failed to sync taken status', e);
-    }
   };
 
   // Close other open swipeable rows

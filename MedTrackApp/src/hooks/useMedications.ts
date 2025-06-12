@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { get, post, put, del } from '../api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Medication } from '../types';
 
 export const useMedications = () => {
@@ -9,33 +9,55 @@ export const useMedications = () => {
   const fetchMedications = async () => {
     setLoading(true);
     try {
-      const data: Medication[] = await get('/medications/');
-      setMedications(data);
+      const stored = await AsyncStorage.getItem('medications');
+      if (stored) {
+        setMedications(JSON.parse(stored));
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const saveMedications = async (items: Medication[]) => {
+    setMedications(items);
+    await AsyncStorage.setItem('medications', JSON.stringify(items));
+  };
+
   const createMedication = async (payload: Partial<Medication>) => {
-    const med: Medication = await post('/medications/', payload);
-    setMedications((prev) => [...prev, med]);
+    const med: Medication = {
+      id: Date.now(),
+      name: payload.name || '',
+      dosage: payload.dosage || '',
+      description: payload.description || '',
+      created_at: new Date().toISOString(),
+    };
+    await saveMedications([...medications, med]);
     return med;
   };
 
   const updateMedication = async (id: number, payload: Partial<Medication>) => {
-    const med: Medication = await put(`/medications/${id}`, payload);
-    setMedications((prev) => prev.map((m) => (m.id === id ? med : m)));
-    return med;
+    const updated = medications.map(m =>
+      m.id === id ? { ...m, ...payload } : m
+    );
+    await saveMedications(updated);
+    return updated.find(m => m.id === id)!;
   };
 
   const removeMedication = async (id: number) => {
-    await del(`/medications/${id}`);
-    setMedications((prev) => prev.filter((m) => m.id !== id));
+    const filtered = medications.filter(m => m.id !== id);
+    await saveMedications(filtered);
   };
 
   useEffect(() => {
     fetchMedications();
   }, []);
 
-  return { medications, loading, fetchMedications, createMedication, updateMedication, removeMedication };
+  return {
+    medications,
+    loading,
+    fetchMedications,
+    createMedication,
+    updateMedication,
+    removeMedication,
+  };
 };
