@@ -16,7 +16,7 @@ export type RootStackParamList = {
     selectedDate?: string;
   };
   Profile: {
-    userData: {
+    userData?: {
       email: string;
       full_name: string;
       timezone: string;
@@ -25,6 +25,5 @@ export type RootStackParamList = {
       total_missed: number;
       adherence_percentage: number;
     };
-  };
-  AuthAndInfo: undefined;
+  } | undefined;
 };

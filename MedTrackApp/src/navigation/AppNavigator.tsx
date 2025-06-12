@@ -7,7 +7,6 @@ import { RootStackParamList } from './types';
 import ReminderEdit from '../screens/ReminderEdit';
 import ReminderAdd from '../screens/ReminderAdd';
 import Main from '../screens/Main';
-import AuthAndInfo from '../screens/AuthAndInfo';
 import Profile from '../screens/Profile';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -23,7 +22,6 @@ const MainStack = () => (
 
 const ProfileStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="AuthAndInfo" component={AuthAndInfo} />
     <Stack.Screen name="Profile" component={Profile} />
   </Stack.Navigator>
 );

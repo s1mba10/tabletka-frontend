@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateStats } from '../../utils/userProfile';
 import { useRoute, RouteProp } from '@react-navigation/native';
 
 import { styles } from './styles';
@@ -33,7 +34,9 @@ const Main: React.FC = () => {
       try {
         const storedReminders = await AsyncStorage.getItem('reminders');
         if (storedReminders) {
-          setReminders(JSON.parse(storedReminders));
+          const parsed = JSON.parse(storedReminders);
+          setReminders(parsed);
+          updateStats(parsed);
         }
       } catch (error) {
         console.error('Failed to load reminders:', error);
@@ -48,14 +51,13 @@ const Main: React.FC = () => {
     const saveReminders = async () => {
       try {
         await AsyncStorage.setItem('reminders', JSON.stringify(reminders));
+        await updateStats(reminders);
       } catch (error) {
         console.error('Failed to save reminders:', error);
       }
     };
 
-    if (reminders.length > 0) {
-      saveReminders();
-    }
+    saveReminders();
   }, [reminders]);
 
   // Handle navigation focus and route params
