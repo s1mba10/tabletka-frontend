@@ -30,11 +30,7 @@ const ReminderAdd: React.FC = () => {
   const route = useRoute<AddReminderScreenRouteProp>();
   const { selectedDate } = route.params || {};
 
-  const { scheduleReminders, syncLocal } = useReminders();
-
-  useEffect(() => {
-    syncLocal();
-  }, []);
+  const { scheduleReminders } = useReminders();
 
   console.log('AddReminderScreen opened with date:', selectedDate);
 
