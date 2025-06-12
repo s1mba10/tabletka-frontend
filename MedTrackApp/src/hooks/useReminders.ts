@@ -23,6 +23,16 @@ export const useReminders = () => {
 
     const token = await AsyncStorage.getItem('authToken');
 
+    let stored = await AsyncStorage.getItem('reminders');
+    let current: Reminder[] = [];
+    if (stored) {
+      try {
+        current = JSON.parse(stored);
+      } catch {
+        current = [];
+      }
+    }
+
     if (token) {
       try {
         const first = items[0];
@@ -41,21 +51,35 @@ export const useReminders = () => {
         };
 
         await post('/reminders/schedule/', payload);
+
+        // Refresh reminders from server to get real IDs
+        await fetchReminders();
+
+        // Remove scheduled local reminders from storage
+        const remaining = current.filter((r) => !items.some((it) => it.id === r.id));
+        await AsyncStorage.setItem('reminders', JSON.stringify(remaining));
+
+        items.forEach((reminder) => {
+          const [hour, minute] = reminder.time.split(':').map(Number);
+          const notificationDate = new Date(reminder.date);
+          notificationDate.setHours(hour, minute, 0, 0);
+          if (notificationDate > new Date()) {
+            reminderNotification({
+              title: `Напоминание: ${reminder.name}`,
+              body: `Примите ${reminder.dosage}`,
+              date: notificationDate,
+            });
+          }
+        });
+
+        return;
       } catch (e) {
         console.warn('Failed to schedule reminders via API', e);
+        // fall through to offline handling
       }
     }
 
-    const stored = await AsyncStorage.getItem('reminders');
-    let current: Reminder[] = [];
-    if (stored) {
-      try {
-        current = JSON.parse(stored);
-      } catch {
-        current = [];
-      }
-    }
-
+    // Offline or failed - store locally
     const existingIds = new Set(current.map((r) => r.id));
     const all = [...current, ...items.filter((r) => !existingIds.has(r.id))];
     await AsyncStorage.setItem('reminders', JSON.stringify(all));

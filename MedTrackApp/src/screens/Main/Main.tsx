@@ -15,8 +15,7 @@ import { RootStackParamList } from '../../navigation';
 import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { sampleReminders, statusColors, typeIcons } from './constants';
-import { useCountdown } from '../../hooks';
-import { put } from '../../api';
+import { useCountdown, useReminders } from '../../hooks';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -171,16 +170,20 @@ const Main: React.FC = () => {
     );
   };
 
+  const { updateReminderStatus, syncLocal } = useReminders();
+
   const markAsTaken = async (item: Reminder) => {
     setReminders(prev =>
       prev.map(r => (r.id === item.id ? { ...r, status: 'taken' } : r)),
     );
 
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const idNum = parseInt(item.id as string, 10);
-      if (token && !isNaN(idNum)) {
-        await put(`/reminders/${idNum}/status`, { status: 'taken' });
+      const idNum = Number(item.id);
+      if (!isNaN(idNum)) {
+        await updateReminderStatus(idNum, 'taken');
+      } else {
+        // reminder not yet synced - try to push local data first
+        await syncLocal();
       }
     } catch (e) {
       console.warn('Failed to sync taken status', e);
