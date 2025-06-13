@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useMedications } from '../../hooks/useMedications';
 import { MedicationsScreenNavigationProp, MedicationFormData } from './types';
 import { styles } from './styles';
 
 const Medications: React.FC = () => {
   const navigation = useNavigation<MedicationsScreenNavigationProp>();
-  const { medications, createMedication, updateMedication, removeMedication } = useMedications();
+  const { medications, createMedication, updateMedication, removeMedication, fetchMedications } = useMedications();
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMedications();
+    }, [fetchMedications])
+  );
 
   const [form, setForm] = useState<MedicationFormData>({ name: '', dosage: '' });
 

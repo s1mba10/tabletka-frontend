@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useReminders, useMedications } from '../../hooks';
+import { useFocusEffect } from '@react-navigation/native';
 import { reminderNotification } from '../../utils/notifications';
 
 import { styles } from './styles';
@@ -31,7 +32,13 @@ const ReminderAdd: React.FC = () => {
   const { selectedDate } = route.params || {};
 
   const { scheduleReminders } = useReminders();
-  const { medications } = useMedications();
+  const { medications, fetchMedications } = useMedications();
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMedications();
+    }, [fetchMedications])
+  );
   const [selectVisible, setSelectVisible] = useState(false);
 
   console.log('AddReminderScreen opened with date:', selectedDate);
