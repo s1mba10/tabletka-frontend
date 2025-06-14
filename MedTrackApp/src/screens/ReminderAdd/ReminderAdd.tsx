@@ -18,7 +18,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useReminders } from '../../hooks';
+import { useReminders, useMedications, useCourses } from '../../hooks';
 import { reminderNotification } from '../../utils/notifications';
 
 import { styles } from './styles';
@@ -30,11 +30,10 @@ const ReminderAdd: React.FC = () => {
   const route = useRoute<AddReminderScreenRouteProp>();
   const { selectedDate } = route.params || {};
 
-  const { scheduleReminders, syncLocal } = useReminders();
-
-  useEffect(() => {
-    syncLocal();
-  }, []);
+  const { scheduleReminders } = useReminders();
+  const { medications, createMedication } = useMedications();
+  const { saveCourse } = useCourses();
+  const [selectVisible, setSelectVisible] = useState(false);
 
   console.log('AddReminderScreen opened with date:', selectedDate);
 
@@ -43,7 +42,19 @@ const ReminderAdd: React.FC = () => {
   const [type, setType] = useState<MedicationType>('tablet');
 
   const [times, setTimes] = useState<string[]>([format(new Date(), 'HH:mm')]);
+  const [startDate, setStartDate] = useState<string>(
+    selectedDate || format(new Date(), 'yyyy-MM-dd'),
+  );
+  const [endDate, setEndDate] = useState<string>(
+    selectedDate || format(new Date(), 'yyyy-MM-dd'),
+  );
+  const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>(
+    'once',
+  );
+  const [weekdays, setWeekdays] = useState<number[]>([]);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
   const [currentEditingTime, setCurrentEditingTime] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState(() => {
     const date = new Date();
@@ -135,6 +146,48 @@ const ReminderAdd: React.FC = () => {
     setShowTimePicker(false);
   };
 
+  const handleStartChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setShowStartPicker(false);
+    if (date) setStartDate(format(date, 'yyyy-MM-dd'));
+  };
+
+  const handleEndChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setShowEndPicker(false);
+    if (date) setEndDate(format(date, 'yyyy-MM-dd'));
+  };
+
+  const toggleWeekday = (day: number) => {
+    setWeekdays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day],
+    );
+  };
+
+  const generateSchedule = () => {
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const iso = format(d, 'yyyy-MM-dd');
+      switch (repeat) {
+        case 'daily':
+          dates.push(iso);
+          break;
+        case 'alternate':
+          if (
+            Math.floor((d.getTime() - start.getTime()) / 86400000) % 2 === 0
+          )
+            dates.push(iso);
+          break;
+        case 'weekdays':
+          if (weekdays.includes(d.getDay())) dates.push(iso);
+          break;
+        default:
+          if (d.getTime() === start.getTime()) dates.push(iso);
+      }
+    }
+    return dates;
+  };
+
   const typeOptions: Array<{ label: string; value: MedicationType }> = [
     { label: 'Таблетка', value: 'tablet' },
     { label: 'Капсула', value: 'capsule' },
@@ -153,23 +206,44 @@ const ReminderAdd: React.FC = () => {
       return;
     }
 
-    const reminderDate = selectedDate || format(new Date(), 'yyyy-MM-dd');
+    if (!medications.find(m => m.name.toLowerCase() === name.toLowerCase())) {
+      await createMedication({ name, dosage });
+    }
 
-    const newReminders: Reminder[] = times.map((time) => {
-      const id = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
-
-      return {
-        id,
-        name,
-        dosage,
-        type,
-        time,
-        status: 'pending',
-        date: reminderDate,
-      };
+    const dates = generateSchedule();
+    const courseId = Date.now();
+    const newReminders: Reminder[] = [];
+    dates.forEach(date => {
+      times.forEach(time => {
+        const id =
+          Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
+        newReminders.push({
+          id,
+          name,
+          dosage,
+          type,
+          time,
+          status: 'pending',
+          date,
+          courseId,
+        });
+      });
     });
 
+    const course = {
+      id: courseId,
+      name,
+      dosage,
+      type,
+      times,
+      startDate,
+      endDate,
+      repeatPattern: repeat,
+      weekdays,
+    } as const;
+
     console.log('Created reminders:', JSON.stringify(newReminders));
+    await saveCourse(course);
 
     try {
       await scheduleReminders(newReminders);
@@ -240,7 +314,11 @@ const ReminderAdd: React.FC = () => {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Добавить напоминание</Text>
         </View>
-        <Text style={styles.dateInfo}>Дата: {selectedDate || format(new Date(), 'yyyy-MM-dd')}</Text>
+        <Text style={styles.dateInfo}>
+          {startDate === endDate
+            ? `Дата: ${startDate}`
+            : `Курс: ${startDate} - ${endDate}`}
+        </Text>
 
         <Text style={styles.label}>Название</Text>
         <TextInput
@@ -250,6 +328,10 @@ const ReminderAdd: React.FC = () => {
           placeholder="Название лекарства"
           placeholderTextColor="#666"
         />
+        <TouchableOpacity onPress={() => setSelectVisible(true)} style={styles.selectButton}>
+          <Icon name="format-list-bulleted" size={20} color="#007AFF" />
+          <Text style={styles.selectButtonText}>Выбрать из добавленных</Text>
+        </TouchableOpacity>
 
         <Text style={styles.label}>Дозировка</Text>
         <TextInput
@@ -259,6 +341,58 @@ const ReminderAdd: React.FC = () => {
           placeholder="Например: 1 таблетка, 5мл"
           placeholderTextColor="#666"
         />
+
+        <View style={styles.dateRow}>
+          <View style={[styles.dateField, { marginRight: 10 }]}>
+            <Text style={styles.label}>Начало</Text>
+            <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.addTimeButton}>
+              <Text style={styles.addTimeText}>{startDate}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.dateField}>
+            <Text style={styles.label}>Конец</Text>
+            <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.addTimeButton}>
+              <Text style={styles.addTimeText}>{endDate}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={styles.label}>Повторять</Text>
+        <View style={styles.repeatRow}>
+          {[
+            { label: 'один раз', value: 'once' },
+            { label: 'каждый день', value: 'daily' },
+            { label: 'через день', value: 'alternate' },
+            { label: 'по дням недели', value: 'weekdays' },
+          ].map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.repeatOption,
+                repeat === opt.value && styles.repeatSelected,
+              ]}
+              onPress={() => setRepeat(opt.value as any)}
+            >
+              <Text style={{ color: 'white' }}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {repeat === 'weekdays' && (
+          <View style={styles.repeatRow}>
+            {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((d, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.weekdayOption,
+                  weekdays.includes(idx) && styles.weekdaySelected,
+                ]}
+                onPress={() => toggleWeekday(idx)}
+              >
+                <Text style={{ color: 'white' }}>{d}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.label}>Тип</Text>
         <View style={styles.typeContainer}>
@@ -335,6 +469,61 @@ const ReminderAdd: React.FC = () => {
             display="default"
             onChange={handleTimeChange}
           />
+        )}
+
+        {showStartPicker && (
+          <DateTimePicker
+            value={new Date(startDate)}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleStartChange}
+          />
+        )}
+        {showEndPicker && (
+          <DateTimePicker
+            value={new Date(endDate)}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleEndChange}
+          />
+        )}
+
+        {selectVisible && (
+          <Modal transparent animationType="slide" visible={selectVisible}>
+            <TouchableWithoutFeedback onPress={() => setSelectVisible(false)}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={() => setSelectVisible(false)}>
+                        <Text style={styles.cancelButton}>Отмена</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Выберите лекарство</Text>
+                      <View style={{ width: 60 }} />
+                    </View>
+                    <ScrollView style={{ width: '100%' }}>
+                      {medications.map(m => (
+                        <TouchableOpacity
+                          key={m.id}
+                          style={styles.medItem}
+                          onPress={() => {
+                            setName(m.name);
+                            setDosage(m.dosage);
+                            setSelectVisible(false);
+                          }}
+                        >
+                          <Text style={styles.medItemText}>{m.name}</Text>
+                          {!!m.dosage && (
+                            <Text style={styles.medItemText}>{m.dosage}</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
         )}
 
         <TouchableOpacity onPress={saveNewReminders} style={styles.saveButton}>

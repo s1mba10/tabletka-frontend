@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
-import { useReminders } from './src/hooks';
+import { MedicationsProvider } from './src/hooks/useMedications';
+import { CoursesProvider } from './src/hooks/useCourses';
 
 const App = () => {
-  const { syncLocal } = useReminders();
-
-  useEffect(() => {
-    syncLocal();
-  }, []);
-
-  return <AppNavigator />;
+  return (
+    <MedicationsProvider>
+      <CoursesProvider>
+        <AppNavigator />
+      </CoursesProvider>
+    </MedicationsProvider>
+  );
 };
 
 export default App;

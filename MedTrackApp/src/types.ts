@@ -17,7 +17,8 @@ export type Reminder = {
   time: string;
   status: ReminderStatus;
   date: string; // YYYY-MM-DD format
-}
+  courseId?: number;
+};
 
 export interface Medication {
   id: number;
@@ -25,6 +26,18 @@ export interface Medication {
   dosage: string;
   description: string;
   created_at: string;
+}
+
+export interface MedicationCourse {
+  id: number;
+  name: string;
+  dosage: string;
+  type: MedicationType;
+  times: string[];
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  repeatPattern: 'once' | 'daily' | 'alternate' | 'weekdays';
+  weekdays?: number[]; // 0-6
 }
 
 export interface ReminderResponse {

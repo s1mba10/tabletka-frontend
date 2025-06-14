@@ -68,6 +68,16 @@ export const styles = StyleSheet.create({
   selectedTypeText: {
     color: 'white',
   },
+  selectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  selectButtonText: {
+    color: '#007AFF',
+    marginLeft: 10,
+    fontSize: 16,
+  },
   // Styles for multiple times
   timesList: {
     marginBottom: 10,
@@ -103,6 +113,40 @@ export const styles = StyleSheet.create({
     color: '#007AFF',
     marginLeft: 10,
     fontSize: 16,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dateField: {
+    flex: 1,
+  },
+  repeatRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  repeatOption: {
+    backgroundColor: '#1E1E1E',
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  repeatSelected: {
+    borderColor: '#007AFF',
+    borderWidth: 1,
+  },
+  weekdayOption: {
+    backgroundColor: '#1E1E1E',
+    padding: 8,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  weekdaySelected: {
+    backgroundColor: '#2C2C2C',
+    borderColor: '#007AFF',
+    borderWidth: 1,
   },
   saveButton: {
     backgroundColor: '#007AFF',
@@ -160,5 +204,15 @@ export const styles = StyleSheet.create({
     height: 200,
     alignSelf: 'center',
     width: '100%',
+  },
+  medItem: {
+    width: '100%',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3A3A3A',
+  },
+  medItemText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
