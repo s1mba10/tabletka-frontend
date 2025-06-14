@@ -290,7 +290,7 @@ const Main: React.FC = () => {
             • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
           </Text>
           <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton}>
-            <Icon name="chevron-right" size={20} color="white" />
+            <Icon name="chevron-right" size={30} color="white" />
           </TouchableOpacity>
         </View>
 
