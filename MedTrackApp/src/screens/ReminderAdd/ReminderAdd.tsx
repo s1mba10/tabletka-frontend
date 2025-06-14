@@ -17,13 +17,17 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useReminders, useMedications } from '../../hooks';
+import { useReminders, useMedications, useCourses } from '../../hooks';
 import { reminderNotification } from '../../utils/notifications';
 
 import { styles } from './styles';
 import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, typeIcons } from './types';
 import { Reminder, MedicationType } from '../../types';
+
+const formatDateRu = (iso: string) =>
+  format(new Date(iso), 'd MMMM', { locale: ru });
 
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
@@ -32,6 +36,7 @@ const ReminderAdd: React.FC = () => {
 
   const { scheduleReminders } = useReminders();
   const { medications, createMedication } = useMedications();
+  const { saveCourse } = useCourses();
   const [selectVisible, setSelectVisible] = useState(false);
 
   console.log('AddReminderScreen opened with date:', selectedDate);
@@ -41,7 +46,21 @@ const ReminderAdd: React.FC = () => {
   const [type, setType] = useState<MedicationType>('tablet');
 
   const [times, setTimes] = useState<string[]>([format(new Date(), 'HH:mm')]);
+  const [startDate, setStartDate] = useState<string>(
+    selectedDate || format(new Date(), 'dd-MM-yyyy'),
+  );
+  const [endDate, setEndDate] = useState<string>(
+    selectedDate || format(new Date(), 'dd-MM-yyyy'),
+  );
+  const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>(
+    'once',
+  );
+  const [weekdays, setWeekdays] = useState<number[]>([]);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [selectedStartDateObj, setSelectedStartDateObj] = useState(new Date());
+  const [selectedEndDateObj, setSelectedEndDateObj] = useState(new Date());
   const [currentEditingTime, setCurrentEditingTime] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState(() => {
     const date = new Date();
@@ -101,6 +120,16 @@ const ReminderAdd: React.FC = () => {
     setShowTimePicker(true);
   };
 
+  const openStartPicker = () => {
+    setSelectedStartDateObj(new Date(startDate));
+    setShowStartPicker(true);
+  };
+
+  const openEndPicker = () => {
+    setSelectedEndDateObj(new Date(endDate));
+    setShowEndPicker(true);
+  };
+
   const confirmTimeSelection = (timeString: string) => {
     if (currentEditingTime) {
       if (currentEditingTime !== timeString) {
@@ -133,6 +162,74 @@ const ReminderAdd: React.FC = () => {
     setShowTimePicker(false);
   };
 
+  const handleStartChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowStartPicker(false);
+      if (date) setStartDate(format(date, 'yyyy-MM-dd'));
+    } else if (date) {
+      setSelectedStartDateObj(date);
+    }
+  };
+
+  const handleEndChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowEndPicker(false);
+      if (date) setEndDate(format(date, 'yyyy-MM-dd'));
+    } else if (date) {
+      setSelectedEndDateObj(date);
+    }
+  };
+
+  const confirmStartDate = () => {
+    setStartDate(format(selectedStartDateObj, 'yyyy-MM-dd'));
+    setShowStartPicker(false);
+  };
+
+  const cancelStartPicker = () => {
+    setShowStartPicker(false);
+  };
+
+  const confirmEndDate = () => {
+    setEndDate(format(selectedEndDateObj, 'yyyy-MM-dd'));
+    setShowEndPicker(false);
+  };
+
+  const cancelEndPicker = () => {
+    setShowEndPicker(false);
+  };
+
+  const toggleWeekday = (day: number) => {
+    setWeekdays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day],
+    );
+  };
+
+  const generateSchedule = () => {
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const iso = format(d, 'yyyy-MM-dd');
+      switch (repeat) {
+        case 'daily':
+          dates.push(iso);
+          break;
+        case 'alternate':
+          if (
+            Math.floor((d.getTime() - start.getTime()) / 86400000) % 2 === 0
+          )
+            dates.push(iso);
+          break;
+        case 'weekdays':
+          if (weekdays.includes(d.getDay())) dates.push(iso);
+          break;
+        default:
+          if (d.getTime() === start.getTime()) dates.push(iso);
+      }
+    }
+    return dates;
+  };
+
   const typeOptions: Array<{ label: string; value: MedicationType }> = [
     { label: 'Таблетка', value: 'tablet' },
     { label: 'Капсула', value: 'capsule' },
@@ -151,27 +248,44 @@ const ReminderAdd: React.FC = () => {
       return;
     }
 
-    const reminderDate = selectedDate || format(new Date(), 'yyyy-MM-dd');
-
     if (!medications.find(m => m.name.toLowerCase() === name.toLowerCase())) {
       await createMedication({ name, dosage });
     }
 
-    const newReminders: Reminder[] = times.map((time) => {
-      const id = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
-
-      return {
-        id,
-        name,
-        dosage,
-        type,
-        time,
-        status: 'pending',
-        date: reminderDate,
-      };
+    const dates = generateSchedule();
+    const courseId = Date.now();
+    const newReminders: Reminder[] = [];
+    dates.forEach(date => {
+      times.forEach(time => {
+        const id =
+          Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
+        newReminders.push({
+          id,
+          name,
+          dosage,
+          type,
+          time,
+          status: 'pending',
+          date,
+          courseId,
+        });
+      });
     });
 
+    const course = {
+      id: courseId,
+      name,
+      dosage,
+      type,
+      times,
+      startDate,
+      endDate,
+      repeatPattern: repeat,
+      weekdays,
+    } as const;
+
     console.log('Created reminders:', JSON.stringify(newReminders));
+    await saveCourse(course);
 
     try {
       await scheduleReminders(newReminders);
@@ -242,7 +356,11 @@ const ReminderAdd: React.FC = () => {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Добавить напоминание</Text>
         </View>
-        <Text style={styles.dateInfo}>Дата: {selectedDate || format(new Date(), 'yyyy-MM-dd')}</Text>
+        <Text style={styles.dateInfo}>
+          {startDate === endDate
+            ? `Дата: ${formatDateRu(startDate)}`
+            : `Курс: ${formatDateRu(startDate)} - ${formatDateRu(endDate)}`}
+        </Text>
 
         <Text style={styles.label}>Название</Text>
         <TextInput
@@ -265,6 +383,58 @@ const ReminderAdd: React.FC = () => {
           placeholder="Например: 1 таблетка, 5мл"
           placeholderTextColor="#666"
         />
+
+        <View style={styles.dateRow}>
+          <View style={[styles.dateField, { marginRight: 10 }]}>
+            <Text style={styles.label}>Начало</Text>
+            <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
+              <Text style={styles.addTimeText}>{startDate}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.dateField}>
+            <Text style={styles.label}>Конец</Text>
+            <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
+              <Text style={styles.addTimeText}>{endDate}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={styles.label}>Повторять</Text>
+        <View style={styles.repeatRow}>
+          {[
+            { label: 'один раз', value: 'once' },
+            { label: 'каждый день', value: 'daily' },
+            { label: 'через день', value: 'alternate' },
+            { label: 'по дням недели', value: 'weekdays' },
+          ].map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.repeatOption,
+                repeat === opt.value && styles.repeatSelected,
+              ]}
+              onPress={() => setRepeat(opt.value as any)}
+            >
+              <Text style={{ color: 'white' }}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {repeat === 'weekdays' && (
+          <View style={styles.repeatRow}>
+            {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((d, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.weekdayOption,
+                  weekdays.includes(idx) && styles.weekdaySelected,
+                ]}
+                onPress={() => toggleWeekday(idx)}
+              >
+                <Text style={{ color: 'white' }}>{d}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.label}>Тип</Text>
         <View style={styles.typeContainer}>
@@ -325,6 +495,7 @@ const ReminderAdd: React.FC = () => {
                       style={styles.timePickerIOS}
                       textColor="white"
                       themeVariant="dark"
+                      locale="ru-RU"
                     />
                   </View>
                 </TouchableWithoutFeedback>
@@ -340,6 +511,88 @@ const ReminderAdd: React.FC = () => {
             is24Hour={true}
             display="default"
             onChange={handleTimeChange}
+            locale="ru-RU"
+          />
+        )}
+
+        {Platform.OS === 'ios' && showStartPicker && (
+          <Modal transparent animationType="slide" visible={showStartPicker}>
+            <TouchableWithoutFeedback onPress={cancelStartPicker}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={cancelStartPicker}>
+                        <Text style={styles.cancelButton}>Отмена</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Начало</Text>
+                      <TouchableOpacity onPress={confirmStartDate}>
+                        <Text style={styles.doneButton}>Готово</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={selectedStartDateObj}
+                      mode="date"
+                      display="spinner"
+                      onChange={handleStartChange}
+                      style={styles.timePickerIOS}
+                      textColor="white"
+                      themeVariant="dark"
+                      locale="ru-RU"
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        )}
+        {Platform.OS === 'android' && showStartPicker && (
+          <DateTimePicker
+            value={selectedStartDateObj}
+            mode="date"
+            display="default"
+            onChange={handleStartChange}
+            locale="ru-RU"
+          />
+        )}
+        {Platform.OS === 'ios' && showEndPicker && (
+          <Modal transparent animationType="slide" visible={showEndPicker}>
+            <TouchableWithoutFeedback onPress={cancelEndPicker}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={cancelEndPicker}>
+                        <Text style={styles.cancelButton}>Отмена</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Конец</Text>
+                      <TouchableOpacity onPress={confirmEndDate}>
+                        <Text style={styles.doneButton}>Готово</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={selectedEndDateObj}
+                      mode="date"
+                      display="spinner"
+                      onChange={handleEndChange}
+                      style={styles.timePickerIOS}
+                      textColor="white"
+                      themeVariant="dark"
+                      locale="ru-RU"
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        )}
+        {Platform.OS === 'android' && showEndPicker && (
+          <DateTimePicker
+            value={selectedEndDateObj}
+            mode="date"
+            display="default"
+            onChange={handleEndChange}
+            locale="ru-RU"
           />
         )}
 

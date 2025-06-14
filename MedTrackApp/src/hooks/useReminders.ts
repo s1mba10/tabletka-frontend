@@ -53,9 +53,23 @@ export const useReminders = () => {
     await saveReminders(filtered);
   };
 
+  const deleteByCourse = async (courseId: number) => {
+    const filtered = reminders.filter(r => r.courseId !== courseId);
+    await saveReminders(filtered);
+  };
+
   useEffect(() => {
     fetchReminders();
   }, []);
 
-  return { reminders, loading, fetchReminders, scheduleReminders, updateReminderStatus, deleteReminder };
+  return {
+    reminders,
+    loading,
+    fetchReminders,
+    scheduleReminders,
+    updateReminderStatus,
+    deleteReminder,
+    deleteByCourse,
+  };
 };
+

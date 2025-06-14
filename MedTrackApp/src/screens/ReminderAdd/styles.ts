@@ -114,6 +114,40 @@ export const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
   },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dateField: {
+    flex: 1,
+  },
+  repeatRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  repeatOption: {
+    backgroundColor: '#1E1E1E',
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  repeatSelected: {
+    borderColor: '#007AFF',
+    borderWidth: 1,
+  },
+  weekdayOption: {
+    backgroundColor: '#1E1E1E',
+    padding: 8,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  weekdaySelected: {
+    backgroundColor: '#2C2C2C',
+    borderColor: '#007AFF',
+    borderWidth: 1,
+  },
   saveButton: {
     backgroundColor: '#007AFF',
     padding: 12,

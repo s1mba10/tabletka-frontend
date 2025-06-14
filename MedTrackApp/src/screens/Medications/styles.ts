@@ -55,4 +55,25 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  sectionTitle: {
+    color: '#ccc',
+    fontSize: 18,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  courseItem: {
+    backgroundColor: '#1E1E1E',
+    padding: 12,
+    borderRadius: 5,
+    marginBottom: 8,
+  },
+  courseTitle: {
+    color: 'white',
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  courseSubtitle: {
+    color: '#888',
+    fontSize: 14,
+  },
 });
