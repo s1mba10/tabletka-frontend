@@ -17,6 +17,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useReminders, useMedications, useCourses } from '../../hooks';
 import { reminderNotification } from '../../utils/notifications';
@@ -24,6 +25,9 @@ import { reminderNotification } from '../../utils/notifications';
 import { styles } from './styles';
 import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, typeIcons } from './types';
 import { Reminder, MedicationType } from '../../types';
+
+const formatDateRu = (iso: string) =>
+  format(new Date(iso), 'd MMMM', { locale: ru });
 
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
@@ -354,8 +358,8 @@ const ReminderAdd: React.FC = () => {
         </View>
         <Text style={styles.dateInfo}>
           {startDate === endDate
-            ? `Дата: ${startDate}`
-            : `Курс: ${startDate} - ${endDate}`}
+            ? `Дата: ${formatDateRu(startDate)}`
+            : `Курс: ${formatDateRu(startDate)} - ${formatDateRu(endDate)}`}
         </Text>
 
         <Text style={styles.label}>Название</Text>
@@ -491,6 +495,7 @@ const ReminderAdd: React.FC = () => {
                       style={styles.timePickerIOS}
                       textColor="white"
                       themeVariant="dark"
+                      locale="ru-RU"
                     />
                   </View>
                 </TouchableWithoutFeedback>
@@ -506,6 +511,7 @@ const ReminderAdd: React.FC = () => {
             is24Hour={true}
             display="default"
             onChange={handleTimeChange}
+            locale="ru-RU"
           />
         )}
 
@@ -532,6 +538,7 @@ const ReminderAdd: React.FC = () => {
                       style={styles.timePickerIOS}
                       textColor="white"
                       themeVariant="dark"
+                      locale="ru-RU"
                     />
                   </View>
                 </TouchableWithoutFeedback>
@@ -545,6 +552,7 @@ const ReminderAdd: React.FC = () => {
             mode="date"
             display="default"
             onChange={handleStartChange}
+            locale="ru-RU"
           />
         )}
         {Platform.OS === 'ios' && showEndPicker && (
@@ -570,6 +578,7 @@ const ReminderAdd: React.FC = () => {
                       style={styles.timePickerIOS}
                       textColor="white"
                       themeVariant="dark"
+                      locale="ru-RU"
                     />
                   </View>
                 </TouchableWithoutFeedback>
@@ -583,6 +592,7 @@ const ReminderAdd: React.FC = () => {
             mode="date"
             display="default"
             onChange={handleEndChange}
+            locale="ru-RU"
           />
         )}
 
