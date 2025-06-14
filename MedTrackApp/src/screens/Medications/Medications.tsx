@@ -13,6 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useMedications } from '../../hooks/useMedications';
 import { useCourses, useReminders } from '../../hooks';
 import { MedicationsScreenNavigationProp, MedicationFormData } from './types';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { styles } from './styles';
 
 const Medications: React.FC = () => {
@@ -22,6 +24,9 @@ const Medications: React.FC = () => {
   const { deleteByCourse } = useReminders();
 
   const [form, setForm] = useState<MedicationFormData>({ name: '', dosage: '' });
+
+  const formatDate = (iso: string) =>
+    format(new Date(iso), 'd MMMM', { locale: ru });
 
   const startEdit = (id: number) => {
     const med = medications.find(m => m.id === id);
@@ -72,7 +77,7 @@ const Medications: React.FC = () => {
           <View key={c.id} style={styles.courseItem}>
             <Text style={styles.courseTitle}>{c.name}</Text>
             <Text style={styles.courseSubtitle}>
-              {c.dosage} • с {c.startDate} по {c.endDate}
+              {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
             </Text>
             <TouchableOpacity onPress={() => stopCourse(c.id)}>
               <Text style={{ color: '#FF3B30', marginTop: 4 }}>Остановить</Text>
@@ -87,7 +92,7 @@ const Medications: React.FC = () => {
           <View key={c.id} style={styles.courseItem}>
             <Text style={styles.courseTitle}>{c.name}</Text>
             <Text style={styles.courseSubtitle}>
-              {c.dosage} • с {c.startDate} по {c.endDate}
+              {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
             </Text>
           </View>
         ))}
