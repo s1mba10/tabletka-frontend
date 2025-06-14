@@ -31,7 +31,7 @@ const ReminderAdd: React.FC = () => {
   const { selectedDate } = route.params || {};
 
   const { scheduleReminders } = useReminders();
-  const { medications } = useMedications();
+  const { medications, createMedication } = useMedications();
   const [selectVisible, setSelectVisible] = useState(false);
 
   console.log('AddReminderScreen opened with date:', selectedDate);
@@ -152,6 +152,10 @@ const ReminderAdd: React.FC = () => {
     }
 
     const reminderDate = selectedDate || format(new Date(), 'yyyy-MM-dd');
+
+    if (!medications.find(m => m.name.toLowerCase() === name.toLowerCase())) {
+      await createMedication({ name, dosage });
+    }
 
     const newReminders: Reminder[] = times.map((time) => {
       const id = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);

@@ -43,9 +43,11 @@ const Medications: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={28} color="#007AFF" />
-        </TouchableOpacity>
+        {navigation.canGoBack() && (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-left" size={28} color="#007AFF" />
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerTitle}>Лекарства</Text>
       </View>
       <ScrollView>

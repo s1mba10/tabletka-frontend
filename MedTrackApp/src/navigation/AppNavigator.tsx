@@ -28,6 +28,12 @@ const ProfileStack = () => (
   </Stack.Navigator>
 );
 
+const MedicationsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Medications" component={Medications} />
+  </Stack.Navigator>
+);
+
 const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
@@ -36,6 +42,11 @@ const AppNavigator: React.FC = () => {
           name="Главная"
           component={MainStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="home" size={30} color={color} /> }}
+        />
+        <Tab.Screen
+          name="Лекарства"
+          component={MedicationsStack}
+          options={{ tabBarIcon: ({ color }) => <Icon name="pill" size={30} color={color} /> }}
         />
         <Tab.Screen
           name="Профиль"
