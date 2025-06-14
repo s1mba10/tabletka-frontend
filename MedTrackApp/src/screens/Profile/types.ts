@@ -1,8 +1,5 @@
-import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../../navigation';
 import { NavigationProp } from '@react-navigation/native';
 
-export type ProfileScreenRouteProp = RouteProp<RootStackParamList, 'Profile'>;
 export type RootNavigationProp = NavigationProp<any>;
 
 

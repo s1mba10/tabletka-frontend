@@ -1,48 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { BarChart } from 'react-native-chart-kit';
 import Svg, { Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Reminder } from '../../types';
 
 import { styles } from './styles';
-import { ProfileScreenRouteProp, RootNavigationProp } from './types';
-import { USERS_ENDPOINT } from '../../api';
+import { RootNavigationProp } from './types';
 
 const Profile: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
-  const route = useRoute<ProfileScreenRouteProp>();
-  const { userData } = route.params || {};
-  
   const [user, setUser] = useState({
-    full_name: userData?.full_name || 'User Name',
-    email: userData?.email || 'user@example.com',
-    timezone: userData?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-    is_active: userData?.is_active || true,
-    total_taken: userData?.total_taken || 0,
-    total_missed: userData?.total_missed || 0,
-    adherence_percentage: userData?.adherence_percentage || 0
+    full_name: 'User Name',
+    email: 'user@example.com',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    is_active: true,
+    total_taken: 0,
+    total_missed: 0,
+    adherence_percentage: 0,
   });
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const screenWidth = Dimensions.get('window').width - 40; // Account for padding
 
   useEffect(() => {
-    // Set navigation title
-    navigation.setOptions({
-      headerTitle: 'Profile',
-      headerRight: () => (
-        <TouchableOpacity
-          style={{ marginRight: 15 }}
-          onPress={handleLogout}
-        >
-          <Icon name="logout" size={24} color="#fff" />
-        </TouchableOpacity>
-      ),
-    });
+    navigation.setOptions({ headerTitle: 'Profile' });
   }, [navigation]);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const stored = await AsyncStorage.getItem('userProfile');
+      if (stored) {
+        try {
+          const info = JSON.parse(stored);
+          setUser(prev => ({ ...prev, ...info }));
+        } catch {
+          // ignore parse errors
+        }
+      }
+    };
+    loadUser();
+  }, []);
 
   // Define prop types for the Adherence Display Component
   type AdherenceDisplayProps = {
@@ -108,104 +108,38 @@ const Profile: React.FC = () => {
     );
   };
 
-  // Function to refresh user data from the API
-  const refreshUserData = async () => {
+  const loadStats = async () => {
     try {
-      setIsRefreshing(true);
-      
-      // Get authentication token from storage
-      const token = await AsyncStorage.getItem('authToken');
-      const tokenType = await AsyncStorage.getItem('tokenType') || 'Bearer';
-      
-      if (!token) {
-        console.log('Токен авторизации не найден');
-        Alert.alert(
-          'Ошибка авторизации', 
-          'Сессия истекла. Пожалуйста, войдите снова.'
-        );
-        
-        // Redirect to login screen
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'AuthAndInfo' }],
-        });
-        return;
+      const stored = await AsyncStorage.getItem('reminders');
+      if (stored) {
+        const items: Reminder[] = JSON.parse(stored);
+        const total_taken = items.filter(r => r.status === 'taken').length;
+        const total_missed = items.filter(r => r.status === 'missed').length;
+        const total = total_taken + total_missed;
+        const adherence_percentage = total > 0 ? (total_taken / total) * 100 : 0;
+        setUser(prev => ({
+          ...prev,
+          total_taken,
+          total_missed,
+          adherence_percentage,
+        }));
       }
-      
-      // Make API request to get user data with proper token format
-      const response = await fetch(`${USERS_ENDPOINT}/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `${tokenType} ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        // If unauthorized (401), token might be expired
-        if (response.status === 401) {
-          await AsyncStorage.removeItem('authToken');
-          await AsyncStorage.removeItem('tokenType');
-          throw new Error('Токен авторизации истек. Пожалуйста, войдите снова.');
-        }
-        
-        const errorData = await response.json().catch(() => null);
-        console.error('API error response:', errorData);
-        throw new Error(`Ошибка получения данных: ${response.status} ${response.statusText}`);
-      }
-
-      // Parse the response and update state
-      const updatedUserData = await response.json();
-      setUser(updatedUserData);
-      
-      Alert.alert("Готово!", "Статистика была обновена!");
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
-      Alert.alert(
-        'Ошибка обновления', 
-        error instanceof Error ? error.message : 'Не удалось обновить статистику. Пожалуйста, попробуйте позже.'
-      );
-    } finally {
-      setIsRefreshing(false);
+    } catch (e) {
+      console.warn('Failed to load stats', e);
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Выход',
-      'Вы уверены, что хотите выйти?',
-      [
-        {
-          text: 'Отмена',
-          style: 'cancel'
-        },
-        {
-          text: 'Выйти',
-          onPress: async () => {
-            try {
-              // Clear the auth tokens from storage
-              await AsyncStorage.removeItem('authToken');
-              await AsyncStorage.removeItem('tokenType');
-              
-              // Navigate to auth screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'AuthAndInfo' }],
-              });
-            } catch (error) {
-              console.error('Error during logout:', error);
-              Alert.alert('Ошибка', 'Не удалось выйти из системы. Пожалуйста, попробуйте еще раз.');
-            }
-          },
-          style: 'destructive'
-        }
-      ]
-    );
-  };
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStats();
+    }, [])
+  );
 
-  // Function to navigate to the Main tab
-  const navigateToMain = () => {
-    navigation.navigate('Главная');
+
+
+  // Navigate to medications management
+  const navigateToMedications = () => {
+    navigation.navigate('Medications');
   };
 
   // Data for bar chart
@@ -258,33 +192,9 @@ const Profile: React.FC = () => {
           <Text style={styles.nameText}>{user.full_name}</Text>
         </View>
 
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Пользовательская информация</Text>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{user.email}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Часовой пояс</Text>
-            <Text style={styles.infoValue}>{user.timezone}</Text>
-          </View>
-        </View>
 
-        {/* Update Statistics Button */}
-        <TouchableOpacity 
-          style={[styles.updateButton, isRefreshing && styles.disabledButton]} 
-          onPress={refreshUserData}
-          disabled={isRefreshing}
-        >
-          {isRefreshing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Icon name="refresh" size={20} color="#fff" style={{ marginRight: 10 }} />
-              <Text style={styles.updateButtonText}>Обновить статистику</Text>
-            </>
-          )}
-        </TouchableOpacity>
+
+
 
         {/* Medication Adherence Section */}
         <View style={styles.adherenceSection}>
@@ -356,16 +266,13 @@ const Profile: React.FC = () => {
         </View>
 
         <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.actionButton} onPress={navigateToMain}>
+          <TouchableOpacity style={styles.actionButton} onPress={navigateToMedications}>
             <Icon name="pill" size={24} color="#007AFF" />
             <Text style={styles.actionText}>Управление лекарствами</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Настройки', 'Здесь откроется страница настроек')}>
             <Icon name="cog" size={24} color="#007AFF" />
             <Text style={styles.actionText}>Настройки</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Выход</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
