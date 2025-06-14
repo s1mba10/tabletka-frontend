@@ -16,4 +16,5 @@ export type RootStackParamList = {
     selectedDate?: string;
   };
   Profile: undefined;
+  Medications: undefined;
 };

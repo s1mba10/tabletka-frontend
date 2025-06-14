@@ -18,7 +18,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useReminders } from '../../hooks';
+import { useReminders, useMedications } from '../../hooks';
 import { reminderNotification } from '../../utils/notifications';
 
 import { styles } from './styles';
@@ -30,6 +30,9 @@ const ReminderAdd: React.FC = () => {
   const route = useRoute<AddReminderScreenRouteProp>();
   const { selectedDate } = route.params || {};
 
+  const { scheduleReminders } = useReminders();
+  const { medications, createMedication } = useMedications();
+  const [selectVisible, setSelectVisible] = useState(false);
   const { scheduleReminders } = useReminders();
 
   console.log('AddReminderScreen opened with date:', selectedDate);
@@ -151,6 +154,10 @@ const ReminderAdd: React.FC = () => {
 
     const reminderDate = selectedDate || format(new Date(), 'yyyy-MM-dd');
 
+    if (!medications.find(m => m.name.toLowerCase() === name.toLowerCase())) {
+      await createMedication({ name, dosage });
+    }
+
     const newReminders: Reminder[] = times.map((time) => {
       const id = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
 
@@ -246,6 +253,10 @@ const ReminderAdd: React.FC = () => {
           placeholder="Название лекарства"
           placeholderTextColor="#666"
         />
+        <TouchableOpacity onPress={() => setSelectVisible(true)} style={styles.selectButton}>
+          <Icon name="format-list-bulleted" size={20} color="#007AFF" />
+          <Text style={styles.selectButtonText}>Выбрать из добавленных</Text>
+        </TouchableOpacity>
 
         <Text style={styles.label}>Дозировка</Text>
         <TextInput
@@ -331,6 +342,44 @@ const ReminderAdd: React.FC = () => {
             display="default"
             onChange={handleTimeChange}
           />
+        )}
+
+        {selectVisible && (
+          <Modal transparent animationType="slide" visible={selectVisible}>
+            <TouchableWithoutFeedback onPress={() => setSelectVisible(false)}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={() => setSelectVisible(false)}>
+                        <Text style={styles.cancelButton}>Отмена</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Выберите лекарство</Text>
+                      <View style={{ width: 60 }} />
+                    </View>
+                    <ScrollView style={{ width: '100%' }}>
+                      {medications.map(m => (
+                        <TouchableOpacity
+                          key={m.id}
+                          style={styles.medItem}
+                          onPress={() => {
+                            setName(m.name);
+                            setDosage(m.dosage);
+                            setSelectVisible(false);
+                          }}
+                        >
+                          <Text style={styles.medItemText}>{m.name}</Text>
+                          {!!m.dosage && (
+                            <Text style={styles.medItemText}>{m.dosage}</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
         )}
 
         <TouchableOpacity onPress={saveNewReminders} style={styles.saveButton}>

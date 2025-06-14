@@ -8,6 +8,7 @@ import ReminderEdit from '../screens/ReminderEdit';
 import ReminderAdd from '../screens/ReminderAdd';
 import Main from '../screens/Main';
 import Profile from '../screens/Profile';
+import Medications from '../screens/Medications';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -23,6 +24,13 @@ const MainStack = () => (
 const ProfileStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Profile" component={Profile} />
+    <Stack.Screen name="Medications" component={Medications} />
+  </Stack.Navigator>
+);
+
+const MedicationsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Medications" component={Medications} />
   </Stack.Navigator>
 );
 
@@ -34,6 +42,11 @@ const AppNavigator: React.FC = () => {
           name="Главная"
           component={MainStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="home" size={30} color={color} /> }}
+        />
+        <Tab.Screen
+          name="Лекарства"
+          component={MedicationsStack}
+          options={{ tabBarIcon: ({ color }) => <Icon name="pill" size={30} color={color} /> }}
         />
         <Tab.Screen
           name="Профиль"

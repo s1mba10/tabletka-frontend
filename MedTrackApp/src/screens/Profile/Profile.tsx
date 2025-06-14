@@ -137,9 +137,9 @@ const Profile: React.FC = () => {
 
 
 
-  // Function to navigate to the Main tab
-  const navigateToMain = () => {
-    navigation.navigate('Главная');
+  // Navigate to medications management
+  const navigateToMedications = () => {
+    navigation.navigate('Medications');
   };
 
   // Data for bar chart
@@ -192,17 +192,7 @@ const Profile: React.FC = () => {
           <Text style={styles.nameText}>{user.full_name}</Text>
         </View>
 
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Пользовательская информация</Text>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{user.email}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Часовой пояс</Text>
-            <Text style={styles.infoValue}>{user.timezone}</Text>
-          </View>
-        </View>
+
 
 
 
@@ -276,7 +266,7 @@ const Profile: React.FC = () => {
         </View>
 
         <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.actionButton} onPress={navigateToMain}>
+          <TouchableOpacity style={styles.actionButton} onPress={navigateToMedications}>
             <Icon name="pill" size={24} color="#007AFF" />
             <Text style={styles.actionText}>Управление лекарствами</Text>
           </TouchableOpacity>
