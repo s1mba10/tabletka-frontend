@@ -43,10 +43,10 @@ const ReminderAdd: React.FC = () => {
 
   const [times, setTimes] = useState<string[]>([format(new Date(), 'HH:mm')]);
   const [startDate, setStartDate] = useState<string>(
-    selectedDate || format(new Date(), 'yyyy-MM-dd'),
+    selectedDate || format(new Date(), 'dd-MM-yyyy'),
   );
   const [endDate, setEndDate] = useState<string>(
-    selectedDate || format(new Date(), 'yyyy-MM-dd'),
+    selectedDate || format(new Date(), 'dd-MM-yyyy'),
   );
   const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>(
     'once',
