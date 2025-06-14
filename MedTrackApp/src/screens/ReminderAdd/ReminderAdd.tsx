@@ -55,6 +55,8 @@ const ReminderAdd: React.FC = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [selectedStartDateObj, setSelectedStartDateObj] = useState(new Date());
+  const [selectedEndDateObj, setSelectedEndDateObj] = useState(new Date());
   const [currentEditingTime, setCurrentEditingTime] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState(() => {
     const date = new Date();
@@ -114,6 +116,16 @@ const ReminderAdd: React.FC = () => {
     setShowTimePicker(true);
   };
 
+  const openStartPicker = () => {
+    setSelectedStartDateObj(new Date(startDate));
+    setShowStartPicker(true);
+  };
+
+  const openEndPicker = () => {
+    setSelectedEndDateObj(new Date(endDate));
+    setShowEndPicker(true);
+  };
+
   const confirmTimeSelection = (timeString: string) => {
     if (currentEditingTime) {
       if (currentEditingTime !== timeString) {
@@ -147,13 +159,39 @@ const ReminderAdd: React.FC = () => {
   };
 
   const handleStartChange = (_e: DateTimePickerEvent, date?: Date) => {
-    if (Platform.OS === 'android') setShowStartPicker(false);
-    if (date) setStartDate(format(date, 'yyyy-MM-dd'));
+    if (Platform.OS === 'android') {
+      setShowStartPicker(false);
+      if (date) setStartDate(format(date, 'yyyy-MM-dd'));
+    } else if (date) {
+      setSelectedStartDateObj(date);
+    }
   };
 
   const handleEndChange = (_e: DateTimePickerEvent, date?: Date) => {
-    if (Platform.OS === 'android') setShowEndPicker(false);
-    if (date) setEndDate(format(date, 'yyyy-MM-dd'));
+    if (Platform.OS === 'android') {
+      setShowEndPicker(false);
+      if (date) setEndDate(format(date, 'yyyy-MM-dd'));
+    } else if (date) {
+      setSelectedEndDateObj(date);
+    }
+  };
+
+  const confirmStartDate = () => {
+    setStartDate(format(selectedStartDateObj, 'yyyy-MM-dd'));
+    setShowStartPicker(false);
+  };
+
+  const cancelStartPicker = () => {
+    setShowStartPicker(false);
+  };
+
+  const confirmEndDate = () => {
+    setEndDate(format(selectedEndDateObj, 'yyyy-MM-dd'));
+    setShowEndPicker(false);
+  };
+
+  const cancelEndPicker = () => {
+    setShowEndPicker(false);
   };
 
   const toggleWeekday = (day: number) => {
@@ -345,13 +383,13 @@ const ReminderAdd: React.FC = () => {
         <View style={styles.dateRow}>
           <View style={[styles.dateField, { marginRight: 10 }]}>
             <Text style={styles.label}>Начало</Text>
-            <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.addTimeButton}>
+            <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
               <Text style={styles.addTimeText}>{startDate}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.dateField}>
             <Text style={styles.label}>Конец</Text>
-            <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.addTimeButton}>
+            <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
               <Text style={styles.addTimeText}>{endDate}</Text>
             </TouchableOpacity>
           </View>
@@ -471,19 +509,79 @@ const ReminderAdd: React.FC = () => {
           />
         )}
 
-        {showStartPicker && (
+        {Platform.OS === 'ios' && showStartPicker && (
+          <Modal transparent animationType="slide" visible={showStartPicker}>
+            <TouchableWithoutFeedback onPress={cancelStartPicker}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={cancelStartPicker}>
+                        <Text style={styles.cancelButton}>Отмена</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Начало</Text>
+                      <TouchableOpacity onPress={confirmStartDate}>
+                        <Text style={styles.doneButton}>Готово</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={selectedStartDateObj}
+                      mode="date"
+                      display="spinner"
+                      onChange={handleStartChange}
+                      style={styles.timePickerIOS}
+                      textColor="white"
+                      themeVariant="dark"
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        )}
+        {Platform.OS === 'android' && showStartPicker && (
           <DateTimePicker
-            value={new Date(startDate)}
+            value={selectedStartDateObj}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="default"
             onChange={handleStartChange}
           />
         )}
-        {showEndPicker && (
+        {Platform.OS === 'ios' && showEndPicker && (
+          <Modal transparent animationType="slide" visible={showEndPicker}>
+            <TouchableWithoutFeedback onPress={cancelEndPicker}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={cancelEndPicker}>
+                        <Text style={styles.cancelButton}>Отмена</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Конец</Text>
+                      <TouchableOpacity onPress={confirmEndDate}>
+                        <Text style={styles.doneButton}>Готово</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={selectedEndDateObj}
+                      mode="date"
+                      display="spinner"
+                      onChange={handleEndChange}
+                      style={styles.timePickerIOS}
+                      textColor="white"
+                      themeVariant="dark"
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        )}
+        {Platform.OS === 'android' && showEndPicker && (
           <DateTimePicker
-            value={new Date(endDate)}
+            value={selectedEndDateObj}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="default"
             onChange={handleEndChange}
           />
         )}
