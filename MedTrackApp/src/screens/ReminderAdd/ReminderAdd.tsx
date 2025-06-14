@@ -33,7 +33,6 @@ const ReminderAdd: React.FC = () => {
   const { scheduleReminders } = useReminders();
   const { medications, createMedication } = useMedications();
   const [selectVisible, setSelectVisible] = useState(false);
-  const { scheduleReminders } = useReminders();
 
   console.log('AddReminderScreen opened with date:', selectedDate);
 
