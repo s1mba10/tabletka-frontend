@@ -43,7 +43,7 @@ const weekDaysOrder = [
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
   const route = useRoute<AddReminderScreenRouteProp>();
-  const { selectedDate } = route.params || {};
+  const { selectedDate, mainKey } = route.params || {};
 
   const { scheduleReminders } = useReminders();
   const { medications, createMedication } = useMedications();
@@ -340,15 +340,23 @@ const ReminderAdd: React.FC = () => {
       }
     }
 
-    navigation.navigate({
-      name: 'Main',
-      params: {
+    if (mainKey) {
+      navigation.goBack();
+      navigation.navigate({
+        name: 'Main',
+        key: mainKey,
+        params: {
+          newReminders,
+          forceRefresh: Date.now(),
+        },
+        merge: true,
+      });
+    } else {
+      navigation.navigate('Main', {
         newReminders,
         forceRefresh: Date.now(),
-      },
-      merge: true,
-    });
-    navigation.goBack();
+      });
+    }
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);

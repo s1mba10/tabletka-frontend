@@ -242,6 +242,7 @@ const Main: React.FC = () => {
             onPress={() =>
               navigation.navigate('ReminderEdit', {
                 reminder: item,
+                mainKey: route.key,
               })
             }
           >
@@ -362,7 +363,10 @@ const Main: React.FC = () => {
         <TouchableOpacity
           style={styles.fab}
           onPress={() => {
-            navigation.navigate('ReminderAdd', { selectedDate });
+            navigation.navigate('ReminderAdd', {
+              selectedDate,
+              mainKey: route.key,
+            });
           }}
         >
           <Icon name="plus" size={30} color="white" />
