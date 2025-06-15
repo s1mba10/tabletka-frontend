@@ -386,23 +386,6 @@ const ReminderAdd: React.FC = () => {
           placeholderTextColor="#666"
         />
 
-        {repeat !== 'once' && (
-          <View style={styles.dateRow}>
-            <View style={[styles.dateField, { marginRight: 10 }]}>
-              <Text style={styles.label}>Начало</Text>
-              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
-                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.dateField}>
-              <Text style={styles.label}>Конец</Text>
-              <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
-                <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
         <Text style={styles.label}>Повторять</Text>
         <View style={styles.repeatRow}>
           {[
@@ -431,6 +414,23 @@ const ReminderAdd: React.FC = () => {
                 <Text style={{ color: 'white' }}>{day.label}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+        )}
+
+        {repeat !== 'once' && (
+          <View style={styles.dateRow}>
+            <View style={[styles.dateField, { marginRight: 10 }]}>
+              <Text style={styles.label}>Начало</Text>
+              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.dateField}>
+              <Text style={styles.label}>Конец</Text>
+              <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
