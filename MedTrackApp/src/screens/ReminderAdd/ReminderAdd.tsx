@@ -340,9 +340,12 @@ const ReminderAdd: React.FC = () => {
       }
     }
 
-    navigation.navigate('Main', {
-      newReminders,
-      forceRefresh: Date.now(),
+    navigation.navigate('Главная', {
+      screen: 'Main',
+      params: {
+        newReminders,
+        forceRefresh: Date.now(),
+      },
     });
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
@@ -358,7 +361,7 @@ const ReminderAdd: React.FC = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           {/* Сделать чтобы было похоже на листание с правой станицы на левую, а не наоборот */}
-          <TouchableOpacity onPress={() => navigation.navigate('Main')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Главная')}>
             <Icon name="arrow-left" size={28} color="#007AFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Добавить напоминание</Text>
