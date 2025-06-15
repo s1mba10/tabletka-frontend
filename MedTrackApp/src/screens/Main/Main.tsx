@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, LayoutAnimation, Animated, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, Animated, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, addWeeks, getISOWeek } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -39,6 +39,8 @@ const Main: React.FC = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
 
   const weekSlideAnim = useRef(new Animated.Value(0)).current;
+  const nextWeekSlideAnim = useRef(new Animated.Value(0)).current;
+  const [prevWeekOffset, setPrevWeekOffset] = useState<number | null>(null);
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -224,11 +226,9 @@ const Main: React.FC = () => {
   const handleWeekSwipe = ({ nativeEvent }: any) => {
     if (nativeEvent.state === GestureState.END) {
       if (nativeEvent.translationX < -50) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setWeekOffset(prev => prev + 1);
+        animateWeekChange(1);
       } else if (nativeEvent.translationX > 50) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setWeekOffset(prev => prev - 1);
+        animateWeekChange(-1);
       }
     }
   };
@@ -237,43 +237,78 @@ const Main: React.FC = () => {
     if (nativeEvent.state === GestureState.END) {
       const index = weekDates.findIndex(d => d.fullDate === selectedDate);
       if (nativeEvent.translationX < -50) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         if (index < 6) {
           setSelectedDate(weekDates[index + 1].fullDate);
         } else {
-          const newOffset = weekOffset + 1;
-          setWeekOffset(newOffset);
-          const nextWeek = getWeekDates(newOffset);
+          animateWeekChange(1);
+          const nextWeek = getWeekDates(weekOffset + 1);
           setSelectedDate(nextWeek[0].fullDate);
         }
       } else if (nativeEvent.translationX > 50) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         if (index > 0) {
           setSelectedDate(weekDates[index - 1].fullDate);
         } else {
-          const newOffset = weekOffset - 1;
-          setWeekOffset(newOffset);
-          const prevWeek = getWeekDates(newOffset);
+          animateWeekChange(-1);
+          const prevWeek = getWeekDates(weekOffset - 1);
           setSelectedDate(prevWeek[6].fullDate);
         }
       }
     }
   };
 
+  const renderWeekContent = (dates: ReturnType<typeof getWeekDates>) => (
+    <>
+      <View style={styles.weekdayRow}>
+        {dates.map((day, index) => (
+          <Text key={index} style={styles.weekdayText}>
+            {day.dayLabel}
+          </Text>
+        ))}
+      </View>
+      <View style={styles.datesRow}>
+        {dates.map(day => (
+          <TouchableOpacity
+            key={day.fullDate}
+            onPress={() => setSelectedDate(day.fullDate)}
+            style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
+          >
+            <Text
+              style={[styles.dayText, day.fullDate === selectedDate && styles.selectedDayText, day.isToday && styles.todayText]}
+            >
+              {day.dateNumber}
+            </Text>
+            <View style={styles.dotContainer}>
+              {getDayStatusDots(day.fullDate).map((dot, index) => (
+                <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
+              ))}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </>
+  );
+
   const animateWeekChange = (direction: number) => {
     const width = Dimensions.get('window').width;
-    Animated.timing(weekSlideAnim, {
-      toValue: direction * -width,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      weekSlideAnim.setValue(direction * width);
-      setWeekOffset(prev => prev + direction);
+    setPrevWeekOffset(weekOffset);
+    setWeekOffset(prev => prev + direction);
+    weekSlideAnim.setValue(0);
+    nextWeekSlideAnim.setValue(direction * width);
+    Animated.parallel([
       Animated.timing(weekSlideAnim, {
-        toValue: 0,
-        duration: 200,
+        toValue: -direction * width,
+        duration: 150,
         useNativeDriver: true,
-      }).start();
+      }),
+      Animated.timing(nextWeekSlideAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setPrevWeekOffset(null);
+      weekSlideAnim.setValue(0);
+      nextWeekSlideAnim.setValue(0);
     });
   };
 
@@ -376,39 +411,26 @@ const Main: React.FC = () => {
           simultaneousHandlers={daySwipeRef}
           onHandlerStateChange={handleWeekSwipe}
         >
-          <Animated.View style={[styles.weekContainer, { transform: [{ translateX: weekSlideAnim }] }]}>
-            <View style={styles.weekdayRow}>
-              {weekDates.map((day, index) => (
-                <Text key={index} style={styles.weekdayText}>
-                  {day.dayLabel}
-                </Text>
-              ))}
-            </View>
-            <View style={styles.datesRow}>
-              {weekDates.map((day) => (
-                <TouchableOpacity
-                  key={day.fullDate}
-                  onPress={() => setSelectedDate(day.fullDate)}
-                  style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      day.fullDate === selectedDate && styles.selectedDayText,
-                      day.isToday && styles.todayText,
-                    ]}
-                  >
-                    {day.dateNumber}
-                  </Text>
-                  <View style={styles.dotContainer}>
-                    {getDayStatusDots(day.fullDate).map((dot, index) => (
-                      <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Animated.View>
+          <View style={{ overflow: 'hidden' }}>
+            {prevWeekOffset !== null && (
+              <Animated.View
+                style={[
+                  styles.weekContainer,
+                  { position: 'absolute', width: '100%', transform: [{ translateX: weekSlideAnim }] },
+                ]}
+              >
+                {renderWeekContent(getWeekDates(prevWeekOffset))}
+              </Animated.View>
+            )}
+            <Animated.View
+              style={[
+                styles.weekContainer,
+                { transform: [{ translateX: prevWeekOffset !== null ? nextWeekSlideAnim : weekSlideAnim }] },
+              ]}
+            >
+              {renderWeekContent(weekDates)}
+            </Animated.View>
+          </View>
         </PanGestureHandler>
 
         {/* Reminders List */}
