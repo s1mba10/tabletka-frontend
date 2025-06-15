@@ -41,6 +41,7 @@ const Main: React.FC = () => {
   const weekSlideAnim = useRef(new Animated.Value(0)).current;
   const nextWeekSlideAnim = useRef(new Animated.Value(0)).current;
   const [prevWeekOffset, setPrevWeekOffset] = useState<number | null>(null);
+  const [isWeekAnimating, setIsWeekAnimating] = useState(false);
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -289,7 +290,11 @@ const Main: React.FC = () => {
   );
 
   const animateWeekChange = (direction: number) => {
+    if (isWeekAnimating) {
+      return;
+    }
     const width = Dimensions.get('window').width;
+    setIsWeekAnimating(true);
     setPrevWeekOffset(weekOffset);
     setWeekOffset(prev => prev + direction);
     weekSlideAnim.setValue(0);
@@ -309,6 +314,7 @@ const Main: React.FC = () => {
       setPrevWeekOffset(null);
       weekSlideAnim.setValue(0);
       nextWeekSlideAnim.setValue(0);
+      setIsWeekAnimating(false);
     });
   };
 
