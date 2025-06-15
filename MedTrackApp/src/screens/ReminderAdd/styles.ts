@@ -139,9 +139,11 @@ export const styles = StyleSheet.create({
   },
   weekdayOption: {
     backgroundColor: '#1E1E1E',
-    padding: 8,
-    borderRadius: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     marginRight: 5,
+    marginBottom: 5,
   },
   weekdaySelected: {
     backgroundColor: '#2C2C2C',
