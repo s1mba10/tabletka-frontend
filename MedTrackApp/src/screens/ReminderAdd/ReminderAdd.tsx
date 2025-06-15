@@ -26,8 +26,18 @@ import { styles } from './styles';
 import { AddReminderScreenNavigationProp, AddReminderScreenRouteProp, typeIcons } from './types';
 import { Reminder, MedicationType } from '../../types';
 
-const formatDateRu = (iso: string) =>
-  format(new Date(iso), 'd MMMM', { locale: ru });
+const formatDateRu = (iso: string) => format(new Date(iso), 'd MMMM', { locale: ru });
+const formatDisplayDate = (iso: string) => format(new Date(iso), 'dd-MM-yyyy');
+
+const weekDaysOrder = [
+  { label: 'Пн', value: 1 },
+  { label: 'Вт', value: 2 },
+  { label: 'Ср', value: 3 },
+  { label: 'Чт', value: 4 },
+  { label: 'Пт', value: 5 },
+  { label: 'Сб', value: 6 },
+  { label: 'Вс', value: 0 },
+] as const;
 
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
@@ -46,15 +56,9 @@ const ReminderAdd: React.FC = () => {
   const [type, setType] = useState<MedicationType>('tablet');
 
   const [times, setTimes] = useState<string[]>([format(new Date(), 'HH:mm')]);
-  const [startDate, setStartDate] = useState<string>(
-    selectedDate || format(new Date(), 'dd-MM-yyyy'),
-  );
-  const [endDate, setEndDate] = useState<string>(
-    selectedDate || format(new Date(), 'dd-MM-yyyy'),
-  );
-  const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>(
-    'once',
-  );
+  const [startDate, setStartDate] = useState<string>(selectedDate || format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState<string>(selectedDate || format(new Date(), 'yyyy-MM-dd'));
+  const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>('once');
   const [weekdays, setWeekdays] = useState<number[]>([]);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -199,9 +203,7 @@ const ReminderAdd: React.FC = () => {
   };
 
   const toggleWeekday = (day: number) => {
-    setWeekdays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day],
-    );
+    setWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
   const generateSchedule = () => {
@@ -215,10 +217,7 @@ const ReminderAdd: React.FC = () => {
           dates.push(iso);
           break;
         case 'alternate':
-          if (
-            Math.floor((d.getTime() - start.getTime()) / 86400000) % 2 === 0
-          )
-            dates.push(iso);
+          if (Math.floor((d.getTime() - start.getTime()) / 86400000) % 2 === 0) dates.push(iso);
           break;
         case 'weekdays':
           if (weekdays.includes(d.getDay())) dates.push(iso);
@@ -248,17 +247,16 @@ const ReminderAdd: React.FC = () => {
       return;
     }
 
-    if (!medications.find(m => m.name.toLowerCase() === name.toLowerCase())) {
+    if (!medications.find((m) => m.name.toLowerCase() === name.toLowerCase())) {
       await createMedication({ name, dosage });
     }
 
     const dates = generateSchedule();
     const courseId = Date.now();
     const newReminders: Reminder[] = [];
-    dates.forEach(date => {
-      times.forEach(time => {
-        const id =
-          Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
+    dates.forEach((date) => {
+      times.forEach((time) => {
+        const id = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
         newReminders.push({
           id,
           name,
@@ -308,10 +306,7 @@ const ReminderAdd: React.FC = () => {
         }
 
         const existingIds = new Set(allReminders.map((r) => r.id));
-        allReminders = [
-          ...allReminders,
-          ...newReminders.filter((r) => !existingIds.has(r.id)),
-        ];
+        allReminders = [...allReminders, ...newReminders.filter((r) => !existingIds.has(r.id))];
         await AsyncStorage.setItem('reminders', JSON.stringify(allReminders));
         console.log('Successfully saved all reminders to storage');
 
@@ -388,13 +383,13 @@ const ReminderAdd: React.FC = () => {
           <View style={[styles.dateField, { marginRight: 10 }]}>
             <Text style={styles.label}>Начало</Text>
             <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
-              <Text style={styles.addTimeText}>{startDate}</Text>
+              <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.dateField}>
             <Text style={styles.label}>Конец</Text>
             <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
-              <Text style={styles.addTimeText}>{endDate}</Text>
+              <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -406,13 +401,10 @@ const ReminderAdd: React.FC = () => {
             { label: 'каждый день', value: 'daily' },
             { label: 'через день', value: 'alternate' },
             { label: 'по дням недели', value: 'weekdays' },
-          ].map(opt => (
+          ].map((opt) => (
             <TouchableOpacity
               key={opt.value}
-              style={[
-                styles.repeatOption,
-                repeat === opt.value && styles.repeatSelected,
-              ]}
+              style={[styles.repeatOption, repeat === opt.value && styles.repeatSelected]}
               onPress={() => setRepeat(opt.value as any)}
             >
               <Text style={{ color: 'white' }}>{opt.label}</Text>
@@ -421,16 +413,13 @@ const ReminderAdd: React.FC = () => {
         </View>
         {repeat === 'weekdays' && (
           <View style={styles.repeatRow}>
-            {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((d, idx) => (
+            {weekDaysOrder.map((day) => (
               <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.weekdayOption,
-                  weekdays.includes(idx) && styles.weekdaySelected,
-                ]}
-                onPress={() => toggleWeekday(idx)}
+                key={day.value}
+                style={[styles.weekdayOption, weekdays.includes(day.value) && styles.weekdaySelected]}
+                onPress={() => toggleWeekday(day.value)}
               >
-                <Text style={{ color: 'white' }}>{d}</Text>
+                <Text style={{ color: 'white' }}>{day.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -610,7 +599,7 @@ const ReminderAdd: React.FC = () => {
                       <View style={{ width: 60 }} />
                     </View>
                     <ScrollView style={{ width: '100%' }}>
-                      {medications.map(m => (
+                      {medications.map((m) => (
                         <TouchableOpacity
                           key={m.id}
                           style={styles.medItem}
@@ -621,9 +610,7 @@ const ReminderAdd: React.FC = () => {
                           }}
                         >
                           <Text style={styles.medItemText}>{m.name}</Text>
-                          {!!m.dosage && (
-                            <Text style={styles.medItemText}>{m.dosage}</Text>
-                          )}
+                          {!!m.dosage && <Text style={styles.medItemText}>{m.dosage}</Text>}
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
