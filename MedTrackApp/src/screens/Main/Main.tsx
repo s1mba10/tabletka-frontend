@@ -93,6 +93,21 @@ const Main: React.FC = () => {
     const unsubscribe = navigation.addListener('focus', () => {
       const params = route.params;
 
+      if (params?.forceRefresh) {
+        AsyncStorage.getItem('reminders').then(stored => {
+          if (stored) {
+            try {
+              setReminders(applyStatusRules(JSON.parse(stored)));
+            } catch {
+              setReminders([]);
+            }
+          } else {
+            setReminders([]);
+          }
+        });
+        navigation.setParams({ forceRefresh: undefined });
+      }
+
       if (params) {
         if (params.newReminders?.length) {
           setReminders(prev =>
@@ -227,6 +242,7 @@ const Main: React.FC = () => {
             onPress={() =>
               navigation.navigate('ReminderEdit', {
                 reminder: item,
+                mainKey: route.key,
               })
             }
           >
@@ -347,7 +363,10 @@ const Main: React.FC = () => {
         <TouchableOpacity
           style={styles.fab}
           onPress={() => {
-            navigation.navigate('ReminderAdd', { selectedDate });
+            navigation.navigate('ReminderAdd', {
+              selectedDate,
+              mainKey: route.key,
+            });
           }}
         >
           <Icon name="plus" size={30} color="white" />

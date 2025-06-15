@@ -58,6 +58,10 @@ const Medications: React.FC = () => {
   const stopCourse = async (id: number) => {
     await removeCourse(id);
     await deleteByCourse(id);
+    navigation.navigate('Главная', {
+      screen: 'Main',
+      params: { forceRefresh: Date.now() },
+    });
   };
 
   return (

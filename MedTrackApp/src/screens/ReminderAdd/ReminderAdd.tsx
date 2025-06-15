@@ -43,7 +43,7 @@ const weekDaysOrder = [
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
   const route = useRoute<AddReminderScreenRouteProp>();
-  const { selectedDate } = route.params || {};
+  const { selectedDate, mainKey } = route.params || {};
 
   const { scheduleReminders } = useReminders();
   const { medications, createMedication } = useMedications();
@@ -340,10 +340,23 @@ const ReminderAdd: React.FC = () => {
       }
     }
 
-    navigation.navigate('Main', {
-      newReminders,
-      forceRefresh: Date.now(),
-    });
+    if (mainKey) {
+      navigation.goBack();
+      navigation.navigate({
+        name: 'Main',
+        key: mainKey,
+        params: {
+          newReminders,
+          forceRefresh: Date.now(),
+        },
+        merge: true,
+      });
+    } else {
+      navigation.navigate('Main', {
+        newReminders,
+        forceRefresh: Date.now(),
+      });
+    }
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);
@@ -358,7 +371,7 @@ const ReminderAdd: React.FC = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           {/* Сделать чтобы было похоже на листание с правой станицы на левую, а не наоборот */}
-          <TouchableOpacity onPress={() => navigation.navigate('Main')}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={28} color="#007AFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Добавить напоминание</Text>

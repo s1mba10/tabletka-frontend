@@ -1,5 +1,4 @@
-import { RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation';
 import { MedicationType } from '../../types';
 
@@ -12,4 +11,4 @@ export const typeIcons: Record<MedicationType, string> = {
 };
 
 export type AddReminderScreenRouteProp = RouteProp<RootStackParamList, 'ReminderAdd'>;
-export type AddReminderScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ReminderAdd'>;
+export type AddReminderScreenNavigationProp = NavigationProp<any>;

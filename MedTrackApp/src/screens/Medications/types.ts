@@ -1,11 +1,7 @@
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../navigation';
+import { NavigationProp } from '@react-navigation/native';
 import { Medication } from '../../types';
 
-export type MedicationsScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'Medications'
->;
+export type MedicationsScreenNavigationProp = NavigationProp<any>;
 
 export interface MedicationFormData {
   id?: number;

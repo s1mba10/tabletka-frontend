@@ -24,7 +24,7 @@ import { EditReminderScreenNavigationProp, EditReminderScreenRouteProp } from '.
 const ReminderEdit: React.FC = () => {
   const navigation = useNavigation<EditReminderScreenNavigationProp>();
   const route = useRoute<EditReminderScreenRouteProp>();
-  const { reminder } = route.params;
+  const { reminder, mainKey } = route.params;
 
   const [name, setName] = useState(reminder.name);
   const [dosage, setDosage] = useState(reminder.dosage);
@@ -87,10 +87,23 @@ const ReminderEdit: React.FC = () => {
       }
 
       // Navigate back to Main screen with updated reminder
-      navigation.navigate('Main', {
-        updatedReminder,
-        forceRefresh: Date.now(),
-      });
+      if (mainKey) {
+        navigation.goBack();
+        navigation.navigate({
+          name: 'Main',
+          key: mainKey,
+          params: {
+            updatedReminder,
+            forceRefresh: Date.now(),
+          },
+          merge: true,
+        });
+      } else {
+        navigation.navigate('Main', {
+          updatedReminder,
+          forceRefresh: Date.now(),
+        });
+      }
 
       Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
     } catch (error) {
