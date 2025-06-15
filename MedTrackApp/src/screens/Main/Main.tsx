@@ -93,6 +93,21 @@ const Main: React.FC = () => {
     const unsubscribe = navigation.addListener('focus', () => {
       const params = route.params;
 
+      if (params?.forceRefresh) {
+        AsyncStorage.getItem('reminders').then(stored => {
+          if (stored) {
+            try {
+              setReminders(applyStatusRules(JSON.parse(stored)));
+            } catch {
+              setReminders([]);
+            }
+          } else {
+            setReminders([]);
+          }
+        });
+        navigation.setParams({ forceRefresh: undefined });
+      }
+
       if (params) {
         if (params.newReminders?.length) {
           setReminders(prev =>

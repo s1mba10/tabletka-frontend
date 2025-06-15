@@ -1,6 +1,6 @@
 # Here is plans for app
 * Объединить созданные приемы в группы которые будет видно как курсы принятые в препаратах(наверное) и можно будет повторить.
-* When I press Остановить my active course, all reminders of this course should be deleted.
+* ~~When I press Остановить my active course, all reminders of this course should be deleted.~~
 * Start and stop when we create reminder should be visible only if we choose to repeat for many days. If not - by default for one day (selected day).  
 * Когда я нажимаю на +, стрелочку, у меня один экран, а если после этого на домик то у меня как будто бы другой экран. Эту логику надо отладить чтобы всегда был один единственный main screen. 
 * Добавить возможность свайпать между неделями а не только переходить через стрелочки. 
