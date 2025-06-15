@@ -11,11 +11,9 @@ export type RootStackParamList = {
     | undefined;
   ReminderEdit: {
     reminder: Reminder;
-    mainKey?: string;
   };
   ReminderAdd: {
     selectedDate?: string;
-    mainKey?: string;
   };
   Profile: undefined;
   Medications: undefined;

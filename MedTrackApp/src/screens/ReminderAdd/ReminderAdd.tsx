@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -43,7 +43,7 @@ const weekDaysOrder = [
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
   const route = useRoute<AddReminderScreenRouteProp>();
-  const { selectedDate, mainKey } = route.params || {};
+  const { selectedDate } = route.params || {};
 
   const { scheduleReminders } = useReminders();
   const { medications, createMedication } = useMedications();
@@ -340,24 +340,10 @@ const ReminderAdd: React.FC = () => {
       }
     }
 
-    if (mainKey) {
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'Main',
-          key: mainKey,
-          params: {
-            newReminders,
-            forceRefresh: Date.now(),
-          },
-          merge: true,
-        }),
-      );
-    } else {
-      navigation.navigate('Main', {
-        newReminders,
-        forceRefresh: Date.now(),
-      });
-    }
+    navigation.navigate('Main', {
+      newReminders,
+      forceRefresh: Date.now(),
+    });
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);

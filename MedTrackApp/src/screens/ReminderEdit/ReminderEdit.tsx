@@ -11,7 +11,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -24,7 +24,7 @@ import { EditReminderScreenNavigationProp, EditReminderScreenRouteProp } from '.
 const ReminderEdit: React.FC = () => {
   const navigation = useNavigation<EditReminderScreenNavigationProp>();
   const route = useRoute<EditReminderScreenRouteProp>();
-  const { reminder, mainKey } = route.params;
+  const { reminder } = route.params;
 
   const [name, setName] = useState(reminder.name);
   const [dosage, setDosage] = useState(reminder.dosage);
@@ -87,24 +87,10 @@ const ReminderEdit: React.FC = () => {
       }
 
       // Navigate back to Main screen with updated reminder
-      if (mainKey) {
-        navigation.dispatch(
-          CommonActions.navigate({
-            name: 'Main',
-            key: mainKey,
-            params: {
-              updatedReminder,
-              forceRefresh: Date.now(),
-            },
-            merge: true,
-          }),
-        );
-      } else {
-        navigation.navigate('Main', {
-          updatedReminder,
-          forceRefresh: Date.now(),
-        });
-      }
+      navigation.navigate('Main', {
+        updatedReminder,
+        forceRefresh: Date.now(),
+      });
 
       Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
     } catch (error) {
