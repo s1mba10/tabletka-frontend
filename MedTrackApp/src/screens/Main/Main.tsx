@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, LayoutAnimation } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, addWeeks, getISOWeek } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, Swipeable, RectButton, PanGestureHandler, State as GestureState } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
 
@@ -40,6 +40,8 @@ const Main: React.FC = () => {
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+  const weekSwipeRef = useRef(null);
+  const daySwipeRef = useRef(null);
 
   // Load reminders from storage on component mount
   useEffect(() => {
@@ -217,6 +219,45 @@ const Main: React.FC = () => {
     </RectButton>
   );
 
+  const handleWeekSwipe = ({ nativeEvent }: any) => {
+    if (nativeEvent.state === GestureState.END) {
+      if (nativeEvent.translationX < -50) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setWeekOffset(prev => prev + 1);
+      } else if (nativeEvent.translationX > 50) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setWeekOffset(prev => prev - 1);
+      }
+    }
+  };
+
+  const handleDaySwipe = ({ nativeEvent }: any) => {
+    if (nativeEvent.state === GestureState.END) {
+      const index = weekDates.findIndex(d => d.fullDate === selectedDate);
+      if (nativeEvent.translationX < -50) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        if (index < 6) {
+          setSelectedDate(weekDates[index + 1].fullDate);
+        } else {
+          const newOffset = weekOffset + 1;
+          setWeekOffset(newOffset);
+          const nextWeek = getWeekDates(newOffset);
+          setSelectedDate(nextWeek[0].fullDate);
+        }
+      } else if (nativeEvent.translationX > 50) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        if (index > 0) {
+          setSelectedDate(weekDates[index - 1].fullDate);
+        } else {
+          const newOffset = weekOffset - 1;
+          setWeekOffset(newOffset);
+          const prevWeek = getWeekDates(newOffset);
+          setSelectedDate(prevWeek[6].fullDate);
+        }
+      }
+    }
+  };
+
   const ReminderCard: React.FC<{ item: Reminder }> = ({ item }) => {
     const due = new Date(`${item.date}T${item.time}`);
     const now = Date.now();
@@ -311,53 +352,65 @@ const Main: React.FC = () => {
         </View>
 
         {/* Week Dates */}
-        <View style={styles.weekContainer}>
-          <View style={styles.weekdayRow}>
-            {weekDates.map((day, index) => (
-              <Text key={index} style={styles.weekdayText}>
-                {day.dayLabel}
-              </Text>
-            ))}
-          </View>
-          <View style={styles.datesRow}>
-            {weekDates.map((day) => (
-              <TouchableOpacity
-                key={day.fullDate}
-                onPress={() => setSelectedDate(day.fullDate)}
-                style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
-              >
-                <Text
-                  style={[
-                    styles.dayText,
-                    day.fullDate === selectedDate && styles.selectedDayText,
-                    day.isToday && styles.todayText,
-                  ]}
-                >
-                  {day.dateNumber}
+        <PanGestureHandler
+          ref={weekSwipeRef}
+          simultaneousHandlers={daySwipeRef}
+          onHandlerStateChange={handleWeekSwipe}
+        >
+          <View style={styles.weekContainer}>
+            <View style={styles.weekdayRow}>
+              {weekDates.map((day, index) => (
+                <Text key={index} style={styles.weekdayText}>
+                  {day.dayLabel}
                 </Text>
-                <View style={styles.dotContainer}>
-                  {getDayStatusDots(day.fullDate).map((dot, index) => (
-                    <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
-                  ))}
-                </View>
-              </TouchableOpacity>
-            ))}
+              ))}
+            </View>
+            <View style={styles.datesRow}>
+              {weekDates.map((day) => (
+                <TouchableOpacity
+                  key={day.fullDate}
+                  onPress={() => setSelectedDate(day.fullDate)}
+                  style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      day.fullDate === selectedDate && styles.selectedDayText,
+                      day.isToday && styles.todayText,
+                    ]}
+                  >
+                    {day.dateNumber}
+                  </Text>
+                  <View style={styles.dotContainer}>
+                    {getDayStatusDots(day.fullDate).map((dot, index) => (
+                      <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        </PanGestureHandler>
 
         {/* Reminders List */}
-        <FlatList
-          data={filteredReminders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ReminderCard item={item} />}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyListContainer}>
-              <Icon name="pill-off" size={60} color="#444" />
-              <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-              <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-            </View>
-          )}
-        />
+        <PanGestureHandler
+          ref={daySwipeRef}
+          simultaneousHandlers={weekSwipeRef}
+          onHandlerStateChange={handleDaySwipe}
+        >
+          <FlatList
+            data={filteredReminders}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ReminderCard item={item} />}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyListContainer}>
+                <Icon name="pill-off" size={60} color="#444" />
+                <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+                <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+              </View>
+            )}
+          />
+        </PanGestureHandler>
 
         {/* Add Reminder FAB */}
         <TouchableOpacity
