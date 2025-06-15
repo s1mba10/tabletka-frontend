@@ -6,7 +6,8 @@ export const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   scrollContainer: {
-    padding: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
   },
   profileHeader: {
     alignItems: 'center',
