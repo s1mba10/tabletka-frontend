@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import {
+  useNavigation,
+  useFocusEffect,
+  CommonActions,
+} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { BarChart } from 'react-native-chart-kit';
 import Svg, { Circle } from 'react-native-svg';
@@ -10,9 +14,13 @@ import { Reminder } from '../../types';
 
 import { styles } from './styles';
 import { RootNavigationProp } from './types';
+import { useMedications } from '../../hooks/useMedications';
+import { useCourses } from '../../hooks/useCourses';
 
 const Profile: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
+  const { fetchMedications } = useMedications();
+  const { fetchCourses } = useCourses();
   const [user, setUser] = useState({
     full_name: 'User Name',
     email: 'user@example.com',
@@ -146,8 +154,19 @@ const Profile: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['reminders', 'medications', 'courses']);
+              await AsyncStorage.multiRemove([
+                'reminders',
+                'medications',
+                'courses',
+                'userProfile',
+                'userStats',
+              ]);
+              await fetchMedications();
+              await fetchCourses();
               await loadStats();
+              navigation.getParent()?.dispatch(
+                CommonActions.reset({ index: 0, routes: [{ name: 'Главная' }] })
+              );
             } catch (e) {
               console.warn('Failed to clear storage', e);
             }
