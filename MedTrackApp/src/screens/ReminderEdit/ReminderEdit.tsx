@@ -87,10 +87,12 @@ const ReminderEdit: React.FC = () => {
       }
 
       // Navigate back to Main screen with updated reminder
-      navigation.navigate('Main', {
-        updatedReminder,
-        forceRefresh: Date.now(),
+      navigation.navigate({
+        name: 'Main',
+        params: { updatedReminder, forceRefresh: Date.now() },
+        merge: true,
       });
+      navigation.goBack();
 
       Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
     } catch (error) {

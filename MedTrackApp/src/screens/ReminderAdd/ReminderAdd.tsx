@@ -340,10 +340,12 @@ const ReminderAdd: React.FC = () => {
       }
     }
 
-    navigation.navigate('Main', {
-      newReminders,
-      forceRefresh: Date.now(),
+    navigation.navigate({
+      name: 'Main',
+      params: { newReminders, forceRefresh: Date.now() },
+      merge: true,
     });
+    navigation.goBack();
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);
