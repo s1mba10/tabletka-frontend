@@ -89,6 +89,7 @@ const ReminderEdit: React.FC = () => {
       // Navigate back to Main screen with updated reminder
       if (mainKey) {
         navigation.goBack();
+        // @ts-ignore
         navigation.navigate({
           name: 'Main',
           key: mainKey,

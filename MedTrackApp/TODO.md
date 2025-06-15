@@ -1,7 +1,8 @@
 # Here is plans for app
 * Add changing weeks by swiping screen where weeks are. And add changing days on other part of screen where scheduled reminders are. So I can change weeks not only with arrows and days not only by tapping on the day. 
 * Объединить созданные приемы в группы которые будет видно как курсы принятые в препаратах(наверное) и можно будет повторить.
-* Или убрать аватарку или добавить возможность добавлять ее. То же самое с именем
+* Either remove profile photo or add opportunity to add it. Same with the name.
+* Find out why vscode is highlighting lines under @ts-ignore in files ReminderEdit.tsx and ReminderAdd.tsx. 
 
 __________
 BACKLOG

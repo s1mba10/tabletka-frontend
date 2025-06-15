@@ -342,6 +342,7 @@ const ReminderAdd: React.FC = () => {
 
     if (mainKey) {
       navigation.goBack();
+      // @ts-ignore
       navigation.navigate({
         name: 'Main',
         key: mainKey,
