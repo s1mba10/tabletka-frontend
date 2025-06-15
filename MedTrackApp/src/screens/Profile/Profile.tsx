@@ -221,7 +221,7 @@ const Profile: React.FC = () => {
   const adherenceColor = getAdherenceColor(user.adherence_percentage);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.profileHeader}>

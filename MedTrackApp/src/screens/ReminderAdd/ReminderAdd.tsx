@@ -10,6 +10,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   ScrollView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -348,9 +349,13 @@ const ReminderAdd: React.FC = () => {
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);
   };
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           {/* Сделать чтобы было похоже на листание с правой станицы на левую, а не наоборот */}
           <TouchableOpacity onPress={() => navigation.navigate('Main')}>
@@ -633,7 +638,8 @@ const ReminderAdd: React.FC = () => {
         <TouchableOpacity onPress={saveNewReminders} style={styles.saveButton}>
           <Text style={styles.buttonText}>Добавить</Text>
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

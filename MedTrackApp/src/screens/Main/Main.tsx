@@ -276,7 +276,7 @@ const Main: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.container}>
         <StatusBar barStyle="light-content" />
         
         {/* Week Navigation */}
