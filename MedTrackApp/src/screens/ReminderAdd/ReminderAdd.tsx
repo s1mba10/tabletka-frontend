@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -342,15 +342,17 @@ const ReminderAdd: React.FC = () => {
 
     if (mainKey) {
       navigation.goBack();
-      navigation.navigate({
-        name: 'Main',
-        key: mainKey,
-        params: {
-          newReminders,
-          forceRefresh: Date.now(),
-        },
-        merge: true,
-      });
+      navigation.dispatch(
+        CommonActions.navigate({
+          name: 'Main',
+          key: mainKey,
+          params: {
+            newReminders,
+            forceRefresh: Date.now(),
+          },
+          merge: true,
+        })
+      );
     } else {
       navigation.navigate('Main', {
         newReminders,
