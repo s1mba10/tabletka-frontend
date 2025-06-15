@@ -117,6 +117,9 @@ export const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
   },
+  reminderListWrapper: {
+    flex: 1,
+  },
   countdownText: {
     fontSize: 12,
     fontWeight: 'bold',

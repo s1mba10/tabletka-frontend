@@ -42,6 +42,10 @@ const Main: React.FC = () => {
   const nextWeekSlideAnim = useRef(new Animated.Value(0)).current;
   const [prevWeekOffset, setPrevWeekOffset] = useState<number | null>(null);
   const [isWeekAnimating, setIsWeekAnimating] = useState(false);
+  const daySlideAnim = useRef(new Animated.Value(0)).current;
+  const nextDaySlideAnim = useRef(new Animated.Value(0)).current;
+  const [prevSelectedDate, setPrevSelectedDate] = useState<string | null>(null);
+  const [isDayAnimating, setIsDayAnimating] = useState(false);
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -154,10 +158,6 @@ const Main: React.FC = () => {
     return unsubscribe;
   }, [navigation, selectedDate, route.params]);
 
-  // Filter and sort reminders for the selected date
-  const filteredReminders = reminders
-    .filter(reminder => reminder.date === selectedDate)
-    .sort((a, b) => a.time.localeCompare(b.time));
 
   // Get status dots for each day
   const getDayStatusDots = (date: string) => {
@@ -234,24 +234,65 @@ const Main: React.FC = () => {
     }
   };
 
+  const animateDayChange = (newDate: string, direction: number) => {
+    if (isDayAnimating) {
+      return;
+    }
+    const width = Dimensions.get('window').width;
+    setIsDayAnimating(true);
+    setPrevSelectedDate(selectedDate);
+    setSelectedDate(newDate);
+    daySlideAnim.setValue(0);
+    nextDaySlideAnim.setValue(direction * width);
+    Animated.parallel([
+      Animated.timing(daySlideAnim, {
+        toValue: -direction * width,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(nextDaySlideAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setPrevSelectedDate(null);
+      daySlideAnim.setValue(0);
+      nextDaySlideAnim.setValue(0);
+      setIsDayAnimating(false);
+    });
+  };
+
+  const handleDayPress = (date: string) => {
+    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+    const newIndex = weekDates.findIndex(d => d.fullDate === date);
+    if (Math.abs(newIndex - currentIndex) === 1) {
+      animateDayChange(date, newIndex > currentIndex ? 1 : -1);
+    } else {
+      setSelectedDate(date);
+    }
+  };
+
   const handleDaySwipe = ({ nativeEvent }: any) => {
     if (nativeEvent.state === GestureState.END) {
       const index = weekDates.findIndex(d => d.fullDate === selectedDate);
       if (nativeEvent.translationX < -50) {
         if (index < 6) {
-          setSelectedDate(weekDates[index + 1].fullDate);
+          animateDayChange(weekDates[index + 1].fullDate, 1);
         } else {
+          const newOffset = weekOffset + 1;
+          const nextWeek = getWeekDates(newOffset);
           animateWeekChange(1);
-          const nextWeek = getWeekDates(weekOffset + 1);
-          setSelectedDate(nextWeek[0].fullDate);
+          animateDayChange(nextWeek[0].fullDate, 1);
         }
       } else if (nativeEvent.translationX > 50) {
         if (index > 0) {
-          setSelectedDate(weekDates[index - 1].fullDate);
+          animateDayChange(weekDates[index - 1].fullDate, -1);
         } else {
+          const newOffset = weekOffset - 1;
+          const prevWeek = getWeekDates(newOffset);
           animateWeekChange(-1);
-          const prevWeek = getWeekDates(weekOffset - 1);
-          setSelectedDate(prevWeek[6].fullDate);
+          animateDayChange(prevWeek[6].fullDate, -1);
         }
       }
     }
@@ -270,7 +311,7 @@ const Main: React.FC = () => {
         {dates.map(day => (
           <TouchableOpacity
             key={day.fullDate}
-            onPress={() => setSelectedDate(day.fullDate)}
+            onPress={() => handleDayPress(day.fullDate)}
             style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
           >
             <Text
@@ -288,6 +329,26 @@ const Main: React.FC = () => {
       </View>
     </>
   );
+
+  const renderReminderList = (date: string) => {
+    const dayReminders = reminders
+      .filter(reminder => reminder.date === date)
+      .sort((a, b) => a.time.localeCompare(b.time));
+    return (
+      <FlatList
+        data={dayReminders}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <ReminderCard item={item} />}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyListContainer}>
+            <Icon name="pill-off" size={60} color="#444" />
+            <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+            <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+          </View>
+        )}
+      />
+    );
+  };
 
   const animateWeekChange = (direction: number) => {
     if (isWeekAnimating) {
@@ -445,18 +506,26 @@ const Main: React.FC = () => {
           simultaneousHandlers={weekSwipeRef}
           onHandlerStateChange={handleDaySwipe}
         >
-          <FlatList
-            data={filteredReminders}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ReminderCard item={item} />}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyListContainer}>
-                <Icon name="pill-off" size={60} color="#444" />
-                <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-                <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-              </View>
+          <View style={{ overflow: 'hidden', flex: 1 }}>
+            {prevSelectedDate !== null && (
+              <Animated.View
+                style={[
+                  styles.reminderListWrapper,
+                  { position: 'absolute', width: '100%', transform: [{ translateX: daySlideAnim }] },
+                ]}
+              >
+                {renderReminderList(prevSelectedDate)}
+              </Animated.View>
             )}
-          />
+            <Animated.View
+              style={[
+                styles.reminderListWrapper,
+                { transform: [{ translateX: prevSelectedDate !== null ? nextDaySlideAnim : daySlideAnim }] },
+              ]}
+            >
+              {renderReminderList(selectedDate)}
+            </Animated.View>
+          </View>
         </PanGestureHandler>
 
         {/* Add Reminder FAB */}
