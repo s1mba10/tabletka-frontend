@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, LayoutAnimation } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, LayoutAnimation, Animated, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, addWeeks, getISOWeek } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -14,7 +14,7 @@ import { NavigationProp } from './types';
 import { RootStackParamList } from '../../navigation';
 import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
-import { sampleReminders, statusColors, typeIcons } from './constants';
+import { statusColors, typeIcons } from './constants';
 import { useCountdown } from '../../hooks';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
@@ -37,6 +37,8 @@ const Main: React.FC = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
+
+  const weekSlideAnim = useRef(new Animated.Value(0)).current;
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -258,6 +260,23 @@ const Main: React.FC = () => {
     }
   };
 
+  const animateWeekChange = (direction: number) => {
+    const width = Dimensions.get('window').width;
+    Animated.timing(weekSlideAnim, {
+      toValue: direction * -width,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      weekSlideAnim.setValue(direction * width);
+      setWeekOffset(prev => prev + direction);
+      Animated.timing(weekSlideAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
   const ReminderCard: React.FC<{ item: Reminder }> = ({ item }) => {
     const due = new Date(`${item.date}T${item.time}`);
     const now = Date.now();
@@ -338,7 +357,7 @@ const Main: React.FC = () => {
         
         {/* Week Navigation */}
         <View style={styles.weekHeader}>
-          <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton}>
+          <TouchableOpacity onPress={() => animateWeekChange(-1)} style={styles.arrowButton}>
             <Icon name="chevron-left" size={30} color="white" />
           </TouchableOpacity>
           <Text style={styles.weekText}>
@@ -346,7 +365,7 @@ const Main: React.FC = () => {
               format(addWeeks(new Date(), weekOffset), 'LLLL yyyy ', { locale: ru }).slice(1)}
             • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
           </Text>
-          <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton}>
+          <TouchableOpacity onPress={() => animateWeekChange(1)} style={styles.arrowButton}>
             <Icon name="chevron-right" size={30} color="white" />
           </TouchableOpacity>
         </View>
@@ -357,7 +376,7 @@ const Main: React.FC = () => {
           simultaneousHandlers={daySwipeRef}
           onHandlerStateChange={handleWeekSwipe}
         >
-          <View style={styles.weekContainer}>
+          <Animated.View style={[styles.weekContainer, { transform: [{ translateX: weekSlideAnim }] }]}>
             <View style={styles.weekdayRow}>
               {weekDates.map((day, index) => (
                 <Text key={index} style={styles.weekdayText}>
@@ -389,7 +408,7 @@ const Main: React.FC = () => {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
+          </Animated.View>
         </PanGestureHandler>
 
         {/* Reminders List */}
