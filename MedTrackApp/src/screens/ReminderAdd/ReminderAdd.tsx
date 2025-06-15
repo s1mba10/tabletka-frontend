@@ -72,6 +72,13 @@ const ReminderAdd: React.FC = () => {
     return date;
   });
 
+  // Ensure single-day course when repeating once
+  useEffect(() => {
+    if (repeat === 'once') {
+      setEndDate(startDate);
+    }
+  }, [repeat, startDate]);
+
   const addTime = (timeString: string) => {
     if (times.includes(timeString)) {
       Alert.alert('Предупреждение', 'Это время уже добавлено');
@@ -379,20 +386,22 @@ const ReminderAdd: React.FC = () => {
           placeholderTextColor="#666"
         />
 
-        <View style={styles.dateRow}>
-          <View style={[styles.dateField, { marginRight: 10 }]}>
-            <Text style={styles.label}>Начало</Text>
-            <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
-              <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
-            </TouchableOpacity>
+        {repeat !== 'once' && (
+          <View style={styles.dateRow}>
+            <View style={[styles.dateField, { marginRight: 10 }]}>
+              <Text style={styles.label}>Начало</Text>
+              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.dateField}>
+              <Text style={styles.label}>Конец</Text>
+              <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.dateField}>
-            <Text style={styles.label}>Конец</Text>
-            <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
-              <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        )}
 
         <Text style={styles.label}>Повторять</Text>
         <View style={styles.repeatRow}>
