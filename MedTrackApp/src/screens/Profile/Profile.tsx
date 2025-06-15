@@ -135,6 +135,28 @@ const Profile: React.FC = () => {
     }, [])
   );
 
+  const flushData = () => {
+    Alert.alert(
+      'Очистить данные',
+      'Все напоминания и созданные курсы будут удалены',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Удалить',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.multiRemove(['reminders', 'medications', 'courses']);
+              await loadStats();
+            } catch (e) {
+              console.warn('Failed to clear storage', e);
+            }
+          },
+        },
+      ],
+    );
+  };
+
 
 
   // Navigate to medications management
@@ -273,6 +295,9 @@ const Profile: React.FC = () => {
           <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Настройки', 'Здесь откроется страница настроек')}>
             <Icon name="cog" size={24} color="#007AFF" />
             <Text style={styles.actionText}>Настройки</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={flushData}>
+            <Text style={styles.logoutText}>Очистить данные</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
