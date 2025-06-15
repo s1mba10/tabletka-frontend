@@ -247,12 +247,12 @@ const Main: React.FC = () => {
     Animated.parallel([
       Animated.timing(daySlideAnim, {
         toValue: -direction * width,
-        duration: 150,
+        duration: 325,
         useNativeDriver: true,
       }),
       Animated.timing(nextDaySlideAnim, {
         toValue: 0,
-        duration: 150,
+        duration: 325,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -363,12 +363,12 @@ const Main: React.FC = () => {
     Animated.parallel([
       Animated.timing(weekSlideAnim, {
         toValue: -direction * width,
-        duration: 150,
+        duration: 250,
         useNativeDriver: true,
       }),
       Animated.timing(nextWeekSlideAnim, {
         toValue: 0,
-        duration: 150,
+        duration: 250,
         useNativeDriver: true,
       }),
     ]).start(() => {
