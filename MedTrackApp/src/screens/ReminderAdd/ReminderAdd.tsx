@@ -345,7 +345,6 @@ const ReminderAdd: React.FC = () => {
       params: { newReminders, forceRefresh: Date.now() },
       merge: true,
     });
-    navigation.goBack();
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);

@@ -92,7 +92,6 @@ const ReminderEdit: React.FC = () => {
         params: { updatedReminder, forceRefresh: Date.now() },
         merge: true,
       });
-      navigation.goBack();
 
       Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
     } catch (error) {
