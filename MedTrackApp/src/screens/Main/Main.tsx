@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, Animated, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert, Animated as RNAnimated, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { format, addWeeks, getISOWeek } from 'date-fns';
+import { format, addWeeks, getISOWeek, addDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,16 +38,29 @@ const Main: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
 
-  const weekSlideAnim = useRef(new Animated.Value(0)).current;
-  const nextWeekSlideAnim = useRef(new Animated.Value(0)).current;
+  const weekSlideAnim = useRef(new RNAnimated.Value(0)).current;
+  const nextWeekSlideAnim = useRef(new RNAnimated.Value(0)).current;
   const [prevWeekOffset, setPrevWeekOffset] = useState<number | null>(null);
   const [isWeekAnimating, setIsWeekAnimating] = useState(false);
-  const daySlideAnim = useRef(new Animated.Value(0)).current;
-  const nextDaySlideAnim = useRef(new Animated.Value(0)).current;
+  const daySlideAnim = useRef(new RNAnimated.Value(0)).current;
+  const nextDaySlideAnim = useRef(new RNAnimated.Value(0)).current;
   const [prevSelectedDate, setPrevSelectedDate] = useState<string | null>(null);
   const [isDayAnimating, setIsDayAnimating] = useState(false);
 
   const weekDates = getWeekDates(weekOffset);
+  const screenWidth = Dimensions.get('window').width;
+  const weekPan = useRef(new RNAnimated.Value(0)).current;
+  const dayPan = useRef(new RNAnimated.Value(0)).current;
+  const weekOffsetBase = useRef(new RNAnimated.Value(-screenWidth)).current;
+  const dayOffsetBase = useRef(new RNAnimated.Value(-screenWidth)).current;
+  const onWeekGestureEvent = RNAnimated.event(
+    [{ nativeEvent: { translationX: weekPan } }],
+    { useNativeDriver: true },
+  );
+  const onDayGestureEvent = RNAnimated.event(
+    [{ nativeEvent: { translationX: dayPan } }],
+    { useNativeDriver: true },
+  );
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
   const weekSwipeRef = useRef(null);
   const daySwipeRef = useRef(null);
@@ -227,9 +240,29 @@ const Main: React.FC = () => {
   const handleWeekSwipe = ({ nativeEvent }: any) => {
     if (nativeEvent.state === GestureState.END) {
       if (nativeEvent.translationX < -50) {
-        animateWeekChange(1);
+        RNAnimated.timing(weekPan, {
+          toValue: -screenWidth,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          weekPan.setValue(0);
+          setWeekOffset(prev => prev + 1);
+        });
       } else if (nativeEvent.translationX > 50) {
-        animateWeekChange(-1);
+        RNAnimated.timing(weekPan, {
+          toValue: screenWidth,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          weekPan.setValue(0);
+          setWeekOffset(prev => prev - 1);
+        });
+      } else {
+        RNAnimated.timing(weekPan, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
       }
     }
   };
@@ -244,13 +277,13 @@ const Main: React.FC = () => {
     setSelectedDate(newDate);
     daySlideAnim.setValue(0);
     nextDaySlideAnim.setValue(direction * width);
-    Animated.parallel([
-      Animated.timing(daySlideAnim, {
+    RNAnimated.parallel([
+      RNAnimated.timing(daySlideAnim, {
         toValue: -direction * width,
         duration: 325,
         useNativeDriver: true,
       }),
-      Animated.timing(nextDaySlideAnim, {
+      RNAnimated.timing(nextDaySlideAnim, {
         toValue: 0,
         duration: 325,
         useNativeDriver: true,
@@ -278,22 +311,54 @@ const Main: React.FC = () => {
       const index = weekDates.findIndex(d => d.fullDate === selectedDate);
       if (nativeEvent.translationX < -50) {
         if (index < 6) {
-          animateDayChange(weekDates[index + 1].fullDate, 1);
+          RNAnimated.timing(dayPan, {
+            toValue: -screenWidth,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(() => {
+            dayPan.setValue(0);
+            animateDayChange(weekDates[index + 1].fullDate, 1);
+          });
         } else {
-          const newOffset = weekOffset + 1;
-          const nextWeek = getWeekDates(newOffset);
-          animateWeekChange(1);
-          animateDayChange(nextWeek[0].fullDate, 1);
+          const nextWeek = getWeekDates(weekOffset + 1);
+          RNAnimated.parallel([
+            RNAnimated.timing(dayPan, { toValue: -screenWidth, duration: 250, useNativeDriver: true }),
+            RNAnimated.timing(weekPan, { toValue: -screenWidth, duration: 250, useNativeDriver: true }),
+          ]).start(() => {
+            dayPan.setValue(0);
+            weekPan.setValue(0);
+            setWeekOffset(prev => prev + 1);
+            animateDayChange(nextWeek[0].fullDate, 1);
+          });
         }
       } else if (nativeEvent.translationX > 50) {
         if (index > 0) {
-          animateDayChange(weekDates[index - 1].fullDate, -1);
+          RNAnimated.timing(dayPan, {
+            toValue: screenWidth,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(() => {
+            dayPan.setValue(0);
+            animateDayChange(weekDates[index - 1].fullDate, -1);
+          });
         } else {
-          const newOffset = weekOffset - 1;
-          const prevWeek = getWeekDates(newOffset);
-          animateWeekChange(-1);
-          animateDayChange(prevWeek[6].fullDate, -1);
+          const prevWeek = getWeekDates(weekOffset - 1);
+          RNAnimated.parallel([
+            RNAnimated.timing(dayPan, { toValue: screenWidth, duration: 250, useNativeDriver: true }),
+            RNAnimated.timing(weekPan, { toValue: screenWidth, duration: 250, useNativeDriver: true }),
+          ]).start(() => {
+            dayPan.setValue(0);
+            weekPan.setValue(0);
+            setWeekOffset(prev => prev - 1);
+            animateDayChange(prevWeek[6].fullDate, -1);
+          });
         }
+      } else {
+        RNAnimated.timing(dayPan, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
       }
     }
   };
@@ -360,13 +425,13 @@ const Main: React.FC = () => {
     setWeekOffset(prev => prev + direction);
     weekSlideAnim.setValue(0);
     nextWeekSlideAnim.setValue(direction * width);
-    Animated.parallel([
-      Animated.timing(weekSlideAnim, {
+    RNAnimated.parallel([
+      RNAnimated.timing(weekSlideAnim, {
         toValue: -direction * width,
         duration: 250,
         useNativeDriver: true,
       }),
-      Animated.timing(nextWeekSlideAnim, {
+      RNAnimated.timing(nextWeekSlideAnim, {
         toValue: 0,
         duration: 250,
         useNativeDriver: true,
@@ -476,27 +541,21 @@ const Main: React.FC = () => {
         <PanGestureHandler
           ref={weekSwipeRef}
           simultaneousHandlers={daySwipeRef}
+          onGestureEvent={onWeekGestureEvent}
           onHandlerStateChange={handleWeekSwipe}
         >
           <View style={{ overflow: 'hidden' }}>
-            {prevWeekOffset !== null && (
-              <Animated.View
-                style={[
-                  styles.weekContainer,
-                  { position: 'absolute', width: '100%', transform: [{ translateX: weekSlideAnim }] },
-                ]}
-              >
-                {renderWeekContent(getWeekDates(prevWeekOffset))}
-              </Animated.View>
-            )}
-            <Animated.View
-              style={[
-                styles.weekContainer,
-                { transform: [{ translateX: prevWeekOffset !== null ? nextWeekSlideAnim : weekSlideAnim }] },
-              ]}
+            <RNAnimated.View
+              style={{
+                flexDirection: 'row',
+                width: screenWidth * 3,
+                transform: [{ translateX: RNAnimated.add(weekPan, weekOffsetBase) }],
+              }}
             >
-              {renderWeekContent(weekDates)}
-            </Animated.View>
+              <View style={{ width: screenWidth }}>{renderWeekContent(getWeekDates(weekOffset - 1))}</View>
+              <View style={{ width: screenWidth }}>{renderWeekContent(weekDates)}</View>
+              <View style={{ width: screenWidth }}>{renderWeekContent(getWeekDates(weekOffset + 1))}</View>
+            </RNAnimated.View>
           </View>
         </PanGestureHandler>
 
@@ -504,27 +563,21 @@ const Main: React.FC = () => {
         <PanGestureHandler
           ref={daySwipeRef}
           simultaneousHandlers={weekSwipeRef}
+          onGestureEvent={onDayGestureEvent}
           onHandlerStateChange={handleDaySwipe}
         >
           <View style={{ overflow: 'hidden', flex: 1 }}>
-            {prevSelectedDate !== null && (
-              <Animated.View
-                style={[
-                  styles.reminderListWrapper,
-                  { position: 'absolute', width: '100%', transform: [{ translateX: daySlideAnim }] },
-                ]}
-              >
-                {renderReminderList(prevSelectedDate)}
-              </Animated.View>
-            )}
-            <Animated.View
-              style={[
-                styles.reminderListWrapper,
-                { transform: [{ translateX: prevSelectedDate !== null ? nextDaySlideAnim : daySlideAnim }] },
-              ]}
+            <RNAnimated.View
+              style={{
+                flexDirection: 'row',
+                width: screenWidth * 3,
+                transform: [{ translateX: RNAnimated.add(dayPan, dayOffsetBase) }],
+              }}
             >
-              {renderReminderList(selectedDate)}
-            </Animated.View>
+              <View style={{ width: screenWidth }}>{renderReminderList(format(addDays(new Date(selectedDate), -1), 'yyyy-MM-dd'))}</View>
+              <View style={{ width: screenWidth }}>{renderReminderList(selectedDate)}</View>
+              <View style={{ width: screenWidth }}>{renderReminderList(format(addDays(new Date(selectedDate), 1), 'yyyy-MM-dd'))}</View>
+            </RNAnimated.View>
           </View>
         </PanGestureHandler>
 
