@@ -38,13 +38,7 @@ const Main: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
 
-  const weekSlideAnim = useRef(new RNAnimated.Value(0)).current;
-  const nextWeekSlideAnim = useRef(new RNAnimated.Value(0)).current;
-  const [prevWeekOffset, setPrevWeekOffset] = useState<number | null>(null);
   const [isWeekAnimating, setIsWeekAnimating] = useState(false);
-  const daySlideAnim = useRef(new RNAnimated.Value(0)).current;
-  const nextDaySlideAnim = useRef(new RNAnimated.Value(0)).current;
-  const [prevSelectedDate, setPrevSelectedDate] = useState<string | null>(null);
   const [isDayAnimating, setIsDayAnimating] = useState(false);
 
   const weekDates = getWeekDates(weekOffset);
@@ -271,27 +265,14 @@ const Main: React.FC = () => {
     if (isDayAnimating) {
       return;
     }
-    const width = Dimensions.get('window').width;
     setIsDayAnimating(true);
-    setPrevSelectedDate(selectedDate);
-    setSelectedDate(newDate);
-    daySlideAnim.setValue(0);
-    nextDaySlideAnim.setValue(direction * width);
-    RNAnimated.parallel([
-      RNAnimated.timing(daySlideAnim, {
-        toValue: -direction * width,
-        duration: 325,
-        useNativeDriver: true,
-      }),
-      RNAnimated.timing(nextDaySlideAnim, {
-        toValue: 0,
-        duration: 325,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setPrevSelectedDate(null);
-      daySlideAnim.setValue(0);
-      nextDaySlideAnim.setValue(0);
+    RNAnimated.timing(dayPan, {
+      toValue: -direction * screenWidth,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      dayPan.setValue(0);
+      setSelectedDate(newDate);
       setIsDayAnimating(false);
     });
   };
@@ -419,27 +400,14 @@ const Main: React.FC = () => {
     if (isWeekAnimating) {
       return;
     }
-    const width = Dimensions.get('window').width;
     setIsWeekAnimating(true);
-    setPrevWeekOffset(weekOffset);
-    setWeekOffset(prev => prev + direction);
-    weekSlideAnim.setValue(0);
-    nextWeekSlideAnim.setValue(direction * width);
-    RNAnimated.parallel([
-      RNAnimated.timing(weekSlideAnim, {
-        toValue: -direction * width,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      RNAnimated.timing(nextWeekSlideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setPrevWeekOffset(null);
-      weekSlideAnim.setValue(0);
-      nextWeekSlideAnim.setValue(0);
+    RNAnimated.timing(weekPan, {
+      toValue: -direction * screenWidth,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      weekPan.setValue(0);
+      setWeekOffset(prev => prev + direction);
       setIsWeekAnimating(false);
     });
   };
