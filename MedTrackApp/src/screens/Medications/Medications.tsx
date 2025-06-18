@@ -114,16 +114,23 @@ const Medications: React.FC = () => {
           const { done, total } = getCourseProgress(c.id);
           return (
             <View key={c.id} style={styles.courseItem}>
-              <Text style={styles.courseTitle}>{c.name}</Text>
-              <Text style={styles.courseSubtitle}>
-                {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
-              </Text>
-              <Text style={styles.courseProgress}>
-                {done}/{total} выполнено
-              </Text>
-              <TouchableOpacity onPress={() => stopCourse(c.id)}>
-                <Text style={{ color: '#FF3B30', marginTop: 4 }}>Остановить</Text>
-              </TouchableOpacity>
+              <View style={styles.courseInfo}>
+                <Text style={styles.courseTitle}>{c.name}</Text>
+                <Text style={styles.courseSubtitle}>
+                  {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
+                </Text>
+                <Text style={styles.courseProgress}>
+                  {done}/{total} выполнено
+                </Text>
+              </View>
+              <View style={styles.courseActions}>
+                <TouchableOpacity
+                  style={styles.courseButton}
+                  onPress={() => stopCourse(c.id)}
+                >
+                  <Icon name="delete" size={20} color="#FF3B30" />
+                </TouchableOpacity>
+              </View>
             </View>
           );
         })}

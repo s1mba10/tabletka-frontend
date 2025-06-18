@@ -64,6 +64,9 @@ export const styles = StyleSheet.create({
   },
   courseItem: {
     backgroundColor: '#1E1E1E',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 12,
     borderRadius: 5,
     marginBottom: 8,
