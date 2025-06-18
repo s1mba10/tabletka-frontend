@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useMedications } from '../../hooks/useMedications';
 import { useCourses, useReminders } from '../../hooks';
 import { MedicationCourse } from '../../types';
@@ -24,7 +24,13 @@ const Medications: React.FC = () => {
   const navigation = useNavigation<MedicationsScreenNavigationProp>();
   const { medications, createMedication, updateMedication, removeMedication } = useMedications();
   const { courses, removeCourse } = useCourses();
-  const { reminders, deleteByCourse } = useReminders();
+  const { reminders, deleteByCourse, fetchReminders } = useReminders();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchReminders();
+    }, []),
+  );
 
   const [form, setForm] = useState<MedicationFormData>({ name: '', dosage: '' });
 
