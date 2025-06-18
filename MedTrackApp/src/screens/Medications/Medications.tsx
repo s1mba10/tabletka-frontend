@@ -147,13 +147,13 @@ const Medications: React.FC = () => {
                   style={styles.courseButton}
                   onPress={() => repeatCourse(c)}
                 >
-                  <Text style={{ color: '#007AFF' }}>Repeat</Text>
+                  <Icon name="refresh" size={20} color="#007AFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.courseButton}
                   onPress={() => deleteCourse(c.id)}
                 >
-                  <Text style={{ color: '#FF3B30' }}>Удалить</Text>
+                  <Icon name="delete" size={20} color="#FF3B30" />
                 </TouchableOpacity>
               </View>
             </View>
