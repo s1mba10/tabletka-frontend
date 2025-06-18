@@ -134,14 +134,16 @@ const Medications: React.FC = () => {
         {finishedCourses.map(c => {
           const { done, total } = getCourseProgress(c.id);
           return (
-            <View key={c.id} style={styles.courseItem}>
-              <Text style={styles.courseTitle}>{c.name}</Text>
-              <Text style={styles.courseSubtitle}>
-                {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
-              </Text>
-              <Text style={styles.courseProgress}>
-                {done}/{total} выполнено
-              </Text>
+            <View key={c.id} style={styles.finishedCourseItem}>
+              <View style={styles.courseInfo}>
+                <Text style={styles.courseTitle}>{c.name}</Text>
+                <Text style={styles.courseSubtitle}>
+                  {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
+                </Text>
+                <Text style={styles.courseProgress}>
+                  {done}/{total} выполнено
+                </Text>
+              </View>
               <View style={styles.courseActions}>
                 <TouchableOpacity
                   style={styles.courseButton}

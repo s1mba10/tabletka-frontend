@@ -82,9 +82,21 @@ export const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
   },
+  finishedCourseItem: {
+    backgroundColor: '#1E1E1E',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 5,
+    marginBottom: 8,
+  },
+  courseInfo: {
+    flex: 1,
+  },
   courseActions: {
     flexDirection: 'row',
-    marginTop: 4,
+    alignItems: 'center',
   },
   courseButton: {
     paddingHorizontal: 8,
