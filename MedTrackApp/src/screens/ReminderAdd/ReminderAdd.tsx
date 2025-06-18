@@ -43,7 +43,7 @@ const weekDaysOrder = [
 const ReminderAdd: React.FC = () => {
   const navigation = useNavigation<AddReminderScreenNavigationProp>();
   const route = useRoute<AddReminderScreenRouteProp>();
-  const { selectedDate, mainKey } = route.params || {};
+  const { selectedDate, mainKey, course } = route.params || {};
 
   const { scheduleReminders } = useReminders();
   const { medications, createMedication } = useMedications();
@@ -52,15 +52,23 @@ const ReminderAdd: React.FC = () => {
 
   console.log('AddReminderScreen opened with date:', selectedDate);
 
-  const [name, setName] = useState('');
-  const [dosage, setDosage] = useState('');
-  const [type, setType] = useState<MedicationType>('tablet');
+  const [name, setName] = useState(course?.name || '');
+  const [dosage, setDosage] = useState(course?.dosage || '');
+  const [type, setType] = useState<MedicationType>(course?.type || 'tablet');
 
-  const [times, setTimes] = useState<string[]>([format(new Date(), 'HH:mm')]);
-  const [startDate, setStartDate] = useState<string>(selectedDate || format(new Date(), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState<string>(selectedDate || format(new Date(), 'yyyy-MM-dd'));
-  const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>('once');
-  const [weekdays, setWeekdays] = useState<number[]>([]);
+  const [times, setTimes] = useState<string[]>(
+    course?.times || [format(new Date(), 'HH:mm')],
+  );
+  const [startDate, setStartDate] = useState<string>(
+    course?.startDate || selectedDate || format(new Date(), 'yyyy-MM-dd'),
+  );
+  const [endDate, setEndDate] = useState<string>(
+    course?.endDate || selectedDate || format(new Date(), 'yyyy-MM-dd'),
+  );
+  const [repeat, setRepeat] = useState<'once' | 'daily' | 'alternate' | 'weekdays'>(
+    course?.repeatPattern || 'once',
+  );
+  const [weekdays, setWeekdays] = useState<number[]>(course?.weekdays || []);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);

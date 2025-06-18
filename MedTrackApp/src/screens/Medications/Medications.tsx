@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useMedications } from '../../hooks/useMedications';
 import { useCourses, useReminders } from '../../hooks';
+import { MedicationCourse } from '../../types';
 import { MedicationsScreenNavigationProp, MedicationFormData } from './types';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -23,7 +24,7 @@ const Medications: React.FC = () => {
   const navigation = useNavigation<MedicationsScreenNavigationProp>();
   const { medications, createMedication, updateMedication, removeMedication } = useMedications();
   const { courses, removeCourse } = useCourses();
-  const { deleteByCourse } = useReminders();
+  const { reminders, deleteByCourse } = useReminders();
 
   const [form, setForm] = useState<MedicationFormData>({ name: '', dosage: '' });
 
@@ -50,10 +51,24 @@ const Medications: React.FC = () => {
   };
 
   const today = new Date().toISOString().slice(0, 10);
-  const activeCourses = courses.filter(
-    c => c.startDate <= today && c.endDate >= today,
-  );
-  const finishedCourses = courses.filter(c => c.endDate < today);
+
+  const getCourseProgress = (id: number) => {
+    const courseReminders = reminders.filter(r => r.courseId === id);
+    const done = courseReminders.filter(r => r.status !== 'pending').length;
+    return { done, total: courseReminders.length };
+  };
+
+  const activeCourses = courses.filter(c => {
+    const { done, total } = getCourseProgress(c.id);
+    const completed = total > 0 && done >= total;
+    return !completed && c.startDate <= today && c.endDate >= today;
+  });
+
+  const finishedCourses = courses.filter(c => {
+    const { done, total } = getCourseProgress(c.id);
+    const completed = total > 0 && done >= total;
+    return completed || c.endDate < today;
+  });
 
   const stopCourse = async (id: number) => {
     await removeCourse(id);
@@ -61,6 +76,13 @@ const Medications: React.FC = () => {
     navigation.navigate('Главная', {
       screen: 'Main',
       params: { forceRefresh: Date.now() },
+    });
+  };
+
+  const repeatCourse = (course: MedicationCourse) => {
+    navigation.navigate('Главная', {
+      screen: 'ReminderAdd',
+      params: { course },
     });
   };
 
@@ -83,29 +105,44 @@ const Medications: React.FC = () => {
         {activeCourses.length > 0 && (
           <Text style={styles.sectionTitle}>Активные</Text>
         )}
-        {activeCourses.map(c => (
-          <View key={c.id} style={styles.courseItem}>
-            <Text style={styles.courseTitle}>{c.name}</Text>
-            <Text style={styles.courseSubtitle}>
-              {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
-            </Text>
-            <TouchableOpacity onPress={() => stopCourse(c.id)}>
-              <Text style={{ color: '#FF3B30', marginTop: 4 }}>Остановить</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+        {activeCourses.map(c => {
+          const { done, total } = getCourseProgress(c.id);
+          return (
+            <View key={c.id} style={styles.courseItem}>
+              <Text style={styles.courseTitle}>{c.name}</Text>
+              <Text style={styles.courseSubtitle}>
+                {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
+              </Text>
+              <Text style={styles.courseProgress}>
+                {done}/{total} выполнено
+              </Text>
+              <TouchableOpacity onPress={() => stopCourse(c.id)}>
+                <Text style={{ color: '#FF3B30', marginTop: 4 }}>Остановить</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
 
         {finishedCourses.length > 0 && (
           <Text style={styles.sectionTitle}>Завершенные</Text>
         )}
-        {finishedCourses.map(c => (
-          <View key={c.id} style={styles.courseItem}>
-            <Text style={styles.courseTitle}>{c.name}</Text>
-            <Text style={styles.courseSubtitle}>
-              {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
-            </Text>
-          </View>
-        ))}
+        {finishedCourses.map(c => {
+          const { done, total } = getCourseProgress(c.id);
+          return (
+            <View key={c.id} style={styles.courseItem}>
+              <Text style={styles.courseTitle}>{c.name}</Text>
+              <Text style={styles.courseSubtitle}>
+                {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
+              </Text>
+              <Text style={styles.courseProgress}>
+                {done}/{total} выполнено
+              </Text>
+              <TouchableOpacity onPress={() => repeatCourse(c)}>
+                <Text style={{ color: '#007AFF', marginTop: 4 }}>Повторить</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
 
         <Text style={styles.sectionTitle}>Список лекарств</Text>
         {medications.map(m => (

@@ -77,4 +77,9 @@ export const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
   },
+  courseProgress: {
+    color: '#ccc',
+    marginTop: 4,
+    fontSize: 14,
+  },
 });

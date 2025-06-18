@@ -16,6 +16,7 @@ export type RootStackParamList = {
   ReminderAdd: {
     selectedDate?: string;
     mainKey?: string;
+    course?: import('../types').MedicationCourse;
   };
   Profile: undefined;
   Medications: undefined;
