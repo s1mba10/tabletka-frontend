@@ -86,6 +86,11 @@ const Medications: React.FC = () => {
     });
   };
 
+  const deleteCourse = async (id: number) => {
+    await removeCourse(id);
+    await deleteByCourse(id);
+  };
+
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -137,9 +142,20 @@ const Medications: React.FC = () => {
               <Text style={styles.courseProgress}>
                 {done}/{total} выполнено
               </Text>
-              <TouchableOpacity onPress={() => repeatCourse(c)}>
-                <Text style={{ color: '#007AFF', marginTop: 4 }}>Повторить</Text>
-              </TouchableOpacity>
+              <View style={styles.courseActions}>
+                <TouchableOpacity
+                  style={styles.courseButton}
+                  onPress={() => repeatCourse(c)}
+                >
+                  <Text style={{ color: '#007AFF' }}>Repeat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.courseButton}
+                  onPress={() => deleteCourse(c.id)}
+                >
+                  <Text style={{ color: '#FF3B30' }}>Удалить</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           );
         })}

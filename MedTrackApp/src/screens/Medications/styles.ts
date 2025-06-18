@@ -82,4 +82,11 @@ export const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
   },
+  courseActions: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  courseButton: {
+    paddingHorizontal: 8,
+  },
 });
