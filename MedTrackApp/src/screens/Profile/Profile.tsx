@@ -224,14 +224,7 @@ const Profile: React.FC = () => {
     <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {user.full_name.split(' ').map(name => name[0]).join('').toUpperCase()}
-            </Text>
-          </View>
-          <Text style={styles.nameText}>{user.full_name}</Text>
-        </View>
+
 
 
 

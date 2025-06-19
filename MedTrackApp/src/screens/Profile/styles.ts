@@ -9,29 +9,6 @@ export const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 20,
   },
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  avatarText: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  nameText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
   infoSection: {
     backgroundColor: '#1E1E1E',
     borderRadius: 10,

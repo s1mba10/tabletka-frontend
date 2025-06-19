@@ -49,9 +49,9 @@ const AppNavigator: React.FC = () => {
           options={{ tabBarIcon: ({ color }) => <Icon name="medical-bag" size={30} color={color} /> }}
         />
         <Tab.Screen
-          name="Профиль"
+          name="Статистика"
           component={ProfileStack}
-          options={{ tabBarIcon: ({ color }) => <Icon name="account" size={30} color={color} /> }}
+          options={{ tabBarIcon: ({ color }) => <Icon name="equalizer" size={30} color={color} /> }}
         />
       </Tab.Navigator>
     </NavigationContainer>
