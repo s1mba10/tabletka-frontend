@@ -444,7 +444,16 @@ const ReminderAdd: React.FC = () => {
           </View>
         )}
 
-        {repeat !== 'once' && (
+        {repeat === 'once' ? (
+          <View style={styles.dateRow}>
+            <View style={styles.dateField}>
+              <Text style={styles.label}>Дата</Text>
+              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
           <View style={styles.dateRow}>
             <View style={[styles.dateField, { marginRight: 10 }]}>
               <Text style={styles.label}>Начало</Text>
