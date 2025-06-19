@@ -1,6 +1,6 @@
 # Here is plans for app
 
-- If medication course was last one day we should allow user which day to plan it. I am thinking about adding to ReminderAdd screen if один раз is selected to choose in one date picker (as when we choose other options except один раз) what day to schedule it to by default today.
+- Add dynamic island with timer progress bar when it is time to take reminder. 
 - Either remove profile photo or add opportunity to add it. Same with the name.
 - Find out why vscode is highlighting lines under @ts-ignore in files ReminderEdit.tsx and ReminderAdd.tsx.
 - Add changing weeks by swiping screen where weeks are as in Mirea app. And add changing days on other part of screen where scheduled reminders are. So I can change weeks not only with arrows and days not only by tapping on the day.
@@ -17,3 +17,4 @@ BACKLOG
 - ~~Start and stop when we create reminder should be visible only if we choose to repeat for many days. If not - by default for one day (selected day).~~
 - ~~When I press Остановить my active course, all reminders of this course should be deleted.~~
 - ~~Fix problematic navigation with main screen~~
+- ~~If medication course was last one day we should allow user which day to plan it. I am thinking about adding to ReminderAdd screen if один раз is selected to choose in one date picker (as when we choose other options except один раз) what day to schedule it to by default today.~~
