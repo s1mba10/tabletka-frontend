@@ -44,10 +44,28 @@ struct MedicationLiveActivity: Widget {
 
 @available(iOS 16.1, *)
 struct MedicationLiveActivity_Previews: PreviewProvider {
+    static let attributes = MedicationActivityAttributes(
+        medicationName: "Aspirin",
+        startDate: Date()
+    )
+
+    static let state = MedicationActivityAttributes.ContentState(
+        progress: 0.5,
+        endDate: Date().addingTimeInterval(60 * 15)
+    )
+
     static var previews: some View {
         if #available(iOS 17.0, *) {
             MedicationLiveActivity()
-                .previewContext(WidgetPreviewContext(family: .systemMedium))
+                .previewDisplayName("Dynamic Island")
+                .previewContext(
+                    ActivityPreviewContext(
+                        attributes: attributes,
+                        contentState: state
+                    )
+                )
+        } else {
+            Text("Live Activity previews require iOS 17")
         }
     }
 }
