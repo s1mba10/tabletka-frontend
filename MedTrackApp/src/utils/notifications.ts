@@ -26,7 +26,10 @@ export async function reminderNotification({ title, body, date }: ReminderNotifi
       {
         title,
         body,
-        android: { channelId },
+        android: {
+          channelId,
+          smallIcon: 'ic_launcher',
+        },
       },
       trigger,
     );
