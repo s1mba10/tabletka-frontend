@@ -1,5 +1,4 @@
 import { NavigationProp } from '@react-navigation/native';
-import { Medication } from '../../types';
 
 export type MedicationsScreenNavigationProp = NavigationProp<any>;
 
