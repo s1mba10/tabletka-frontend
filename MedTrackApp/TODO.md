@@ -1,6 +1,7 @@
 # Here is plans for app
 
 - Add dynamic island with timer progress bar when it is time to take reminder. 
+- Checking that field medication name is not empty
 - Either remove profile photo or add opportunity to add it. Same with the name.
 - Find out why vscode is highlighting lines under @ts-ignore in files ReminderEdit.tsx and ReminderAdd.tsx.
 - Add changing weeks by swiping screen where weeks are as in Mirea app. And add changing days on other part of screen where scheduled reminders are. So I can change weeks not only with arrows and days not only by tapping on the day.
