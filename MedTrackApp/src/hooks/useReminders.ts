@@ -7,6 +7,7 @@ export const useReminders = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // memoize so useEffect below doesn't trigger on every render
   const fetchReminders = useCallback(async () => {
     setLoading(true);
     try {
