@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Reminder, ReminderStatus } from '../types';
 import { reminderNotification } from '../utils/notifications';
@@ -7,7 +7,7 @@ export const useReminders = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchReminders = async () => {
+  const fetchReminders = useCallback(async () => {
     setLoading(true);
     try {
       const stored = await AsyncStorage.getItem('reminders');
@@ -17,7 +17,7 @@ export const useReminders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const saveReminders = async (items: Reminder[]) => {
     setReminders(items);
@@ -60,7 +60,7 @@ export const useReminders = () => {
 
   useEffect(() => {
     fetchReminders();
-  }, []);
+  }, [fetchReminders]);
 
   return {
     reminders,
