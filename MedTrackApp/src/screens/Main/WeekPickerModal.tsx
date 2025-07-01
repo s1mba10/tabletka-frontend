@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Modal from 'react-native-modal';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { getISOWeeksInYear } from 'date-fns';
 
@@ -51,65 +50,73 @@ const WeekPickerModal: React.FC<Props> = ({
   };
 
   return (
-    <Modal
-      isVisible={visible}
-      swipeDirection="down"
-      onSwipeComplete={onClose}
-      onBackdropPress={onClose}
-      style={styles.modal}
-      propagateSwipe
-    >
-      <View style={styles.content}>
-        <Text style={styles.title}>Выберите год и неделю</Text>
-        <View style={styles.pickerRow}>
-          <Picker
-            selectedValue={year}
-            style={styles.picker}
-            onValueChange={(v) => setYear(v)}
-            itemStyle={styles.pickerItem}
-          >
-            {yearOptions}
-          </Picker>
-          <Picker
-            selectedValue={week}
-            style={styles.picker}
-            onValueChange={(v) => setWeek(v)}
-            itemStyle={styles.pickerItem}
-          >
-            {weekOptions}
-          </Picker>
+    <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={onClose} accessibilityRole="button">
+                  <Text style={styles.cancelButton}>Отмена</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Выберите год и неделю</Text>
+                <TouchableOpacity onPress={confirm} accessibilityRole="button">
+                  <Text style={styles.doneButton}>Выбрать</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.pickerRow}>
+                <Picker
+                  selectedValue={year}
+                  style={styles.picker}
+                  onValueChange={(v) => setYear(v)}
+                  itemStyle={styles.pickerItem}
+                >
+                  {yearOptions}
+                </Picker>
+                <Picker
+                  selectedValue={week}
+                  style={styles.picker}
+                  onValueChange={(v) => setWeek(v)}
+                  itemStyle={styles.pickerItem}
+                >
+                  {weekOptions}
+                </Picker>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity accessibilityRole="button" onPress={onClose} style={styles.cancelButton}>
-            <Text style={styles.cancelText}>Отмена</Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" onPress={confirm} style={styles.confirmButton}>
-            <Text style={styles.confirmText}>Выбрать</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modal: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
-    margin: 0,
   },
-  content: {
-    backgroundColor: '#1E1E1E',
+  modalContent: {
+    backgroundColor: '#2C2C2C',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 20,
-    paddingTop: 20,
+    alignItems: 'center',
   },
-  title: {
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3A3A3A',
+    width: '100%',
+  },
+  modalTitle: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
   },
   pickerRow: {
     flexDirection: 'row',
@@ -121,30 +128,16 @@ const styles = StyleSheet.create({
   pickerItem: {
     color: 'white',
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    paddingHorizontal: 20,
-  },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  confirmButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-  },
-  cancelText: {
     color: '#FF3B30',
     fontSize: 16,
+    paddingRight: 8,
   },
-  confirmText: {
-    color: 'white',
+  doneButton: {
+    color: '#007AFF',
     fontSize: 16,
     fontWeight: 'bold',
+    paddingLeft: 8,
   },
 });
 
