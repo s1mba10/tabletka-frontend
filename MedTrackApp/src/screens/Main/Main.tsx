@@ -1,7 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { format, addWeeks, getISOWeek } from 'date-fns';
+import {
+  format,
+  addWeeks,
+  getISOWeek,
+  setISOWeek,
+  setISOWeekYear,
+  startOfISOWeek,
+  differenceInCalendarISOWeeks,
+} from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
 
 import { styles } from './styles';
+import WeekPickerModal from './WeekPickerModal';
 import { NavigationProp } from './types';
 import { RootStackParamList } from '../../navigation';
 import { Reminder } from '../../types';
@@ -37,9 +46,18 @@ const Main: React.FC = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+
+  const handleWeekSelect = (year: number, week: number) => {
+    const target = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
+    const offset = differenceInCalendarISOWeeks(target, startOfISOWeek(new Date()));
+    setWeekOffset(offset);
+    setSelectedDate(format(target, 'yyyy-MM-dd'));
+    setPickerVisible(false);
+  };
 
   // Load reminders from storage on component mount
   useEffect(() => {
@@ -297,15 +315,20 @@ const Main: React.FC = () => {
         
         {/* Week Navigation */}
         <View style={styles.weekHeader}>
-          <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton}>
+          <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton} accessibilityRole="button">
             <Icon name="chevron-left" size={30} color="white" />
           </TouchableOpacity>
-          <Text style={styles.weekText}>
-            {format(addWeeks(new Date(), weekOffset), 'LLLL yyyy', { locale: ru }).charAt(0).toUpperCase() +
-              format(addWeeks(new Date(), weekOffset), 'LLLL yyyy ', { locale: ru }).slice(1)}
-            • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
-          </Text>
-          <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={() => setPickerVisible(true)}
+          >
+            <Text style={styles.weekText}>
+              {format(addWeeks(new Date(), weekOffset), 'LLLL yyyy', { locale: ru }).charAt(0).toUpperCase() +
+                format(addWeeks(new Date(), weekOffset), 'LLLL yyyy ', { locale: ru }).slice(1)}
+              • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton} accessibilityRole="button">
             <Icon name="chevron-right" size={30} color="white" />
           </TouchableOpacity>
         </View>
@@ -371,6 +394,13 @@ const Main: React.FC = () => {
         >
           <Icon name="plus" size={30} color="white" />
         </TouchableOpacity>
+        <WeekPickerModal
+          visible={pickerVisible}
+          onClose={() => setPickerVisible(false)}
+          onSelect={handleWeekSelect}
+          initialYear={Number(format(addWeeks(new Date(), weekOffset), 'yyyy'))}
+          initialWeek={getISOWeek(addWeeks(new Date(), weekOffset))}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );
