@@ -36,7 +36,7 @@ export function useCountdown(target: Date | null, active: boolean, onExpire?: ()
     intervalRef.current = setInterval(update, 1000);
 
     return () => clearInterval(intervalRef.current);
-  }, [target, active]);
+  }, [target, active, onExpire]);
 
   const minutes = Math.floor(remaining / 60)
     .toString()

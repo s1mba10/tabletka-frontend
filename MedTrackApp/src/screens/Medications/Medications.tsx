@@ -8,6 +8,8 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -29,10 +31,11 @@ const Medications: React.FC = () => {
   useFocusEffect(
     React.useCallback(() => {
       fetchReminders();
-    }, []),
+    }, [fetchReminders]),
   );
 
   const [form, setForm] = useState<MedicationFormData>({ name: '', dosage: '' });
+  const [modalVisible, setModalVisible] = useState(false);
 
   const formatDate = (iso: string) =>
     format(new Date(iso), 'd MMMM', { locale: ru });
@@ -41,13 +44,24 @@ const Medications: React.FC = () => {
     const med = medications.find(m => m.id === id);
     if (med) {
       setForm({ id: med.id, name: med.name, dosage: med.dosage });
+      setModalVisible(true);
     }
   };
 
-  const clearForm = () => setForm({ name: '', dosage: '' });
+  const startAdd = () => {
+    setForm({ name: '', dosage: '' });
+    setModalVisible(true);
+  };
+
+  const clearForm = () => {
+    setForm({ name: '', dosage: '' });
+    setModalVisible(false);
+  };
 
   const save = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      return;
+    }
     if (form.id) {
       await updateMedication(form.id, { name: form.name, dosage: form.dosage });
     } else {
@@ -104,6 +118,7 @@ const Medications: React.FC = () => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+      <View style={styles.content}>
       <View style={styles.header}>
         {navigation.canGoBack() && (
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -201,31 +216,51 @@ const Medications: React.FC = () => {
           </View>
         ))}
 
-        <TextInput
-          placeholder="Название"
-          placeholderTextColor="#666"
-          style={styles.input}
-          value={form.name}
-          onChangeText={name => setForm(prev => ({ ...prev, name }))}
-        />
-        <TextInput
-          placeholder="Дозировка"
-          placeholderTextColor="#666"
-          style={styles.input}
-          value={form.dosage}
-          onChangeText={dosage => setForm(prev => ({ ...prev, dosage }))}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={save}>
-          <Text style={styles.addButtonText}>
-            {form.id ? 'Сохранить' : 'Добавить'}
-          </Text>
+        <TouchableOpacity style={styles.addButton} onPress={startAdd}>
+          <Text style={styles.addButtonText}>Добавить</Text>
         </TouchableOpacity>
-        {form.id && (
-          <TouchableOpacity style={styles.addButton} onPress={clearForm}>
-            <Text style={styles.addButtonText}>Отмена</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
+      </View>
+      <TouchableOpacity style={styles.fab} onPress={startAdd}>
+        <Icon name="plus" size={30} color="white" />
+      </TouchableOpacity>
+      <Modal transparent animationType="slide" visible={modalVisible}>
+        <TouchableWithoutFeedback onPress={clearForm}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>
+                  {form.id ? 'Редактировать' : 'Добавить'} лекарство
+                </Text>
+                <TextInput
+                  placeholder="Название"
+                  placeholderTextColor="#666"
+                  style={styles.input}
+                  value={form.name}
+                  onChangeText={name => setForm(prev => ({ ...prev, name }))}
+                />
+                <TextInput
+                  placeholder="Дозировка"
+                  placeholderTextColor="#666"
+                  style={styles.input}
+                  value={form.dosage}
+                  onChangeText={dosage => setForm(prev => ({ ...prev, dosage }))}
+                />
+                <TouchableOpacity style={styles.addButton} onPress={save}>
+                  <Text style={styles.addButtonText}>
+                    {form.id ? 'Сохранить' : 'Добавить'}
+                  </Text>
+                </TouchableOpacity>
+                {form.id && (
+                  <TouchableOpacity style={styles.addButton} onPress={clearForm}>
+                    <Text style={styles.addButtonText}>Отмена</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
