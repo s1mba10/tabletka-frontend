@@ -113,6 +113,44 @@ const ReminderEdit: React.FC = () => {
     }
   };
 
+  const deleteReminder = async () => {
+    try {
+      const storedRemindersJson = await AsyncStorage.getItem('reminders');
+      if (storedRemindersJson) {
+        const storedReminders: Reminder[] = JSON.parse(storedRemindersJson);
+        const updatedReminders = storedReminders.filter(r => r.id !== reminder.id);
+        await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));
+      }
+
+      if (mainKey) {
+        navigation.goBack();
+        // @ts-ignore
+        navigation.navigate({
+          name: 'Main',
+          key: mainKey,
+          params: {
+            forceRefresh: Date.now(),
+          },
+          merge: true,
+        });
+      } else {
+        navigation.navigate('Main', { forceRefresh: Date.now() });
+      }
+
+      Alert.alert('Удалено', 'Напоминание успешно удалено!');
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      Alert.alert('Ошибка', 'Не удалось удалить напоминание');
+    }
+  };
+
+  const confirmDelete = () => {
+    Alert.alert('Удалить напоминание', 'Вы уверены, что хотите удалить это напоминание?', [
+      { text: 'Отмена', style: 'cancel' },
+      { text: 'Удалить', style: 'destructive', onPress: deleteReminder },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -172,6 +210,9 @@ const ReminderEdit: React.FC = () => {
 
       <TouchableOpacity onPress={saveReminder} style={styles.saveButton}>
         <Text style={styles.buttonText}>Сохранить</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={confirmDelete} style={styles.deleteButton}>
+        <Text style={styles.buttonText}>Удалить напоминание</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
