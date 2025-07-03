@@ -29,7 +29,7 @@ import { useCountdown } from '../../hooks';
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
   return items.map((r) => {
-    if (r.status === 'taken') {
+    if (r.status === 'taken' || r.status === 'missed') {
       return r;
     }
     const due = new Date(`${r.date}T${r.time}`);
@@ -255,7 +255,13 @@ const Main: React.FC = () => {
         friction={2}
         overshootRight={false}
       >
-        <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
+        <View
+          style={[
+            styles.reminderItem,
+            item.status === 'missed' && styles.missedItem,
+            { borderLeftColor: statusColors[item.status] },
+          ]}
+        >
           <TouchableWithoutFeedback
             onPress={() =>
               navigation.navigate('ReminderEdit', {
@@ -295,14 +301,21 @@ const Main: React.FC = () => {
             </View>
           </TouchableWithoutFeedback>
 
-          {item.status !== 'taken' && (
-            <TouchableOpacity
-              onPress={() => markAsTaken(item)}
-              style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
-            >
-              <Text style={styles.buttonText}>Принять</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={() =>
+              item.status === 'taken'
+                ? markAsMissed(item.id)
+                : markAsTaken(item)
+            }
+            style={[
+              styles.takeButton,
+              { backgroundColor: statusColors[item.status] },
+            ]}
+          >
+            <Text style={styles.buttonText}>
+              {item.status === 'taken' ? 'Пропустить' : 'Принять'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </Swipeable>
     );

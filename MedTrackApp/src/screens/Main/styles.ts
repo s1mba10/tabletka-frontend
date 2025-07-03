@@ -83,6 +83,9 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     borderLeftWidth: 6,
   },
+  missedItem: {
+    backgroundColor: '#330000',
+  },
   reminderContent: {
     flex: 1,
     flexDirection: 'row',
