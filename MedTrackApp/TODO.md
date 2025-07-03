@@ -1,5 +1,5 @@
 # Here is plans for app
-
+- Full Calendar Picker for selecting dates to schedule. And full calendar when tapping on week and year date to select where to go. 
 - Add dynamic island with timer progress bar when it is time to take reminder. 
 - Checking that field medication name is not empty
 - Either remove profile photo or add opportunity to add it. Same with the name.
