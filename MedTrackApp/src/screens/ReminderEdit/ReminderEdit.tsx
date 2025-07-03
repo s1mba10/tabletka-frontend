@@ -159,7 +159,13 @@ const ReminderEdit: React.FC = () => {
       <TextInput style={styles.input} value={name} onChangeText={setName} />
 
       <Text style={styles.label}>Дозировка</Text>
-      <TextInput style={styles.input} value={dosage} onChangeText={setDosage} />
+      <TextInput
+        style={styles.input}
+        value={dosage}
+        keyboardType="decimal-pad"
+        inputMode="decimal"
+        onChangeText={(text) => setDosage(text.replace(/[^0-9,]/g, ''))}
+      />
 
       <Text style={styles.label}>Время</Text>
       <TouchableOpacity onPress={openTimePicker} style={styles.timePickerButton}>

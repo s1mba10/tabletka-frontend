@@ -433,7 +433,9 @@ const ReminderAdd: React.FC = () => {
         <TextInput
           style={styles.input}
           value={dosage}
-          onChangeText={setDosage}
+          keyboardType="decimal-pad"
+          inputMode="decimal"
+          onChangeText={(text) => setDosage(text.replace(/[^0-9,]/g, ''))}
           placeholder="Например: 1 таблетка, 5мл"
           placeholderTextColor="#666"
         />
