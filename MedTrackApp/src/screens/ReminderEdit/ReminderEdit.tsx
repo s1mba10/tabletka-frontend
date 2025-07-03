@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Reminder } from '../../types';
+import { useCourses } from '../../hooks';
 
 import { styles } from './styles';
 import { EditReminderScreenNavigationProp, EditReminderScreenRouteProp } from './types';
@@ -25,6 +26,7 @@ const ReminderEdit: React.FC = () => {
   const navigation = useNavigation<EditReminderScreenNavigationProp>();
   const route = useRoute<EditReminderScreenRouteProp>();
   const { reminder, mainKey } = route.params;
+  const { removeCourse } = useCourses();
 
   const [name, setName] = useState(reminder.name);
   const [dosage, setDosage] = useState(reminder.dosage);
@@ -116,10 +118,18 @@ const ReminderEdit: React.FC = () => {
   const deleteReminder = async () => {
     try {
       const storedRemindersJson = await AsyncStorage.getItem('reminders');
+      let updatedReminders: Reminder[] = [];
       if (storedRemindersJson) {
         const storedReminders: Reminder[] = JSON.parse(storedRemindersJson);
-        const updatedReminders = storedReminders.filter(r => r.id !== reminder.id);
+        updatedReminders = storedReminders.filter(r => r.id !== reminder.id);
         await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));
+      }
+
+      if (reminder.courseId) {
+        const exists = updatedReminders.some(r => r.courseId === reminder.courseId);
+        if (!exists) {
+          await removeCourse(reminder.courseId);
+        }
       }
 
       if (mainKey) {

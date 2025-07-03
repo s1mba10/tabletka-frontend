@@ -24,7 +24,7 @@ import { RootStackParamList } from '../../navigation';
 import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { statusColors, typeIcons } from './constants';
-import { useCountdown } from '../../hooks';
+import { useCountdown, useCourses } from '../../hooks';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -42,6 +42,7 @@ const applyStatusRules = (items: Reminder[]): Reminder[] => {
 const Main: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
+  const { removeCourse } = useCourses();
   
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -186,16 +187,21 @@ const Main: React.FC = () => {
       text: 'Удалить',
       onPress: async () => {
         try {
-          // Close the swipeable row
           const swipeable = rowRefs.current.get(id);
           swipeable?.close();
 
-          // Remove the reminder from state
+          const reminder = reminders.find(item => item.id === id);
           const updatedReminders = reminders.filter(item => item.id !== id);
           setReminders(applyStatusRules(updatedReminders));
 
-          // Update AsyncStorage with the filtered reminders
           await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));
+
+          if (reminder?.courseId) {
+            const exists = updatedReminders.some(r => r.courseId === reminder.courseId);
+            if (!exists) {
+              await removeCourse(reminder.courseId);
+            }
+          }
         } catch (error) {
           console.error('Failed to delete reminder:', error);
           Alert.alert('Ошибка', 'Не удалось удалить напоминание');
