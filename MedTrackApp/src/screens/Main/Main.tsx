@@ -258,7 +258,6 @@ const Main: React.FC = () => {
         <View
           style={[
             styles.reminderItem,
-            item.status === 'missed' && styles.missedItem,
             { borderLeftColor: statusColors[item.status] },
           ]}
         >
