@@ -237,7 +237,7 @@ const Medications: React.FC = () => {
                   placeholderTextColor="#666"
                   style={styles.input}
                   value={form.name}
-                  maxLength={50}
+                  maxLength={35}
                   onChangeText={name => setForm(prev => ({ ...prev, name }))}
                 />
                 <TextInput

@@ -421,7 +421,7 @@ const ReminderAdd: React.FC = () => {
           style={styles.input}
           value={name}
           onChangeText={setName}
-          maxLength={50}
+          maxLength={35}
           placeholder="Название лекарства"
           placeholderTextColor="#666"
         />
