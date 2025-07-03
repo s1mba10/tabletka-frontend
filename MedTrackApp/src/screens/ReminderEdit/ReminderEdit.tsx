@@ -156,7 +156,12 @@ const ReminderEdit: React.FC = () => {
       <StatusBar barStyle="light-content" />
 
       <Text style={styles.label}>Название</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} />
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        maxLength={50}
+      />
 
       <Text style={styles.label}>Дозировка</Text>
       <TextInput
@@ -164,7 +169,12 @@ const ReminderEdit: React.FC = () => {
         value={dosage}
         keyboardType="decimal-pad"
         inputMode="decimal"
-        onChangeText={(text) => setDosage(text.replace(/[^0-9,]/g, ''))}
+        maxLength={7}
+        onChangeText={(text) => {
+          let sanitized = text.replace(/[^0-9,]/g, '').replace(/^,/, '');
+          sanitized = sanitized.replace(/,(?=.*,)/g, '');
+          setDosage(sanitized);
+        }}
       />
 
       <Text style={styles.label}>Время</Text>

@@ -421,6 +421,7 @@ const ReminderAdd: React.FC = () => {
           style={styles.input}
           value={name}
           onChangeText={setName}
+          maxLength={50}
           placeholder="Название лекарства"
           placeholderTextColor="#666"
         />
@@ -435,8 +436,13 @@ const ReminderAdd: React.FC = () => {
           value={dosage}
           keyboardType="decimal-pad"
           inputMode="decimal"
-          onChangeText={(text) => setDosage(text.replace(/[^0-9,]/g, ''))}
-          placeholder="Например: 1 таблетка, 5мл"
+          maxLength={7}
+          onChangeText={(text) => {
+            let sanitized = text.replace(/[^0-9,]/g, '').replace(/^,/, '');
+            sanitized = sanitized.replace(/,(?=.*,)/g, '');
+            setDosage(sanitized);
+          }}
+          placeholder="Например: 1"
           placeholderTextColor="#666"
         />
 
