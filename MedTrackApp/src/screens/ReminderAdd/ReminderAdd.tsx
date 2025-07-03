@@ -231,6 +231,10 @@ const ReminderAdd: React.FC = () => {
     return false;
   };
 
+  useEffect(() => {
+    setWeekdays((prev) => prev.filter((d) => isWeekdayInRange(d)));
+  }, [startDate, endDate]);
+
   const handleWeekdayPress = (day: number) => {
     if (!isWeekdayInRange(day)) {
       Alert.alert('Недоступно', 'Этот день не входит в выбранный период');
