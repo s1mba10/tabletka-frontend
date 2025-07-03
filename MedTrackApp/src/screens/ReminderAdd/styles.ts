@@ -151,6 +151,9 @@ export const styles = StyleSheet.create({
     borderColor: '#007AFF',
     borderWidth: 1,
   },
+  weekdayDisabled: {
+    opacity: 0.4,
+  },
   saveButton: {
     backgroundColor: '#007AFF',
     padding: 12,

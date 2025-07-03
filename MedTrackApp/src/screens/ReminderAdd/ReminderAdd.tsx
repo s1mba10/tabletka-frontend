@@ -222,6 +222,23 @@ const ReminderAdd: React.FC = () => {
     setWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
+  const isWeekdayInRange = (day: number) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() === day) return true;
+    }
+    return false;
+  };
+
+  const handleWeekdayPress = (day: number) => {
+    if (!isWeekdayInRange(day)) {
+      Alert.alert('Недоступно', 'Этот день не входит в выбранный период');
+      return;
+    }
+    toggleWeekday(day);
+  };
+
   const generateSchedule = () => {
     const dates: string[] = [];
     const start = new Date(startDate);
@@ -432,15 +449,22 @@ const ReminderAdd: React.FC = () => {
         </View>
         {repeat === 'weekdays' && (
           <View style={styles.repeatRow}>
-            {weekDaysOrder.map((day) => (
-              <TouchableOpacity
-                key={day.value}
-                style={[styles.weekdayOption, weekdays.includes(day.value) && styles.weekdaySelected]}
-                onPress={() => toggleWeekday(day.value)}
-              >
-                <Text style={{ color: 'white' }}>{day.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {weekDaysOrder.map((day) => {
+              const disabled = !isWeekdayInRange(day.value);
+              return (
+                <TouchableOpacity
+                  key={day.value}
+                  style={[
+                    styles.weekdayOption,
+                    weekdays.includes(day.value) && styles.weekdaySelected,
+                    disabled && styles.weekdayDisabled,
+                  ]}
+                  onPress={() => handleWeekdayPress(day.value)}
+                >
+                  <Text style={{ color: 'white' }}>{day.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
