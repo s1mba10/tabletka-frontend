@@ -289,6 +289,10 @@ const ReminderAdd: React.FC = () => {
     }
 
     const dates = generateSchedule();
+    if (dates.length === 0) {
+      Alert.alert('Ошибка', 'Пожалуйста, выберите даты принятия препарата.');
+      return;
+    }
     const courseId = Date.now();
     const newReminders: Reminder[] = [];
     dates.forEach((date) => {
