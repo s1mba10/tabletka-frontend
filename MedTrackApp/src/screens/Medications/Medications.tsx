@@ -193,8 +193,14 @@ const Medications: React.FC = () => {
         <Text style={styles.sectionTitle}>Список лекарств</Text>
         {medications.map(m => (
           <View key={m.id} style={styles.listItem}>
-            <View>
-              <Text style={styles.listText}>{m.name}</Text>
+            <View style={styles.listInfo}>
+              <Text
+                style={styles.listText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {m.name}
+              </Text>
               {!!m.dosage && (
                 <Text style={styles.listText}>{m.dosage}</Text>
               )}

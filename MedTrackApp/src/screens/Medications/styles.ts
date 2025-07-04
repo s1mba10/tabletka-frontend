@@ -37,6 +37,10 @@ export const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 8,
   },
+  listInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
   listText: {
     color: 'white',
     fontSize: 16,
