@@ -251,14 +251,11 @@ const Medications: React.FC = () => {
                   placeholderTextColor="#666"
                   style={styles.input}
                   value={form.dosage}
-                  keyboardType="decimal-pad"
-                  inputMode="decimal"
-                  maxLength={7}
-                  onChangeText={text => {
-                    let sanitized = text.replace(/[^0-9,]/g, '').replace(/^,/, '');
-                    sanitized = sanitized.replace(/,(?=.*,)/g, '');
-                    setForm(prev => ({ ...prev, dosage: sanitized }));
-                  }}
+                  keyboardType="default"
+                  maxLength={35}
+                  onChangeText={dosage =>
+                    setForm(prev => ({ ...prev, dosage }))
+                  }
                 />
                 <TouchableOpacity style={styles.addButton} onPress={save}>
                   <Text style={styles.addButtonText}>
