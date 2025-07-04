@@ -446,6 +446,46 @@ const ReminderAdd: React.FC = () => {
           placeholderTextColor="#666"
         />
 
+        <Text style={styles.label}>Тип</Text>
+        <View style={styles.typeContainer}>
+          {typeOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={[styles.typeOption, type === option.value && styles.selectedType]}
+              onPress={() => setType(option.value)}
+            >
+              <Icon name={typeIcons[option.value]} size={24} color={type === option.value ? '#007AFF' : '#888'} />
+              <Text style={[styles.typeText, type === option.value && styles.selectedTypeText]}>{option.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {repeat === 'once' ? (
+          <View style={styles.dateRow}>
+            <View style={styles.dateField}>
+              <Text style={styles.label}>Дата</Text>
+              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.dateRow}>
+            <View style={[styles.dateField, { marginRight: 10 }]}>
+              <Text style={styles.label}>Начало</Text>
+              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.dateField}>
+              <Text style={styles.label}>Конец</Text>
+              <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
+                <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <Text style={styles.label}>Повторять</Text>
         <View style={styles.repeatRow}>
           {[
@@ -483,46 +523,6 @@ const ReminderAdd: React.FC = () => {
             })}
           </View>
         )}
-
-        {repeat === 'once' ? (
-          <View style={styles.dateRow}>
-            <View style={styles.dateField}>
-              <Text style={styles.label}>Дата</Text>
-              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
-                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.dateRow}>
-            <View style={[styles.dateField, { marginRight: 10 }]}>
-              <Text style={styles.label}>Начало</Text>
-              <TouchableOpacity onPress={openStartPicker} style={styles.addTimeButton}>
-                <Text style={styles.addTimeText}>{formatDisplayDate(startDate)}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.dateField}>
-              <Text style={styles.label}>Конец</Text>
-              <TouchableOpacity onPress={openEndPicker} style={styles.addTimeButton}>
-                <Text style={styles.addTimeText}>{formatDisplayDate(endDate)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        <Text style={styles.label}>Тип</Text>
-        <View style={styles.typeContainer}>
-          {typeOptions.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[styles.typeOption, type === option.value && styles.selectedType]}
-              onPress={() => setType(option.value)}
-            >
-              <Icon name={typeIcons[option.value]} size={24} color={type === option.value ? '#007AFF' : '#888'} />
-              <Text style={[styles.typeText, type === option.value && styles.selectedTypeText]}>{option.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
 
         <Text style={styles.label}>Время</Text>
         <View style={styles.timesList}>
