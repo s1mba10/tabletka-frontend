@@ -160,7 +160,7 @@ const Medications: React.FC = () => {
               style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.7}
+              minimumFontScale={0.5}
               ellipsizeMode="clip"
             >
               Активные
@@ -174,7 +174,7 @@ const Medications: React.FC = () => {
               style={[styles.tabText, activeTab === 'scheduled' && styles.activeTabText]}
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.7}
+              minimumFontScale={0.5}
               ellipsizeMode="clip"
             >
               Запланированные
@@ -188,7 +188,7 @@ const Medications: React.FC = () => {
               style={[styles.tabText, activeTab === 'finished' && styles.activeTabText]}
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.7}
+              minimumFontScale={0.5}
               ellipsizeMode="clip"
             >
               Завершенные

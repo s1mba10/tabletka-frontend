@@ -21,13 +21,16 @@ export const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   tabText: {
     color: '#888',
     fontSize: 18,
     textAlign: 'center',
+    flexShrink: 1,
   },
   activeTab: {
     borderBottomWidth: 2,
