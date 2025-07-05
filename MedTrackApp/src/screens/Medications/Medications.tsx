@@ -172,7 +172,7 @@ const Medications: React.FC = () => {
               adjustsFontSizeToFit
               minimumFontScale={0.6}
             >
-              Запланированные
+              Планы
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
