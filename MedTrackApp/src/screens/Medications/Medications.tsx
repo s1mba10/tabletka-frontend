@@ -129,6 +129,10 @@ const Medications: React.FC = () => {
   const deleteCourse = async (id: number) => {
     await removeCourse(id);
     await deleteByCourse(id);
+    navigation.navigate('Главная', {
+      screen: 'Main',
+      params: { forceRefresh: Date.now() },
+    });
   };
 
   return (
