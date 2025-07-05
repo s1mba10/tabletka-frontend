@@ -18,7 +18,7 @@ import { useMedications } from '../../hooks/useMedications';
 import { useCourses, useReminders } from '../../hooks';
 import { MedicationCourse } from '../../types';
 import { MedicationsScreenNavigationProp, MedicationFormData } from './types';
-import { format } from 'date-fns';
+import { format, addDays, differenceInCalendarDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { styles } from './styles';
 
@@ -72,6 +72,10 @@ const Medications: React.FC = () => {
 
   const today = new Date().toISOString().slice(0, 10);
 
+  const [activeTab, setActiveTab] = useState<'active' | 'scheduled' | 'finished'>(
+    'active',
+  );
+
   const getCourseProgress = (id: number) => {
     const courseReminders = reminders.filter(r => r.courseId === id);
     const done = courseReminders.filter(r => r.status !== 'pending').length;
@@ -82,6 +86,15 @@ const Medications: React.FC = () => {
     const { done, total } = getCourseProgress(c.id);
     const completed = total > 0 && done >= total;
     return !completed && c.startDate <= today && c.endDate >= today;
+  });
+
+  const scheduledCourses = courses.filter(c => {
+    const { done, total } = getCourseProgress(c.id);
+    const completed = total > 0 && done >= total;
+    const hasFutureReminder = reminders.some(
+      r => r.courseId === c.id && r.date >= today,
+    );
+    return !completed && c.startDate > today && hasFutureReminder;
   });
 
   const finishedCourses = courses.filter(c => {
@@ -100,9 +113,19 @@ const Medications: React.FC = () => {
   };
 
   const repeatCourse = (course: MedicationCourse) => {
+    const duration =
+      differenceInCalendarDays(new Date(course.endDate), new Date(course.startDate));
+    const newStart = new Date();
+    const newEnd = addDays(newStart, duration);
     navigation.navigate('Главная', {
       screen: 'ReminderAdd',
-      params: { course },
+      params: {
+        course: {
+          ...course,
+          startDate: format(newStart, 'yyyy-MM-dd'),
+          endDate: format(newEnd, 'yyyy-MM-dd'),
+        },
+      },
     });
   };
 
@@ -128,10 +151,53 @@ const Medications: React.FC = () => {
         <Text style={styles.headerTitle}>Лекарства</Text>
       </View>
       <ScrollView>
-        {activeCourses.length > 0 && (
-          <Text style={styles.sectionTitle}>Активные</Text>
-        )}
-        {activeCourses.map(c => {
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'active' && styles.activeTab]}
+            onPress={() => setActiveTab('active')}
+          >
+            <Text
+              style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              ellipsizeMode="clip"
+            >
+              Активные
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'scheduled' && styles.activeTab]}
+            onPress={() => setActiveTab('scheduled')}
+          >
+            <Text
+              style={[styles.tabText, activeTab === 'scheduled' && styles.activeTabText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              ellipsizeMode="clip"
+            >
+              Запланированные
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'finished' && styles.activeTab]}
+            onPress={() => setActiveTab('finished')}
+          >
+            <Text
+              style={[styles.tabText, activeTab === 'finished' && styles.activeTabText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              ellipsizeMode="clip"
+            >
+              Завершенные
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === 'active' &&
+          activeCourses.map(c => {
           const { done, total } = getCourseProgress(c.id);
           return (
             <View key={c.id} style={styles.courseItem}>
@@ -154,15 +220,39 @@ const Medications: React.FC = () => {
               </View>
             </View>
           );
-        })}
+          })}
 
-        {finishedCourses.length > 0 && (
-          <Text style={styles.sectionTitle}>Завершенные</Text>
-        )}
-        {finishedCourses.map(c => {
-          const { done, total } = getCourseProgress(c.id);
-          return (
-            <View key={c.id} style={styles.finishedCourseItem}>
+        {activeTab === 'scheduled' &&
+          scheduledCourses.map(c => {
+            const { done, total } = getCourseProgress(c.id);
+            return (
+              <View key={c.id} style={styles.courseItem}>
+                <View style={styles.courseInfo}>
+                  <Text style={styles.courseTitle}>{c.name}</Text>
+                  <Text style={styles.courseSubtitle}>
+                    {c.dosage} • с {formatDate(c.startDate)} по {formatDate(c.endDate)}
+                  </Text>
+                  <Text style={styles.courseProgress}>
+                    {done}/{total} выполнено
+                  </Text>
+                </View>
+                <View style={styles.courseActions}>
+                  <TouchableOpacity
+                    style={styles.courseButton}
+                    onPress={() => deleteCourse(c.id)}
+                  >
+                    <Icon name="delete" size={20} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })}
+
+        {activeTab === 'finished' &&
+          finishedCourses.map(c => {
+            const { done, total } = getCourseProgress(c.id);
+            return (
+              <View key={c.id} style={styles.finishedCourseItem}>
               <View style={styles.courseInfo}>
                 <Text style={styles.courseTitle}>{c.name}</Text>
                 <Text style={styles.courseSubtitle}>
@@ -188,7 +278,7 @@ const Medications: React.FC = () => {
               </View>
             </View>
           );
-        })}
+          })}
 
         <Text style={styles.sectionTitle}>Список лекарств</Text>
         {medications.map(m => (
