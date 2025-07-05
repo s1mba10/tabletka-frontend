@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MedicationCourse } from '../types';
+import { MedicationCourse, Reminder } from '../types';
 
 interface CoursesContextValue {
   courses: MedicationCourse[];
@@ -57,6 +57,26 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const removeCourse = async (id: number) => {
     const filtered = courses.filter(c => c.id !== id);
     await saveAll(filtered);
+
+    try {
+      const storedReminders = await AsyncStorage.getItem('reminders');
+      if (storedReminders) {
+        try {
+          const parsed = JSON.parse(storedReminders);
+          if (Array.isArray(parsed)) {
+            const updatedReminders = (parsed as Reminder[]).filter(
+              (r: Reminder) => r.courseId !== id,
+            );
+            await AsyncStorage.setItem(
+              'reminders',
+              JSON.stringify(updatedReminders),
+            );
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.error('Failed to remove reminders for course', id, e);
+    }
   };
 
   useEffect(() => {
