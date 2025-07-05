@@ -15,6 +15,31 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  tabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  tabText: {
+    color: '#888',
+    fontSize: 18,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#007AFF',
+  },
+  activeTabText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
