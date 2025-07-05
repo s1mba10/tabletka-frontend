@@ -156,7 +156,8 @@ const Medications: React.FC = () => {
             <Text
               style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}
               numberOfLines={1}
-              ellipsizeMode="clip"
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
             >
               Активные
             </Text>
@@ -168,9 +169,10 @@ const Medications: React.FC = () => {
             <Text
               style={[styles.tabText, activeTab === 'scheduled' && styles.activeTabText]}
               numberOfLines={1}
-              ellipsizeMode="clip"
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
             >
-              План
+              Запланированные
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -180,7 +182,8 @@ const Medications: React.FC = () => {
             <Text
               style={[styles.tabText, activeTab === 'finished' && styles.activeTabText]}
               numberOfLines={1}
-              ellipsizeMode="clip"
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
             >
               Завершенные
             </Text>
