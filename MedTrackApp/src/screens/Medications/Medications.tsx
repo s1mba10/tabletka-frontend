@@ -153,7 +153,13 @@ const Medications: React.FC = () => {
             style={[styles.tabButton, activeTab === 'active' && styles.activeTab]}
             onPress={() => setActiveTab('active')}
           >
-            <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Активные</Text>
+            <Text
+              style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}
+              numberOfLines={1}
+              ellipsizeMode="clip"
+            >
+              Активные
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'scheduled' && styles.activeTab]}
@@ -161,6 +167,8 @@ const Medications: React.FC = () => {
           >
             <Text
               style={[styles.tabText, activeTab === 'scheduled' && styles.activeTabText]}
+              numberOfLines={1}
+              ellipsizeMode="clip"
             >
               Запланированные
             </Text>
@@ -171,6 +179,8 @@ const Medications: React.FC = () => {
           >
             <Text
               style={[styles.tabText, activeTab === 'finished' && styles.activeTabText]}
+              numberOfLines={1}
+              ellipsizeMode="clip"
             >
               Завершенные
             </Text>

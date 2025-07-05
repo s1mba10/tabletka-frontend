@@ -26,6 +26,8 @@ export const styles = StyleSheet.create({
   },
   tabText: {
     color: '#888',
+    fontSize: 12,
+    flexShrink: 1,
   },
   activeTab: {
     borderBottomWidth: 2,
