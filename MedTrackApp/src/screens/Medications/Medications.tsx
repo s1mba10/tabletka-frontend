@@ -170,7 +170,7 @@ const Medications: React.FC = () => {
               numberOfLines={1}
               ellipsizeMode="clip"
             >
-              Запланированные
+              План
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
