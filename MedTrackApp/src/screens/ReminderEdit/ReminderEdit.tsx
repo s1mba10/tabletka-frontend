@@ -89,24 +89,18 @@ const ReminderEdit: React.FC = () => {
       }
 
       // Navigate back to Main screen with updated reminder
-      if (mainKey) {
-        navigation.goBack();
-        // @ts-ignore
-        navigation.navigate({
-          name: 'Main',
-          key: mainKey,
-          params: {
-            updatedReminder,
-            forceRefresh: Date.now(),
-          },
-          merge: true,
-        });
-      } else {
-        navigation.navigate('Main', {
+      const key = mainKey || navigation.getState().routes[0]?.key;
+      navigation.goBack();
+      // @ts-ignore
+      navigation.navigate({
+        name: 'Main',
+        key,
+        params: {
           updatedReminder,
           forceRefresh: Date.now(),
-        });
-      }
+        },
+        merge: true,
+      });
 
       Alert.alert('Сохранено', 'Напоминание успешно обновлено!');
     } catch (error) {
@@ -132,20 +126,17 @@ const ReminderEdit: React.FC = () => {
         }
       }
 
-      if (mainKey) {
-        navigation.goBack();
-        // @ts-ignore
-        navigation.navigate({
-          name: 'Main',
-          key: mainKey,
-          params: {
-            forceRefresh: Date.now(),
-          },
-          merge: true,
-        });
-      } else {
-        navigation.navigate('Main', { forceRefresh: Date.now() });
-      }
+      const key = mainKey || navigation.getState().routes[0]?.key;
+      navigation.goBack();
+      // @ts-ignore
+      navigation.navigate({
+        name: 'Main',
+        key,
+        params: {
+          forceRefresh: Date.now(),
+        },
+        merge: true,
+      });
 
       Alert.alert('Удалено', 'Напоминание успешно удалено!');
     } catch (error) {

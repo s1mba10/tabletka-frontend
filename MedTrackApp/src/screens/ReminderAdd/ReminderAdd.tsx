@@ -373,24 +373,18 @@ const ReminderAdd: React.FC = () => {
       }
     }
 
-    if (mainKey) {
-      navigation.goBack();
-      // @ts-ignore
-      navigation.navigate({
-        name: 'Main',
-        key: mainKey,
-        params: {
-          newReminders,
-          forceRefresh: Date.now(),
-        },
-        merge: true,
-      });
-    } else {
-      navigation.navigate('Main', {
+    const key = mainKey || navigation.getState().routes[0]?.key;
+    navigation.goBack();
+    // @ts-ignore
+    navigation.navigate({
+      name: 'Main',
+      key,
+      params: {
         newReminders,
         forceRefresh: Date.now(),
-      });
-    }
+      },
+      merge: true,
+    });
 
     const reminderText = newReminders.length === 1 ? 'напоминание' : 'напоминания';
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);
