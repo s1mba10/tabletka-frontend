@@ -180,7 +180,9 @@ const Profile: React.FC = () => {
 
   // Navigate to medications management
   const navigateToMedications = () => {
-    navigation.navigate('Medications');
+    // Switch to the Medications tab instead of pushing a new screen on top
+    const parentNavigator = navigation.getParent();
+    parentNavigator?.navigate('Препараты');
   };
 
   // Data for bar chart
