@@ -168,14 +168,9 @@ const ReminderEdit: React.FC = () => {
       <TextInput
         style={styles.input}
         value={dosage}
-        keyboardType="decimal-pad"
-        inputMode="decimal"
-        maxLength={7}
-        onChangeText={(text) => {
-          let sanitized = text.replace(/[^0-9,]/g, '').replace(/^,/, '');
-          sanitized = sanitized.replace(/,(?=.*,)/g, '');
-          setDosage(sanitized);
-        }}
+        keyboardType="default"
+        maxLength={35}
+        onChangeText={setDosage}
       />
 
       <Text style={styles.label}>Время</Text>
