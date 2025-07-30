@@ -84,4 +84,8 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
   },
+  adherenceWrapper: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
 });

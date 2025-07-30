@@ -12,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { AdherenceDisplay } from '../../components';
+import { useAdherence } from '../../hooks';
 
 import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
@@ -20,6 +22,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
 const MainScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { percentage } = useAdherence();
 
   const features = [
     { title: 'Продуктовые корзины', icon: 'basket' },
@@ -40,6 +43,13 @@ const MainScreen: React.FC = () => {
   const isPro = true; // placeholder
   const userName = 'Иван Иванов'; // placeholder
   const userImage: string | undefined = undefined;
+
+  const getAdherenceColor = (value: number) => {
+    if (value >= 80) return '#4CAF50';
+    if (value >= 60) return '#FFC107';
+    return '#FF5722';
+  };
+  const adherenceColor = getAdherenceColor(percentage);
 
   const renderAvatar = () => {
     if (userImage) {
@@ -104,6 +114,10 @@ const MainScreen: React.FC = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
+
+      <View style={styles.adherenceWrapper}>
+        <AdherenceDisplay percentage={percentage} color={adherenceColor} />
       </View>
     </SafeAreaView>
   );

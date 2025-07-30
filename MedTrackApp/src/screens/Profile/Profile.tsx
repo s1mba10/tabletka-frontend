@@ -8,7 +8,6 @@ import {
 } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { BarChart } from 'react-native-chart-kit';
-import Svg, { Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Reminder } from '../../types';
 
@@ -16,6 +15,7 @@ import { styles } from './styles';
 import { RootNavigationProp } from './types';
 import { useMedications } from '../../hooks/useMedications';
 import { useCourses } from '../../hooks/useCourses';
+import { AdherenceDisplay } from '../../components';
 
 const Profile: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
@@ -52,69 +52,6 @@ const Profile: React.FC = () => {
     loadUser();
   }, []);
 
-  // Define prop types for the Adherence Display Component
-  type AdherenceDisplayProps = {
-    percentage: number;
-    color: string;
-  };
-
-  // Custom Adherence Display Component
-  const AdherenceDisplay: React.FC<AdherenceDisplayProps> = ({ percentage, color }) => {
-    // Calculate the stroke dash based on percentage (circumference = 2πr = 2 * π * 85)
-    const radius = 85;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (circumference * percentage) / 100;
-    
-    // Round the percentage to a whole number
-    const roundedPercentage = Math.round(percentage);
-    
-    return (
-      <View style={styles.adherenceContainer}>
-        <Svg height="200" width="200" viewBox="0 0 200 200">
-          {/* Background Circle */}
-          <Circle
-            cx="100"
-            cy="100"
-            r={radius}
-            stroke="#2C2C2C"
-            strokeWidth="15"
-            fill="transparent"
-          />
-          
-          {/* Progress Arc */}
-          <Circle
-            cx="100"
-            cy="100"
-            r={radius}
-            stroke={color}
-            strokeWidth="15"
-            strokeLinecap="round"
-            fill="transparent"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            transform="rotate(-90, 100, 100)"
-          />
-        </Svg>
-        
-        {/* Central display */}
-        <View style={styles.adherenceCenterContent}>
-          <Text style={[styles.adherencePercentage, { color: color }]}>
-            {roundedPercentage}%
-          </Text>
-          <Text style={styles.adherenceLabel}>Соблюдения</Text>
-          
-          {/* Status indicator */}
-          <View style={styles.statusContainer}>
-            <View style={[styles.statusDot, { backgroundColor: color }]} />
-            <Text style={styles.statusText}>
-              {roundedPercentage >= 80 ? 'Потрясающе' : 
-                roundedPercentage >= 60 ? 'Хорошо' : 'Можно лучше'}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
 
   const loadStats = async () => {
     try {
