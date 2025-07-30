@@ -13,8 +13,8 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 const MainScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
 
-  const isPro = false; // placeholder
-  const userName = 'Иван';
+  const isPro = true; // placeholder
+  const userName = 'Иван Иванов'; // placeholder
   const userImage: string | undefined = undefined;
 
   const renderAvatar = () => {

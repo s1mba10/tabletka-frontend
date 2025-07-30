@@ -38,12 +38,12 @@ export const styles = StyleSheet.create({
   },
   profileName: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   placeholderName: {
     color: '#888',
-    fontSize: 16,
+    fontSize: 20,
   },
   crown: {
     marginLeft: 5,
