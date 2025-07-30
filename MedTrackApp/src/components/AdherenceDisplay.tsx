@@ -43,7 +43,11 @@ const AdherenceDisplay: React.FC<AdherenceDisplayProps> = ({ percentage, color }
         <View style={styles.statusContainer}>
           <View style={[styles.statusDot, { backgroundColor: color }]} />
           <Text style={styles.statusText}>
-            {roundedPercentage >= 80 ? 'Потрясающе' : roundedPercentage >= 60 ? 'Хорошо' : 'Можно лучше'}
+            {roundedPercentage >= 80
+              ? 'Отлично'
+              : roundedPercentage >= 60
+              ? 'Хорошо'
+              : 'Можно лучше'}
           </Text>
         </View>
       </View>
