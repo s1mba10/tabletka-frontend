@@ -51,4 +51,37 @@ export const styles = StyleSheet.create({
   chevron: {
     marginLeft: 10,
   },
+  featuresContainer: {
+    paddingVertical: 10,
+    marginBottom: 20,
+  },
+  featureCard: {
+    width: 110,
+    height: 110,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  featureContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureCardImage: {
+    borderRadius: 10,
+  },
+  featureIcon: {
+    marginBottom: 8,
+  },
+  featureLabel: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 14,
+  },
 });
