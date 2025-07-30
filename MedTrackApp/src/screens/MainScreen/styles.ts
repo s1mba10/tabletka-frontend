@@ -43,26 +43,4 @@ export const styles = StyleSheet.create({
   crown: {
     marginLeft: 5,
   },
-  progressContainer: {
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  progressInner: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  progressLabel: {
-    color: '#888',
-    fontSize: 12,
-  },
 });
