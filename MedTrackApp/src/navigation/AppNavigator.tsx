@@ -7,6 +7,7 @@ import { RootStackParamList } from './types';
 import ReminderEdit from '../screens/ReminderEdit';
 import ReminderAdd from '../screens/ReminderAdd';
 import MainScreen from '../screens/MainScreen';
+import AccountScreen from '../screens/AccountScreen';
 import MedCalendarScreen from '../screens/MedCalendarScreen';
 import Profile from '../screens/Profile';
 import Medications from '../screens/Medications';
@@ -17,6 +18,7 @@ const Tab = createBottomTabNavigator();
 const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="MainScreen" component={MainScreen} />
+    <Stack.Screen name="Account" component={AccountScreen} />
   </Stack.Navigator>
 );
 
