@@ -39,9 +39,9 @@ const applyStatusRules = (items: Reminder[]): Reminder[] => {
   });
 };
 
-const Main: React.FC = () => {
+const MedCalendarScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'MedCalendar'>>();
   const { removeCourse } = useCourses();
   
   const [weekOffset, setWeekOffset] = useState(0);
@@ -424,4 +424,4 @@ const Main: React.FC = () => {
   );
 };
 
-export default Main;
+export default MedCalendarScreen;

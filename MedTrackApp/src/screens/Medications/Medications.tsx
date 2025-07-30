@@ -103,8 +103,8 @@ const Medications: React.FC = () => {
   const stopCourse = async (id: number) => {
     await removeCourse(id);
     await deleteByCourse(id);
-    navigation.navigate('Главная', {
-      screen: 'Main',
+    navigation.navigate('Календарь', {
+      screen: 'MedCalendar',
       params: { forceRefresh: Date.now() },
     });
   };
@@ -129,8 +129,8 @@ const Medications: React.FC = () => {
   const deleteCourse = async (id: number) => {
     await removeCourse(id);
     await deleteByCourse(id);
-    navigation.navigate('Главная', {
-      screen: 'Main',
+    navigation.navigate('Календарь', {
+      screen: 'MedCalendar',
       params: { forceRefresh: Date.now() },
     });
   };

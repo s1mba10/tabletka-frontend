@@ -377,7 +377,7 @@ const ReminderAdd: React.FC = () => {
     navigation.goBack();
     // @ts-ignore
     navigation.navigate({
-      name: 'Main',
+      name: 'MedCalendar',
       key,
       params: {
         newReminders,

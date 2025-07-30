@@ -6,7 +6,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RootStackParamList } from './types';
 import ReminderEdit from '../screens/ReminderEdit';
 import ReminderAdd from '../screens/ReminderAdd';
-import Main from '../screens/Main';
+import MainScreen from '../screens/MainScreen';
+import MedCalendarScreen from '../screens/MedCalendarScreen';
 import Profile from '../screens/Profile';
 import Medications from '../screens/Medications';
 
@@ -15,7 +16,13 @@ const Tab = createBottomTabNavigator();
 
 const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Main" component={Main} />
+    <Stack.Screen name="MainScreen" component={MainScreen} />
+  </Stack.Navigator>
+);
+
+const MedCalendarStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="MedCalendar" component={MedCalendarScreen} />
     <Stack.Screen name="ReminderEdit" component={ReminderEdit} />
     <Stack.Screen name="ReminderAdd" component={ReminderAdd} />
   </Stack.Navigator>
@@ -42,6 +49,11 @@ const AppNavigator: React.FC = () => {
           name="Главная"
           component={MainStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="home" size={30} color={color} /> }}
+        />
+        <Tab.Screen
+          name="Календарь"
+          component={MedCalendarStack}
+          options={{ tabBarIcon: ({ color }) => <Icon name="pill" size={30} color={color} /> }}
         />
         <Tab.Screen
           name="Препараты"

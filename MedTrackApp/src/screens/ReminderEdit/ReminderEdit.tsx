@@ -93,7 +93,7 @@ const ReminderEdit: React.FC = () => {
       navigation.goBack();
       // @ts-ignore
       navigation.navigate({
-        name: 'Main',
+        name: 'MedCalendar',
         key,
         params: {
           updatedReminder,
@@ -130,7 +130,7 @@ const ReminderEdit: React.FC = () => {
       navigation.goBack();
       // @ts-ignore
       navigation.navigate({
-        name: 'Main',
+        name: 'MedCalendar',
         key,
         params: {
           forceRefresh: Date.now(),

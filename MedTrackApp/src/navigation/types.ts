@@ -1,7 +1,8 @@
 import { Reminder } from '../types';
 
 export type RootStackParamList = {
-  Main:
+  MainScreen: undefined;
+  MedCalendar:
     | {
         updatedReminder?: Reminder;
         newReminder?: Reminder;
