@@ -35,16 +35,21 @@ const MainScreen: React.FC = () => {
         onPress={() => navigation.navigate('Account')}
         activeOpacity={0.7}
       >
-        <View style={styles.leftSection}>
-          <View style={styles.avatar}>{renderAvatar()}</View>
+        <View style={styles.avatar}>{renderAvatar()}</View>
+        <View style={styles.infoRow}>
           <Text style={userName ? styles.profileName : styles.placeholderName}>
             {userName || 'Имя не указано'}
           </Text>
           {isPro && (
             <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />
           )}
+          <Icon
+            name="chevron-right"
+            size={24}
+            color="#888"
+            style={styles.chevron}
+          />
         </View>
-        <Icon name="chevron-right" size={24} color="#888" style={styles.chevron} />
       </TouchableOpacity>
     </SafeAreaView>
   );

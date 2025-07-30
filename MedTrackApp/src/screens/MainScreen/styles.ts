@@ -10,11 +10,10 @@ export const styles = StyleSheet.create({
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 12,
     marginBottom: 20,
   },
-  leftSection: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
