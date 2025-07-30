@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Rect } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export type CategorySummaryCardProps = {
@@ -15,10 +15,11 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
   percentage,
 }) => {
   const size = 80;
-  const radius = 36;
-  const strokeWidth = 6;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * percentage) / 100;
+  const strokeWidth = 4;
+  const radius = 10;
+
+  const perimeter = 4 * (size - strokeWidth);
+  const strokeDashoffset = perimeter - (perimeter * percentage) / 100;
 
   const getColor = (value: number) => {
     if (value >= 80) return '#4CAF50';
@@ -29,26 +30,30 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
 
   return (
     <View style={styles.wrapper}>
-      <Svg height={size} width={size} style={styles.ring}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+      <Svg height={size} width={size} style={styles.progress}>
+        <Rect
+          x={strokeWidth / 2}
+          y={strokeWidth / 2}
+          width={size - strokeWidth}
+          height={size - strokeWidth}
+          rx={radius}
+          ry={radius}
           stroke="#2C2C2C"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+        <Rect
+          x={strokeWidth / 2}
+          y={strokeWidth / 2}
+          width={size - strokeWidth}
+          height={size - strokeWidth}
+          rx={radius}
+          ry={radius}
           stroke={color}
           strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="transparent"
-          strokeDasharray={circumference}
+          strokeDasharray={perimeter}
           strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          fill="transparent"
         />
       </Svg>
       <View style={styles.card}>
@@ -64,8 +69,9 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     marginHorizontal: 5,
+    padding: 2,
   },
-  ring: {
+  progress: {
     position: 'absolute',
     top: 0,
     left: 0,
