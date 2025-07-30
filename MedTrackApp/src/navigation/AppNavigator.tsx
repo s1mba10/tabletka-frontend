@@ -53,7 +53,7 @@ const AppNavigator: React.FC = () => {
           options={{ tabBarIcon: ({ color }) => <Icon name="home" size={30} color={color} /> }}
         />
         <Tab.Screen
-          name="Календарь"
+          name="Лекарства"
           component={MedCalendarStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="pill" size={30} color={color} /> }}
         />

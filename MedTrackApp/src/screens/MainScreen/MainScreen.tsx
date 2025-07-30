@@ -24,10 +24,17 @@ const MainScreen: React.FC = () => {
   const features = [
     { title: 'Продуктовые корзины', icon: 'basket' },
     { title: 'Тренировки', icon: 'dumbbell' },
-    { title: 'Дневник лекарств', icon: 'clipboard-text' },
+    { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
     { title: 'ИИ-помощники', icon: 'robot' },
     { title: 'Интересные факты', icon: 'lightbulb-on-outline' },
   ];
+
+  const handleFeaturePress = (feature: { title: string; tab?: string }) => {
+    Alert.alert(feature.title);
+    if (feature.tab) {
+      navigation.getParent()?.navigate(feature.tab as never);
+    }
+  };
 
   const isPro = true; // placeholder
   const userName = 'Иван Иванов'; // placeholder
@@ -74,7 +81,7 @@ const MainScreen: React.FC = () => {
             <TouchableOpacity
               key={feature.title}
               activeOpacity={0.8}
-              onPress={() => Alert.alert(feature.title)}
+              onPress={() => handleFeaturePress(feature)}
             >
               <ImageBackground
                 source={undefined}
