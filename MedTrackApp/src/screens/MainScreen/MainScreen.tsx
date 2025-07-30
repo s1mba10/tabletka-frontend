@@ -30,9 +30,10 @@ const MainScreen: React.FC = () => {
   ];
 
   const handleFeaturePress = (feature: { title: string; tab?: string }) => {
-    Alert.alert(feature.title);
     if (feature.tab) {
       navigation.getParent()?.navigate(feature.tab as never);
+    } else {
+      Alert.alert(feature.title);
     }
   };
 
