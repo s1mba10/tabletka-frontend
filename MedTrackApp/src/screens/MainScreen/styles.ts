@@ -88,4 +88,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
 });

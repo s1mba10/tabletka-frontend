@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { AdherenceDisplay } from '../../components';
+import { AdherenceDisplay, CategorySummaryCard } from '../../components';
 import { useAdherence } from '../../hooks';
 
 import { RootStackParamList } from '../../navigation';
@@ -56,6 +56,18 @@ const MainScreen: React.FC = () => {
     return '#FF5722';
   };
   const adherenceColor = getAdherenceColor(percentage);
+
+  const getStatusLabel = (value: number) => {
+    if (value >= 80) return 'Отлично';
+    if (value >= 60) return 'Можно лучше';
+    return 'Низкий результат';
+  };
+
+  const summaries = [
+    { name: 'Лекарства', icon: '💊', value: percentage },
+    { name: 'Тренировки', icon: '🏋️', value: 72 },
+    { name: 'Питание', icon: '🍎', value: 65 },
+  ];
 
   const renderAvatar = () => {
     if (userImage) {
@@ -124,6 +136,18 @@ const MainScreen: React.FC = () => {
 
       <View style={styles.adherenceWrapper}>
         <AdherenceDisplay percentage={percentage} color={adherenceColor} />
+      </View>
+
+      <View style={styles.summaryRow}>
+        {summaries.map(item => (
+          <CategorySummaryCard
+            key={item.name}
+            icon={item.icon}
+            percentage={Math.round(item.value)}
+            status={getStatusLabel(item.value)}
+            color={getAdherenceColor(item.value)}
+          />
+        ))}
       </View>
     </SafeAreaView>
   );
