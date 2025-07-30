@@ -10,25 +10,31 @@ export const styles = StyleSheet.create({
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
     marginBottom: 20,
   },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#2C2C2C',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   avatarInitial: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   profileName: {
@@ -42,5 +48,8 @@ export const styles = StyleSheet.create({
   },
   crown: {
     marginLeft: 5,
+  },
+  chevron: {
+    marginLeft: 10,
   },
 });

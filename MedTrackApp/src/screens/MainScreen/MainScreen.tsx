@@ -24,7 +24,7 @@ const MainScreen: React.FC = () => {
     if (userName) {
       return <Text style={styles.avatarInitial}>{userName[0]}</Text>;
     }
-    return <Icon name="account" size={24} color="#888" />;
+    return <Icon name="account" size={28} color="#888" />;
   };
 
 
@@ -35,13 +35,16 @@ const MainScreen: React.FC = () => {
         onPress={() => navigation.navigate('Account')}
         activeOpacity={0.7}
       >
-        <View style={styles.avatar}>{renderAvatar()}</View>
-        <Text style={userName ? styles.profileName : styles.placeholderName}>
-          {userName || 'Имя не указано'}
-        </Text>
-        {isPro && (
-          <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />
-        )}
+        <View style={styles.leftSection}>
+          <View style={styles.avatar}>{renderAvatar()}</View>
+          <Text style={userName ? styles.profileName : styles.placeholderName}>
+            {userName || 'Имя не указано'}
+          </Text>
+          {isPro && (
+            <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />
+          )}
+        </View>
+        <Icon name="chevron-right" size={24} color="#888" style={styles.chevron} />
       </TouchableOpacity>
     </SafeAreaView>
   );
