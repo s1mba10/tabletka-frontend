@@ -57,16 +57,10 @@ const MainScreen: React.FC = () => {
   };
   const adherenceColor = getAdherenceColor(percentage);
 
-  const getStatusLabel = (value: number) => {
-    if (value >= 80) return 'Отлично';
-    if (value >= 60) return 'Можно лучше';
-    return 'Низкий результат';
-  };
-
   const summaries = [
-    { name: 'Лекарства', icon: '💊', value: percentage },
-    { name: 'Тренировки', icon: '🏋️', value: 72 },
-    { name: 'Питание', icon: '🍎', value: 65 },
+    { label: 'Лекарства', icon: 'pill', value: percentage },
+    { label: 'Тренировки', icon: 'dumbbell', value: 72 },
+    { label: 'Питание', icon: 'food-apple', value: 65 },
   ];
 
   const renderAvatar = () => {
@@ -141,11 +135,10 @@ const MainScreen: React.FC = () => {
       <View style={styles.summaryRow}>
         {summaries.map(item => (
           <CategorySummaryCard
-            key={item.name}
+            key={item.label}
             icon={item.icon}
-            percentage={Math.round(item.value)}
-            status={getStatusLabel(item.value)}
-            color={getAdherenceColor(item.value)}
+            label={item.label}
+            percentage={item.value}
           />
         ))}
       </View>

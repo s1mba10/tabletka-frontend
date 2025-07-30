@@ -91,6 +91,6 @@ export const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginVertical: 20,
   },
 });
