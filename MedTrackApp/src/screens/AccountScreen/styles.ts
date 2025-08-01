@@ -85,6 +85,8 @@ export const styles = StyleSheet.create({
   },
   genderButtonActive: {
     backgroundColor: '#007AFF',
+    shadowOpacity: 0.4,
+    elevation: 5,
   },
   genderLabel: {
     marginTop: 4,
@@ -128,6 +130,12 @@ export const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  errorText: {
+    color: '#FF3B30',
+    marginBottom: 4,
+    marginTop: -6,
+    fontSize: 12,
   },
   modalOverlay: {
     flex: 1,

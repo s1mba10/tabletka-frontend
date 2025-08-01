@@ -113,6 +113,61 @@ const AccountScreen: React.FC = () => {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedBirthDateObj, setSelectedBirthDateObj] = useState(new Date());
+  const [emailError, setEmailError] = useState('');
+
+  const capitalize = (val: string) =>
+    val ? val.charAt(0).toUpperCase() + val.slice(1) : '';
+
+  const formatNameInput = (text: string) =>
+    capitalize(text.replace(/[^A-Za-zА-Яа-яЁё]/g, '').slice(0, 30));
+
+  const handleLastNameChange = (text: string) =>
+    setProfile(prev => ({ ...prev, lastName: formatNameInput(text) }));
+
+  const handleFirstNameChange = (text: string) =>
+    setProfile(prev => ({ ...prev, firstName: formatNameInput(text) }));
+
+  const handleMiddleNameChange = (text: string) =>
+    setProfile(prev => ({ ...prev, middleName: formatNameInput(text) }));
+
+  const handleSocialChange = (key: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram') =>
+    (text: string) =>
+      setProfile(prev => ({
+        ...prev,
+        [key]: text.replace(/[^A-Za-z0-9_.]/g, '').slice(0, 32),
+      }));
+
+  const handleEmailChange = (text: string) => {
+    const trimmed = text.trim().slice(0, 64);
+    setEmailError(
+      trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+        ? 'Некорректный email'
+        : '',
+    );
+    setProfile(prev => ({ ...prev, email: trimmed }));
+  };
+
+  const handlePhoneChange = (text: string) => {
+    let digits = text.replace(/\D/g, '').slice(0, 11);
+    if (!digits) {
+      setProfile(prev => ({ ...prev, phone: '' }));
+      return;
+    }
+    if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+    if (!digits.startsWith('7')) digits = '7' + digits;
+    setProfile(prev => ({ ...prev, phone: '+' + digits }));
+  };
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    let out = '+7';
+    if (digits.length > 1) out += ` (${digits.slice(1, 4)}`;
+    if (digits.length >= 4) out += `) ${digits.slice(4, 7)}`;
+    if (digits.length >= 7) out += `-${digits.slice(7, 9)}`;
+    if (digits.length >= 9) out += `-${digits.slice(9, 11)}`;
+    return out;
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -138,17 +193,30 @@ const AccountScreen: React.FC = () => {
   };
 
   const handleBirthChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (!date) return;
+    const today = new Date();
+    const minAllowed = new Date();
+    minAllowed.setFullYear(today.getFullYear() - 10);
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
-      if (date) {
-        setProfile(prev => ({ ...prev, birthDate: date.toISOString() }));
+      if (date > minAllowed) {
+        Alert.alert('Ошибка', 'Возраст должен быть не менее 10 лет');
+        return;
       }
-    } else if (date) {
+      setProfile(prev => ({ ...prev, birthDate: date.toISOString() }));
+    } else {
       setSelectedBirthDateObj(date);
     }
   };
 
   const confirmDate = () => {
+    const today = new Date();
+    const minAllowed = new Date();
+    minAllowed.setFullYear(today.getFullYear() - 10);
+    if (selectedBirthDateObj > minAllowed) {
+      Alert.alert('Ошибка', 'Возраст должен быть не менее 10 лет');
+      return;
+    }
     setProfile(prev => ({ ...prev, birthDate: selectedBirthDateObj.toISOString() }));
     setShowDatePicker(false);
   };
@@ -158,6 +226,27 @@ const AccountScreen: React.FC = () => {
   };
 
   const save = async () => {
+    if (profile.lastName.length < 2 || profile.firstName.length < 2) {
+      Alert.alert('Ошибка', 'Имя и фамилия должны содержать минимум 2 буквы');
+      return;
+    }
+    if (emailError) {
+      Alert.alert('Ошибка', 'Проверьте корректность email');
+      return;
+    }
+    if (profile.phone.replace(/\D/g, '').length < 11) {
+      Alert.alert('Ошибка', 'Введите корректный номер телефона');
+      return;
+    }
+    if (
+      (profile.vk && profile.vk.length < 3) ||
+      (profile.instagram && profile.instagram.length < 3) ||
+      (profile.odnoklassniki && profile.odnoklassniki.length < 3) ||
+      (profile.telegram && profile.telegram.length < 3)
+    ) {
+      Alert.alert('Ошибка', 'Неверный формат никнейма в соцсетях');
+      return;
+    }
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
       Alert.alert('Изменения сохранены');
@@ -205,7 +294,7 @@ const AccountScreen: React.FC = () => {
                 placeholder="Фамилия"
                 placeholderTextColor="#666"
                 value={profile.lastName}
-                onChangeText={lastName => setProfile(prev => ({ ...prev, lastName }))}
+                onChangeText={handleLastNameChange}
               />
               <Text style={styles.label}>Имя</Text>
               <TextInput
@@ -213,7 +302,7 @@ const AccountScreen: React.FC = () => {
                 placeholder="Имя"
                 placeholderTextColor="#666"
                 value={profile.firstName}
-                onChangeText={firstName => setProfile(prev => ({ ...prev, firstName }))}
+                onChangeText={handleFirstNameChange}
               />
               <Text style={styles.label}>Отчество</Text>
               <TextInput
@@ -221,9 +310,7 @@ const AccountScreen: React.FC = () => {
                 placeholder="Отчество"
                 placeholderTextColor="#666"
                 value={profile.middleName}
-                onChangeText={middleName =>
-                  setProfile(prev => ({ ...prev, middleName }))
-                }
+                onChangeText={handleMiddleNameChange}
               />
               <Text style={styles.label}>Пол</Text>
               <GenderSelector
@@ -254,8 +341,8 @@ const AccountScreen: React.FC = () => {
                 placeholder="Телефон"
                 placeholderTextColor="#666"
                 keyboardType="phone-pad"
-                value={profile.phone}
-                onChangeText={phone => setProfile(prev => ({ ...prev, phone }))}
+                value={formatPhone(profile.phone)}
+                onChangeText={handlePhoneChange}
               />
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -265,8 +352,11 @@ const AccountScreen: React.FC = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={profile.email}
-                onChangeText={email => setProfile(prev => ({ ...prev, email }))}
+                onChangeText={handleEmailChange}
               />
+              {emailError ? (
+                <Text style={styles.errorText}>{emailError}</Text>
+              ) : null}
             </View>
 
             <View style={styles.section}>
@@ -279,7 +369,7 @@ const AccountScreen: React.FC = () => {
                   placeholder="ВКонтакте"
                   placeholderTextColor="#666"
                   value={profile.vk}
-                  onChangeText={vk => setProfile(prev => ({ ...prev, vk }))}
+                  onChangeText={handleSocialChange('vk')}
                 />
               </View>
               <Text style={styles.label}>Instagram</Text>
@@ -290,9 +380,7 @@ const AccountScreen: React.FC = () => {
                   placeholder="Instagram"
                   placeholderTextColor="#666"
                   value={profile.instagram}
-                  onChangeText={instagram =>
-                    setProfile(prev => ({ ...prev, instagram }))
-                  }
+                  onChangeText={handleSocialChange('instagram')}
                 />
               </View>
               <Text style={styles.label}>Одноклассники</Text>
@@ -303,9 +391,7 @@ const AccountScreen: React.FC = () => {
                   placeholder="Одноклассники"
                   placeholderTextColor="#666"
                   value={profile.odnoklassniki}
-                  onChangeText={odnoklassniki =>
-                    setProfile(prev => ({ ...prev, odnoklassniki }))
-                  }
+                  onChangeText={handleSocialChange('odnoklassniki')}
                 />
               </View>
               <Text style={styles.label}>Telegram</Text>
@@ -316,9 +402,7 @@ const AccountScreen: React.FC = () => {
                   placeholder="Telegram"
                   placeholderTextColor="#666"
                   value={profile.telegram}
-                  onChangeText={telegram =>
-                    setProfile(prev => ({ ...prev, telegram }))
-                  }
+                  onChangeText={handleSocialChange('telegram')}
                 />
               </View>
             </View>
