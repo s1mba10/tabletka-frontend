@@ -130,12 +130,38 @@ const AccountScreen: React.FC = () => {
   const handleMiddleNameChange = (text: string) =>
     setProfile(prev => ({ ...prev, middleName: formatNameInput(text) }));
 
-  const handleSocialChange = (key: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram') =>
+  const cleanSocial = (
+    platform: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram',
+    text: string,
+  ) => {
+    let value = text.trim();
+    value = value.replace(/^https?:\/\//i, '');
+
+    switch (platform) {
+      case 'vk':
+        value = value.replace(/^(?:m\.)?vk\.com\//i, '');
+        break;
+      case 'instagram':
+        value = value.replace(/^instagram\.com\//i, '');
+        break;
+      case 'telegram':
+        value = value.replace(/^t\.me\//i, '');
+        value = value.replace(/^@/, '');
+        break;
+      default:
+        break;
+    }
+
+    value = value.replace(/[^A-Za-z0-9_.]/g, '');
+    const limit = platform === 'odnoklassniki' ? 256 : 32;
+    return value.slice(0, limit);
+  };
+
+  const handleSocialChange = (
+    key: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram',
+  ) =>
     (text: string) =>
-      setProfile(prev => ({
-        ...prev,
-        [key]: text.replace(/[^A-Za-z0-9_.]/g, '').slice(0, 32),
-      }));
+      setProfile(prev => ({ ...prev, [key]: cleanSocial(key, text) }));
 
   const handleEmailChange = (text: string) => {
     const trimmed = text.trim().slice(0, 64);
@@ -176,9 +202,15 @@ const AccountScreen: React.FC = () => {
         if (stored) {
           const parsed = JSON.parse(stored) as Partial<ProfileData>;
           const gender = parsed.gender === 'Женский' ? 'Женский' : 'Мужской';
-          const vk = parsed.vk?.replace(/^vk\.com\//, '') || '';
-          const instagram = parsed.instagram?.replace(/^instagram\.com\//, '') || '';
-          const telegram = parsed.telegram?.replace(/^t\.me\//, '') || '';
+          const vk = parsed.vk
+            ? cleanSocial('vk', parsed.vk)
+            : '';
+          const instagram = parsed.instagram
+            ? cleanSocial('instagram', parsed.instagram)
+            : '';
+          const telegram = parsed.telegram
+            ? cleanSocial('telegram', parsed.telegram)
+            : '';
           setProfile(prev => ({
             ...prev,
             ...parsed,
@@ -309,6 +341,7 @@ const AccountScreen: React.FC = () => {
                 style={styles.input}
                 placeholder="Фамилия"
                 placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={profile.lastName}
                 onChangeText={handleLastNameChange}
               />
@@ -317,6 +350,7 @@ const AccountScreen: React.FC = () => {
                 style={styles.input}
                 placeholder="Имя"
                 placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={profile.firstName}
                 onChangeText={handleFirstNameChange}
               />
@@ -325,6 +359,7 @@ const AccountScreen: React.FC = () => {
                 style={styles.input}
                 placeholder="Отчество"
                 placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={profile.middleName}
                 onChangeText={handleMiddleNameChange}
               />
@@ -357,6 +392,7 @@ const AccountScreen: React.FC = () => {
                 placeholder="Телефон"
                 placeholderTextColor="#666"
                 keyboardType="phone-pad"
+                autoCapitalize="none"
                 value={formatPhone(profile.phone)}
                 onChangeText={handlePhoneChange}
               />
@@ -386,6 +422,8 @@ const AccountScreen: React.FC = () => {
                     style={styles.socialInput}
                     placeholder="username"
                     placeholderTextColor="#666"
+                    autoCapitalize="none"
+                    maxLength={32}
                     value={profile.vk}
                     onChangeText={handleSocialChange('vk')}
                   />
@@ -400,6 +438,8 @@ const AccountScreen: React.FC = () => {
                     style={styles.socialInput}
                     placeholder="username"
                     placeholderTextColor="#666"
+                    autoCapitalize="none"
+                    maxLength={32}
                     value={profile.instagram}
                     onChangeText={handleSocialChange('instagram')}
                   />
@@ -412,6 +452,8 @@ const AccountScreen: React.FC = () => {
                   style={[styles.input, { flex: 1 }]}
                   placeholder="Одноклассники"
                   placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  maxLength={256}
                   value={profile.odnoklassniki}
                   onChangeText={handleSocialChange('odnoklassniki')}
                 />
@@ -425,6 +467,8 @@ const AccountScreen: React.FC = () => {
                     style={styles.socialInput}
                     placeholder="username"
                     placeholderTextColor="#666"
+                    autoCapitalize="none"
+                    maxLength={32}
                     value={profile.telegram}
                     onChangeText={handleSocialChange('telegram')}
                   />
