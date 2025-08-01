@@ -117,4 +117,29 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#121212',
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  doneText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  datePicker: {
+    alignSelf: 'center',
+  },
 });

@@ -11,8 +11,9 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  Modal,
 } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -111,6 +112,7 @@ const AccountScreen: React.FC = () => {
     telegram: '',
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
 
   useEffect(() => {
     const load = async () => {
@@ -128,11 +130,14 @@ const AccountScreen: React.FC = () => {
     load();
   }, []);
 
-  const onChangeDate = (_: DateTimePickerEvent, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (date) {
-      setProfile(prev => ({ ...prev, birthDate: date.toISOString() }));
-    }
+  const openDatePicker = () => {
+    setTempDate(profile.birthDate ? new Date(profile.birthDate) : new Date());
+    setShowDatePicker(true);
+  };
+
+  const confirmDate = () => {
+    setProfile(prev => ({ ...prev, birthDate: tempDate.toISOString() }));
+    setShowDatePicker(false);
   };
 
   const save = async () => {
@@ -213,22 +218,13 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.label}>Дата рождения</Text>
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
+                onPress={openDatePicker}
               >
                 <Text style={{ color: profile.birthDate ? 'white' : '#666' }}>
                   {formatDate(profile.birthDate)}
                 </Text>
                 <Icon name="calendar" size={20} color="#888" />
               </TouchableOpacity>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={profile.birthDate ? new Date(profile.birthDate) : new Date()}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  maximumDate={new Date()}
-                  onChange={onChangeDate}
-                />
-              )}
             </View>
 
             <View style={styles.section}>
@@ -311,6 +307,40 @@ const AccountScreen: React.FC = () => {
             <TouchableOpacity style={styles.saveButton} onPress={save}>
               <Text style={styles.saveButtonText}>Сохранить</Text>
             </TouchableOpacity>
+
+            <Modal
+              visible={showDatePicker}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setShowDatePicker(false)}
+            >
+              <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
+                <View style={styles.modalOverlay}>
+                  <TouchableWithoutFeedback>
+                    <View style={styles.modalContent}>
+                      <View style={styles.modalHeader}>
+                        <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                          <Icon name="close" size={24} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={confirmDate}>
+                          <Text style={styles.doneText}>Готово</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <DatePicker
+                        date={tempDate}
+                        mode="date"
+                        maximumDate={new Date()}
+                        onDateChange={setTempDate}
+                        locale="ru"
+                        textColor="white"
+                        fadeToColor="none"
+                        style={styles.datePicker}
+                      />
+                    </View>
+                  </TouchableWithoutFeedback>
+                </View>
+              </TouchableWithoutFeedback>
+            </Modal>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
