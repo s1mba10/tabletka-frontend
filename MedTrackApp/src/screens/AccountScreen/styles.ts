@@ -82,6 +82,9 @@ export const styles = StyleSheet.create({
     marginRight: 10,
     color: '#888',
   },
+  svgIcon: {
+    marginRight: 10,
+  },
   genderContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -22,6 +22,10 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { RootStackParamList } from '../../navigation';
+import VKIcon from '../../assets/icons/icons8-vk.svg';
+import InstagramIcon from '../../assets/icons/icons8-instagram.svg';
+import TelegramIcon from '../../assets/icons/icons8-telegram.svg';
+import OKIcon from '../../assets/icons/icons8-odnoklassniki.svg';
 
 import { styles } from './styles';
 
@@ -420,7 +424,7 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.sectionTitle}>Соцсети</Text>
               <Text style={styles.label}>ВКонтакте</Text>
               <View style={styles.rowInput}>
-                <Icon name="vk" size={20} style={styles.icon} />
+                <VKIcon width={20} height={20} style={styles.svgIcon} fill="#fff" />
                 <View style={styles.socialField}>
                   <Text style={styles.prefixText}>vk.com/</Text>
                   <TextInput
@@ -436,7 +440,12 @@ const AccountScreen: React.FC = () => {
               </View>
               <Text style={styles.label}>Instagram</Text>
               <View style={styles.rowInput}>
-                <Icon name="instagram" size={20} style={styles.icon} />
+                <InstagramIcon
+                  width={20}
+                  height={20}
+                  style={styles.svgIcon}
+                  fill="#fff"
+                />
                 <View style={styles.socialField}>
                   <Text style={styles.prefixText}>instagram.com/</Text>
                   <TextInput
@@ -452,7 +461,7 @@ const AccountScreen: React.FC = () => {
               </View>
               <Text style={styles.label}>Одноклассники</Text>
               <View style={styles.rowInput}>
-                <Icon name="alpha-o-circle" size={20} style={styles.icon} />
+                <OKIcon width={20} height={20} style={styles.svgIcon} fill="#fff" />
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   placeholder="Одноклассники"
@@ -465,7 +474,12 @@ const AccountScreen: React.FC = () => {
               </View>
               <Text style={styles.label}>Telegram</Text>
               <View style={styles.rowInput}>
-                <Icon name="telegram" size={20} style={styles.icon} />
+                <TelegramIcon
+                  width={20}
+                  height={20}
+                  style={styles.svgIcon}
+                  fill="#fff"
+                />
                 <View style={styles.socialField}>
                   <Text style={styles.prefixText}>t.me/</Text>
                   <TextInput
