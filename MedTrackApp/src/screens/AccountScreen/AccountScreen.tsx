@@ -13,9 +13,10 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import DatePicker from 'react-native-date-picker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaskInput from 'react-native-mask-input';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -112,7 +113,91 @@ const AccountScreen: React.FC = () => {
     telegram: '',
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date());
+  const [selectedBirthDateObj, setSelectedBirthDateObj] = useState(new Date());
+  const [emailError, setEmailError] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+
+  const capitalize = (val: string) =>
+    val ? val.charAt(0).toUpperCase() + val.slice(1) : '';
+
+  const formatNameInput = (text: string) =>
+    capitalize(text.replace(/[^A-Za-zА-Яа-яЁё]/g, '').slice(0, 30));
+
+  const handleLastNameChange = (text: string) =>
+    setProfile(prev => ({ ...prev, lastName: formatNameInput(text) }));
+
+  const handleFirstNameChange = (text: string) =>
+    setProfile(prev => ({ ...prev, firstName: formatNameInput(text) }));
+
+  const handleMiddleNameChange = (text: string) =>
+    setProfile(prev => ({ ...prev, middleName: formatNameInput(text) }));
+
+  const cleanSocial = (
+    platform: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram',
+    text: string,
+  ) => {
+    let value = text.trim();
+    value = value.replace(/^https?:\/\//i, '');
+
+    switch (platform) {
+      case 'vk':
+        value = value.replace(/^(?:m\.)?vk\.com\//i, '');
+        break;
+      case 'instagram':
+        value = value.replace(/^instagram\.com\//i, '');
+        break;
+      case 'telegram':
+        value = value.replace(/^t\.me\//i, '');
+        value = value.replace(/^@/, '');
+        break;
+      default:
+        break;
+    }
+
+    value = value.replace(/[^A-Za-z0-9_.]/g, '');
+    const limit = platform === 'odnoklassniki' ? 256 : 32;
+    return value.slice(0, limit);
+  };
+
+  const handleSocialChange = (
+    key: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram',
+  ) =>
+    (text: string) =>
+      setProfile(prev => ({ ...prev, [key]: cleanSocial(key, text) }));
+
+  const handleEmailChange = (text: string) => {
+    const trimmed = text.trim().slice(0, 64);
+    setEmailError(
+      trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+        ? 'Некорректный email'
+        : '',
+    );
+    setProfile(prev => ({ ...prev, email: trimmed }));
+  };
+
+  const handlePhoneChange = (masked: string, unmasked: string) => {
+    let digits = unmasked.slice(0, 11);
+    if (!digits) {
+      setPhoneInput('');
+      setProfile(prev => ({ ...prev, phone: '' }));
+      return;
+    }
+    if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+    if (!digits.startsWith('7')) digits = '7' + digits;
+    setPhoneInput(masked);
+    setProfile(prev => ({ ...prev, phone: '+' + digits }));
+  };
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    let out = '+7';
+    if (digits.length > 1) out += ` (${digits.slice(1, 4)}`;
+    if (digits.length >= 4) out += `) ${digits.slice(4, 7)}`;
+    if (digits.length >= 7) out += `-${digits.slice(7, 9)}`;
+    if (digits.length >= 9) out += `-${digits.slice(9, 11)}`;
+    return out;
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -121,7 +206,24 @@ const AccountScreen: React.FC = () => {
         if (stored) {
           const parsed = JSON.parse(stored) as Partial<ProfileData>;
           const gender = parsed.gender === 'Женский' ? 'Женский' : 'Мужской';
-          setProfile(prev => ({ ...prev, ...parsed, gender }));
+          const vk = parsed.vk
+            ? cleanSocial('vk', parsed.vk)
+            : '';
+          const instagram = parsed.instagram
+            ? cleanSocial('instagram', parsed.instagram)
+            : '';
+          const telegram = parsed.telegram
+            ? cleanSocial('telegram', parsed.telegram)
+            : '';
+          setProfile(prev => ({
+            ...prev,
+            ...parsed,
+            gender,
+            vk,
+            instagram,
+            telegram,
+          }));
+          setPhoneInput(formatPhone(parsed.phone || ''));
         }
       } catch {
         // ignore
@@ -131,18 +233,75 @@ const AccountScreen: React.FC = () => {
   }, []);
 
   const openDatePicker = () => {
-    setTempDate(profile.birthDate ? new Date(profile.birthDate) : new Date());
+    setSelectedBirthDateObj(
+      profile.birthDate ? new Date(profile.birthDate) : new Date(),
+    );
     setShowDatePicker(true);
   };
 
+  const handleBirthChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (!date) return;
+    const today = new Date();
+    const minAllowed = new Date();
+    minAllowed.setFullYear(today.getFullYear() - 10);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (date > minAllowed) {
+        Alert.alert('Ошибка', 'Возраст должен быть не менее 10 лет');
+        return;
+      }
+      setProfile(prev => ({ ...prev, birthDate: date.toISOString() }));
+    } else {
+      setSelectedBirthDateObj(date);
+    }
+  };
+
   const confirmDate = () => {
-    setProfile(prev => ({ ...prev, birthDate: tempDate.toISOString() }));
+    const today = new Date();
+    const minAllowed = new Date();
+    minAllowed.setFullYear(today.getFullYear() - 10);
+    if (selectedBirthDateObj > minAllowed) {
+      Alert.alert('Ошибка', 'Возраст должен быть не менее 10 лет');
+      return;
+    }
+    setProfile(prev => ({ ...prev, birthDate: selectedBirthDateObj.toISOString() }));
+    setShowDatePicker(false);
+  };
+
+  const cancelDatePicker = () => {
     setShowDatePicker(false);
   };
 
   const save = async () => {
+    if (profile.lastName.length < 2 || profile.firstName.length < 2) {
+      Alert.alert('Ошибка', 'Имя и фамилия должны содержать минимум 2 буквы');
+      return;
+    }
+    if (emailError) {
+      Alert.alert('Ошибка', 'Проверьте корректность email');
+      return;
+    }
+    if (profile.phone.replace(/\D/g, '').length < 11) {
+      Alert.alert('Ошибка', 'Введите корректный номер телефона');
+      return;
+    }
+    if (
+      (profile.vk && profile.vk.length < 3) ||
+      (profile.instagram && profile.instagram.length < 3) ||
+      (profile.odnoklassniki && profile.odnoklassniki.length < 3) ||
+      (profile.telegram && profile.telegram.length < 3)
+    ) {
+      Alert.alert('Ошибка', 'Неверный формат никнейма в соцсетях');
+      return;
+    }
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      const dataToSave = {
+        ...profile,
+        vk: profile.vk ? `vk.com/${profile.vk}` : '',
+        instagram: profile.instagram ? `instagram.com/${profile.instagram}` : '',
+        telegram: profile.telegram ? `t.me/${profile.telegram}` : '',
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
       Alert.alert('Изменения сохранены');
     } catch {
       Alert.alert('Ошибка', 'Не удалось сохранить данные');
@@ -187,26 +346,27 @@ const AccountScreen: React.FC = () => {
                 style={styles.input}
                 placeholder="Фамилия"
                 placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={profile.lastName}
-                onChangeText={lastName => setProfile(prev => ({ ...prev, lastName }))}
+                onChangeText={handleLastNameChange}
               />
               <Text style={styles.label}>Имя</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Имя"
                 placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={profile.firstName}
-                onChangeText={firstName => setProfile(prev => ({ ...prev, firstName }))}
+                onChangeText={handleFirstNameChange}
               />
               <Text style={styles.label}>Отчество</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Отчество"
                 placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={profile.middleName}
-                onChangeText={middleName =>
-                  setProfile(prev => ({ ...prev, middleName }))
-                }
+                onChangeText={handleMiddleNameChange}
               />
               <Text style={styles.label}>Пол</Text>
               <GenderSelector
@@ -215,14 +375,16 @@ const AccountScreen: React.FC = () => {
                   setProfile(prev => ({ ...prev, gender }))
                 }
               />
-              <Text style={styles.label}>Дата рождения</Text>
               <TouchableOpacity
-                style={styles.dateButton}
+                style={styles.birthRow}
                 onPress={openDatePicker}
               >
-                <Text style={{ color: profile.birthDate ? 'white' : '#666' }}>
-                  {formatDate(profile.birthDate)}
-                </Text>
+                <View style={styles.birthTexts}>
+                  <Text style={styles.birthLabel}>Дата рождения</Text>
+                  <Text style={styles.birthValue}>
+                    {formatDate(profile.birthDate)}
+                  </Text>
+                </View>
                 <Icon name="calendar" size={20} color="#888" />
               </TouchableOpacity>
             </View>
@@ -230,13 +392,14 @@ const AccountScreen: React.FC = () => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Контакты</Text>
               <Text style={styles.label}>Телефон</Text>
-              <TextInput
+              <MaskInput
                 style={styles.input}
-                placeholder="Телефон"
+                placeholder="+7 (___) ___-__-__"
                 placeholderTextColor="#666"
                 keyboardType="phone-pad"
-                value={profile.phone}
-                onChangeText={phone => setProfile(prev => ({ ...prev, phone }))}
+                value={phoneInput}
+                onChangeText={handlePhoneChange}
+                mask={['+', '7', ' ', '(', /\d/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, '-', /\d/, /\d/]}
               />
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -246,8 +409,11 @@ const AccountScreen: React.FC = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={profile.email}
-                onChangeText={email => setProfile(prev => ({ ...prev, email }))}
+                onChangeText={handleEmailChange}
               />
+              {emailError ? (
+                <Text style={styles.errorText}>{emailError}</Text>
+              ) : null}
             </View>
 
             <View style={styles.section}>
@@ -255,26 +421,34 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.label}>ВКонтакте</Text>
               <View style={styles.rowInput}>
                 <Icon name="vk" size={20} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="ВКонтакте"
-                  placeholderTextColor="#666"
-                  value={profile.vk}
-                  onChangeText={vk => setProfile(prev => ({ ...prev, vk }))}
-                />
+                <View style={styles.socialField}>
+                  <Text style={styles.prefixText}>vk.com/</Text>
+                  <TextInput
+                    style={styles.socialInput}
+                    placeholder="username"
+                    placeholderTextColor="#666"
+                    autoCapitalize="none"
+                    maxLength={32}
+                    value={profile.vk}
+                    onChangeText={handleSocialChange('vk')}
+                  />
+                </View>
               </View>
               <Text style={styles.label}>Instagram</Text>
               <View style={styles.rowInput}>
                 <Icon name="instagram" size={20} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Instagram"
-                  placeholderTextColor="#666"
-                  value={profile.instagram}
-                  onChangeText={instagram =>
-                    setProfile(prev => ({ ...prev, instagram }))
-                  }
-                />
+                <View style={styles.socialField}>
+                  <Text style={styles.prefixText}>instagram.com/</Text>
+                  <TextInput
+                    style={styles.socialInput}
+                    placeholder="username"
+                    placeholderTextColor="#666"
+                    autoCapitalize="none"
+                    maxLength={32}
+                    value={profile.instagram}
+                    onChangeText={handleSocialChange('instagram')}
+                  />
+                </View>
               </View>
               <Text style={styles.label}>Одноклассники</Text>
               <View style={styles.rowInput}>
@@ -283,24 +457,27 @@ const AccountScreen: React.FC = () => {
                   style={[styles.input, { flex: 1 }]}
                   placeholder="Одноклассники"
                   placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  maxLength={256}
                   value={profile.odnoklassniki}
-                  onChangeText={odnoklassniki =>
-                    setProfile(prev => ({ ...prev, odnoklassniki }))
-                  }
+                  onChangeText={handleSocialChange('odnoklassniki')}
                 />
               </View>
               <Text style={styles.label}>Telegram</Text>
               <View style={styles.rowInput}>
                 <Icon name="telegram" size={20} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Telegram"
-                  placeholderTextColor="#666"
-                  value={profile.telegram}
-                  onChangeText={telegram =>
-                    setProfile(prev => ({ ...prev, telegram }))
-                  }
-                />
+                <View style={styles.socialField}>
+                  <Text style={styles.prefixText}>t.me/</Text>
+                  <TextInput
+                    style={styles.socialInput}
+                    placeholder="username"
+                    placeholderTextColor="#666"
+                    autoCapitalize="none"
+                    maxLength={32}
+                    value={profile.telegram}
+                    onChangeText={handleSocialChange('telegram')}
+                  />
+                </View>
               </View>
             </View>
 
@@ -308,39 +485,53 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.saveButtonText}>Сохранить</Text>
             </TouchableOpacity>
 
-            <Modal
-              visible={showDatePicker}
-              transparent
-              animationType="slide"
-              onRequestClose={() => setShowDatePicker(false)}
-            >
-              <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
-                <View style={styles.modalOverlay}>
-                  <TouchableWithoutFeedback>
-                    <View style={styles.modalContent}>
-                      <View style={styles.modalHeader}>
-                        <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                          <Icon name="close" size={24} color="white" />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={confirmDate}>
-                          <Text style={styles.doneText}>Готово</Text>
-                        </TouchableOpacity>
+            {Platform.OS === 'ios' && showDatePicker && (
+              <Modal
+                transparent
+                animationType="slide"
+                visible={showDatePicker}
+                onRequestClose={cancelDatePicker}
+              >
+                <TouchableWithoutFeedback onPress={cancelDatePicker}>
+                  <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                      <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                          <TouchableOpacity onPress={cancelDatePicker}>
+                            <Text style={styles.cancelButton}>Отмена</Text>
+                          </TouchableOpacity>
+                          <Text style={styles.modalTitle}>Дата рождения</Text>
+                          <TouchableOpacity onPress={confirmDate}>
+                            <Text style={styles.doneButton}>Готово</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                          value={selectedBirthDateObj}
+                          mode="date"
+                          display="spinner"
+                          onChange={handleBirthChange}
+                          style={styles.timePickerIOS}
+                          textColor="white"
+                          themeVariant="dark"
+                          locale="ru-RU"
+                          maximumDate={new Date()}
+                        />
                       </View>
-                      <DatePicker
-                        date={tempDate}
-                        mode="date"
-                        maximumDate={new Date()}
-                        onDateChange={setTempDate}
-                        locale="ru"
-                        textColor="white"
-                        fadeToColor="none"
-                        style={styles.datePicker}
-                      />
-                    </View>
-                  </TouchableWithoutFeedback>
-                </View>
-              </TouchableWithoutFeedback>
-            </Modal>
+                    </TouchableWithoutFeedback>
+                  </View>
+                </TouchableWithoutFeedback>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showDatePicker && (
+              <DateTimePicker
+                value={selectedBirthDateObj}
+                mode="date"
+                display="default"
+                onChange={handleBirthChange}
+                maximumDate={new Date()}
+                locale="ru-RU"
+              />
+            )}
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
