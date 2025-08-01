@@ -13,7 +13,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import DatePicker from 'react-native-date-picker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -112,7 +112,7 @@ const AccountScreen: React.FC = () => {
     telegram: '',
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date());
+  const [selectedBirthDateObj, setSelectedBirthDateObj] = useState(new Date());
 
   useEffect(() => {
     const load = async () => {
@@ -131,12 +131,29 @@ const AccountScreen: React.FC = () => {
   }, []);
 
   const openDatePicker = () => {
-    setTempDate(profile.birthDate ? new Date(profile.birthDate) : new Date());
+    setSelectedBirthDateObj(
+      profile.birthDate ? new Date(profile.birthDate) : new Date(),
+    );
     setShowDatePicker(true);
   };
 
+  const handleBirthChange = (_e: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (date) {
+        setProfile(prev => ({ ...prev, birthDate: date.toISOString() }));
+      }
+    } else if (date) {
+      setSelectedBirthDateObj(date);
+    }
+  };
+
   const confirmDate = () => {
-    setProfile(prev => ({ ...prev, birthDate: tempDate.toISOString() }));
+    setProfile(prev => ({ ...prev, birthDate: selectedBirthDateObj.toISOString() }));
+    setShowDatePicker(false);
+  };
+
+  const cancelDatePicker = () => {
     setShowDatePicker(false);
   };
 
@@ -215,14 +232,16 @@ const AccountScreen: React.FC = () => {
                   setProfile(prev => ({ ...prev, gender }))
                 }
               />
-              <Text style={styles.label}>Дата рождения</Text>
               <TouchableOpacity
-                style={styles.dateButton}
+                style={styles.birthRow}
                 onPress={openDatePicker}
               >
-                <Text style={{ color: profile.birthDate ? 'white' : '#666' }}>
-                  {formatDate(profile.birthDate)}
-                </Text>
+                <View style={styles.birthTexts}>
+                  <Text style={styles.birthLabel}>Дата рождения</Text>
+                  <Text style={styles.birthValue}>
+                    {formatDate(profile.birthDate)}
+                  </Text>
+                </View>
                 <Icon name="calendar" size={20} color="#888" />
               </TouchableOpacity>
             </View>
@@ -308,39 +327,53 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.saveButtonText}>Сохранить</Text>
             </TouchableOpacity>
 
-            <Modal
-              visible={showDatePicker}
-              transparent
-              animationType="slide"
-              onRequestClose={() => setShowDatePicker(false)}
-            >
-              <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
-                <View style={styles.modalOverlay}>
-                  <TouchableWithoutFeedback>
-                    <View style={styles.modalContent}>
-                      <View style={styles.modalHeader}>
-                        <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                          <Icon name="close" size={24} color="white" />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={confirmDate}>
-                          <Text style={styles.doneText}>Готово</Text>
-                        </TouchableOpacity>
+            {Platform.OS === 'ios' && showDatePicker && (
+              <Modal
+                transparent
+                animationType="slide"
+                visible={showDatePicker}
+                onRequestClose={cancelDatePicker}
+              >
+                <TouchableWithoutFeedback onPress={cancelDatePicker}>
+                  <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                      <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                          <TouchableOpacity onPress={cancelDatePicker}>
+                            <Text style={styles.cancelButton}>Отмена</Text>
+                          </TouchableOpacity>
+                          <Text style={styles.modalTitle}>Дата рождения</Text>
+                          <TouchableOpacity onPress={confirmDate}>
+                            <Text style={styles.doneButton}>Готово</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                          value={selectedBirthDateObj}
+                          mode="date"
+                          display="spinner"
+                          onChange={handleBirthChange}
+                          style={styles.timePickerIOS}
+                          textColor="white"
+                          themeVariant="dark"
+                          locale="ru-RU"
+                          maximumDate={new Date()}
+                        />
                       </View>
-                      <DatePicker
-                        date={tempDate}
-                        mode="date"
-                        maximumDate={new Date()}
-                        onDateChange={setTempDate}
-                        locale="ru"
-                        textColor="white"
-                        fadeToColor="none"
-                        style={styles.datePicker}
-                      />
-                    </View>
-                  </TouchableWithoutFeedback>
-                </View>
-              </TouchableWithoutFeedback>
-            </Modal>
+                    </TouchableWithoutFeedback>
+                  </View>
+                </TouchableWithoutFeedback>
+              </Modal>
+            )}
+            {Platform.OS === 'android' && showDatePicker && (
+              <DateTimePicker
+                value={selectedBirthDateObj}
+                mode="date"
+                display="default"
+                onChange={handleBirthChange}
+                maximumDate={new Date()}
+                locale="ru-RU"
+              />
+            )}
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

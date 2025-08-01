@@ -95,14 +95,26 @@ export const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  dateButton: {
+  birthRow: {
     backgroundColor: '#1E1E1E',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
     borderRadius: 8,
     marginBottom: 10,
+  },
+  birthTexts: {
+    flex: 1,
+  },
+  birthLabel: {
+    color: 'white',
+    fontSize: 12,
+  },
+  birthValue: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 2,
   },
   saveButton: {
     backgroundColor: '#007AFF',
@@ -123,23 +135,41 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#121212',
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: '#2C2C2C',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+    alignItems: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3A3A3A',
+    width: '100%',
   },
-  doneText: {
+  modalTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    color: '#FF3B30',
+    fontSize: 16,
+    paddingRight: 8,
+  },
+  doneButton: {
     color: '#007AFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    paddingLeft: 8,
   },
-  datePicker: {
+  timePickerIOS: {
+    height: 200,
     alignSelf: 'center',
+    width: '100%',
   },
 });
