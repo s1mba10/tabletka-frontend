@@ -176,7 +176,17 @@ const AccountScreen: React.FC = () => {
         if (stored) {
           const parsed = JSON.parse(stored) as Partial<ProfileData>;
           const gender = parsed.gender === 'Женский' ? 'Женский' : 'Мужской';
-          setProfile(prev => ({ ...prev, ...parsed, gender }));
+          const vk = parsed.vk?.replace(/^vk\.com\//, '') || '';
+          const instagram = parsed.instagram?.replace(/^instagram\.com\//, '') || '';
+          const telegram = parsed.telegram?.replace(/^t\.me\//, '') || '';
+          setProfile(prev => ({
+            ...prev,
+            ...parsed,
+            gender,
+            vk,
+            instagram,
+            telegram,
+          }));
         }
       } catch {
         // ignore
@@ -248,7 +258,13 @@ const AccountScreen: React.FC = () => {
       return;
     }
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      const dataToSave = {
+        ...profile,
+        vk: profile.vk ? `vk.com/${profile.vk}` : '',
+        instagram: profile.instagram ? `instagram.com/${profile.instagram}` : '',
+        telegram: profile.telegram ? `t.me/${profile.telegram}` : '',
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
       Alert.alert('Изменения сохранены');
     } catch {
       Alert.alert('Ошибка', 'Не удалось сохранить данные');
@@ -364,24 +380,30 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.label}>ВКонтакте</Text>
               <View style={styles.rowInput}>
                 <Icon name="vk" size={20} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="ВКонтакте"
-                  placeholderTextColor="#666"
-                  value={profile.vk}
-                  onChangeText={handleSocialChange('vk')}
-                />
+                <View style={styles.socialField}>
+                  <Text style={styles.prefixText}>vk.com/</Text>
+                  <TextInput
+                    style={styles.socialInput}
+                    placeholder="username"
+                    placeholderTextColor="#666"
+                    value={profile.vk}
+                    onChangeText={handleSocialChange('vk')}
+                  />
+                </View>
               </View>
               <Text style={styles.label}>Instagram</Text>
               <View style={styles.rowInput}>
                 <Icon name="instagram" size={20} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Instagram"
-                  placeholderTextColor="#666"
-                  value={profile.instagram}
-                  onChangeText={handleSocialChange('instagram')}
-                />
+                <View style={styles.socialField}>
+                  <Text style={styles.prefixText}>instagram.com/</Text>
+                  <TextInput
+                    style={styles.socialInput}
+                    placeholder="username"
+                    placeholderTextColor="#666"
+                    value={profile.instagram}
+                    onChangeText={handleSocialChange('instagram')}
+                  />
+                </View>
               </View>
               <Text style={styles.label}>Одноклассники</Text>
               <View style={styles.rowInput}>
@@ -397,13 +419,16 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.label}>Telegram</Text>
               <View style={styles.rowInput}>
                 <Icon name="telegram" size={20} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Telegram"
-                  placeholderTextColor="#666"
-                  value={profile.telegram}
-                  onChangeText={handleSocialChange('telegram')}
-                />
+                <View style={styles.socialField}>
+                  <Text style={styles.prefixText}>t.me/</Text>
+                  <TextInput
+                    style={styles.socialInput}
+                    placeholder="username"
+                    placeholderTextColor="#666"
+                    value={profile.telegram}
+                    onChangeText={handleSocialChange('telegram')}
+                  />
+                </View>
               </View>
             </View>
 

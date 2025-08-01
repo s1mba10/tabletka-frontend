@@ -60,6 +60,24 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  socialField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 8,
+    flex: 1,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  prefixText: {
+    color: '#888',
+  },
+  socialInput: {
+    color: 'white',
+    flex: 1,
+    paddingVertical: 10,
+    marginLeft: 4,
+  },
   icon: {
     marginRight: 10,
     color: '#888',
