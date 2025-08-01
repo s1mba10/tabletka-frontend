@@ -13,7 +13,6 @@ import {
   Alert,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,13 +29,69 @@ interface ProfileData {
   middleName: string;
   phone: string;
   email: string;
-  gender: 'Мужской' | 'Женский' | 'Не указан';
+  gender: 'Мужской' | 'Женский';
   birthDate: string;
   vk: string;
   instagram: string;
   odnoklassniki: string;
   telegram: string;
 }
+
+interface GenderSelectorProps {
+  value: 'Мужской' | 'Женский';
+  onChange: (gender: 'Мужской' | 'Женский') => void;
+}
+
+const GenderSelector: React.FC<GenderSelectorProps> = ({ value, onChange }) => {
+  return (
+    <View style={styles.genderContainer}>
+      <TouchableOpacity
+        style={[
+          styles.genderButton,
+          value === 'Мужской' && styles.genderButtonActive,
+        ]}
+        onPress={() => onChange('Мужской')}
+        accessibilityRole="button"
+      >
+        <Icon
+          name="gender-male"
+          size={28}
+          color={value === 'Мужской' ? 'white' : '#888'}
+        />
+        <Text
+          style={[
+            styles.genderLabel,
+            value === 'Мужской' && styles.genderLabelActive,
+          ]}
+        >
+          Мужской
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.genderButton,
+          value === 'Женский' && styles.genderButtonActive,
+        ]}
+        onPress={() => onChange('Женский')}
+        accessibilityRole="button"
+      >
+        <Icon
+          name="gender-female"
+          size={28}
+          color={value === 'Женский' ? 'white' : '#888'}
+        />
+        <Text
+          style={[
+            styles.genderLabel,
+            value === 'Женский' && styles.genderLabelActive,
+          ]}
+        >
+          Женский
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const STORAGE_KEY = 'userProfile';
 
@@ -48,7 +103,7 @@ const AccountScreen: React.FC = () => {
     middleName: '',
     phone: '',
     email: '',
-    gender: 'Не указан',
+    gender: 'Мужской',
     birthDate: '',
     vk: '',
     instagram: '',
@@ -62,7 +117,9 @@ const AccountScreen: React.FC = () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
         if (stored) {
-          setProfile(prev => ({ ...prev, ...JSON.parse(stored) }));
+          const parsed = JSON.parse(stored) as Partial<ProfileData>;
+          const gender = parsed.gender === 'Женский' ? 'Женский' : 'Мужской';
+          setProfile(prev => ({ ...prev, ...parsed, gender }));
         }
       } catch {
         // ignore
@@ -147,21 +204,12 @@ const AccountScreen: React.FC = () => {
                 }
               />
               <Text style={styles.label}>Пол</Text>
-              <View style={styles.input}>
-                <Picker
-                  selectedValue={profile.gender}
-                  onValueChange={gender =>
-                    setProfile(prev => ({ ...prev, gender: gender as ProfileData["gender"] }))
-                  }
-                  dropdownIconColor="white"
-                  style={{ color: 'white' }}
-                  itemStyle={{ color: 'white' }}
-                >
-                  <Picker.Item label="Мужской" value="Мужской" color="white" />
-                  <Picker.Item label="Женский" value="Женский" color="white" />
-                  <Picker.Item label="Не указан" value="Не указан" color="white" />
-                </Picker>
-              </View>
+              <GenderSelector
+                value={profile.gender}
+                onChange={gender =>
+                  setProfile(prev => ({ ...prev, gender }))
+                }
+              />
               <Text style={styles.label}>Дата рождения</Text>
               <TouchableOpacity
                 style={styles.dateButton}

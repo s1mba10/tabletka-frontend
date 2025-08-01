@@ -64,6 +64,37 @@ export const styles = StyleSheet.create({
     marginRight: 10,
     color: '#888',
   },
+  genderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  genderButton: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  genderButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  genderLabel: {
+    marginTop: 4,
+    color: '#888',
+    fontSize: 14,
+  },
+  genderLabelActive: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
   dateButton: {
     backgroundColor: '#1E1E1E',
     flexDirection: 'row',
