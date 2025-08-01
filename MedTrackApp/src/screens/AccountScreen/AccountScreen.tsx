@@ -155,10 +155,11 @@ const AccountScreen: React.FC = () => {
                   }
                   dropdownIconColor="white"
                   style={{ color: 'white' }}
+                  itemStyle={{ color: 'white' }}
                 >
-                  <Picker.Item label="Мужской" value="Мужской" />
-                  <Picker.Item label="Женский" value="Женский" />
-                  <Picker.Item label="Не указан" value="Не указан" />
+                  <Picker.Item label="Мужской" value="Мужской" color="white" />
+                  <Picker.Item label="Женский" value="Женский" color="white" />
+                  <Picker.Item label="Не указан" value="Не указан" color="white" />
                 </Picker>
               </View>
               <Text style={styles.label}>Дата рождения</Text>
