@@ -16,6 +16,7 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaskInput from 'react-native-mask-input';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -114,6 +115,7 @@ const AccountScreen: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedBirthDateObj, setSelectedBirthDateObj] = useState(new Date());
   const [emailError, setEmailError] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
 
   const capitalize = (val: string) =>
     val ? val.charAt(0).toUpperCase() + val.slice(1) : '';
@@ -173,14 +175,16 @@ const AccountScreen: React.FC = () => {
     setProfile(prev => ({ ...prev, email: trimmed }));
   };
 
-  const handlePhoneChange = (text: string) => {
-    let digits = text.replace(/\D/g, '').slice(0, 11);
+  const handlePhoneChange = (masked: string, unmasked: string) => {
+    let digits = unmasked.slice(0, 11);
     if (!digits) {
+      setPhoneInput('');
       setProfile(prev => ({ ...prev, phone: '' }));
       return;
     }
     if (digits.startsWith('8')) digits = '7' + digits.slice(1);
     if (!digits.startsWith('7')) digits = '7' + digits;
+    setPhoneInput(masked);
     setProfile(prev => ({ ...prev, phone: '+' + digits }));
   };
 
@@ -219,6 +223,7 @@ const AccountScreen: React.FC = () => {
             instagram,
             telegram,
           }));
+          setPhoneInput(formatPhone(parsed.phone || ''));
         }
       } catch {
         // ignore
@@ -387,14 +392,14 @@ const AccountScreen: React.FC = () => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Контакты</Text>
               <Text style={styles.label}>Телефон</Text>
-              <TextInput
+              <MaskInput
                 style={styles.input}
-                placeholder="Телефон"
+                placeholder="+7 (___) ___-__-__"
                 placeholderTextColor="#666"
                 keyboardType="phone-pad"
-                autoCapitalize="none"
-                value={formatPhone(profile.phone)}
+                value={phoneInput}
                 onChangeText={handlePhoneChange}
+                mask={['+', '7', ' ', '(', /\d/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, '-', /\d/, /\d/]}
               />
               <Text style={styles.label}>Email</Text>
               <TextInput
