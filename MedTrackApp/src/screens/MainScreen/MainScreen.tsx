@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AdherenceDisplay, CategorySummaryCard } from '../../components';
 import { useAdherence } from '../../hooks';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
@@ -23,10 +24,31 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 const MainScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { percentage, reloadStats } = useAdherence();
+  const [userName, setUserName] = useState('');
+  const [userImage, setUserImage] = useState<string | undefined>();
 
   useFocusEffect(
     React.useCallback(() => {
       reloadStats();
+      const loadProfile = async () => {
+        try {
+          const stored = await AsyncStorage.getItem('userProfile');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const firstName = parsed.firstName || '';
+            const lastName = parsed.lastName || '';
+            setUserName(firstName && lastName ? `${firstName} ${lastName}` : '');
+            setUserImage(parsed.avatarUri || undefined);
+          } else {
+            setUserName('');
+            setUserImage(undefined);
+          }
+        } catch {
+          setUserName('');
+          setUserImage(undefined);
+        }
+      };
+      loadProfile();
     }, [reloadStats])
   );
 
@@ -47,8 +69,6 @@ const MainScreen: React.FC = () => {
   };
 
   const isPro = true; // placeholder
-  const userName = 'Иван Иванов'; // placeholder
-  const userImage: string | undefined = undefined;
 
   const getAdherenceColor = (value: number) => {
     if (value >= 80) return '#4CAF50';
@@ -83,9 +103,7 @@ const MainScreen: React.FC = () => {
       >
         <View style={styles.avatar}>{renderAvatar()}</View>
         <View style={styles.infoRow}>
-          <Text style={userName ? styles.profileName : styles.placeholderName}>
-            {userName || 'Имя не указано'}
-          </Text>
+          {userName ? <Text style={styles.profileName}>{userName}</Text> : null}
           {isPro && (
             <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />
           )}

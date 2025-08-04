@@ -12,6 +12,7 @@ import {
   Keyboard,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,10 +23,8 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { RootStackParamList } from '../../navigation';
-import VKIcon from '../../../assets/icons/icons8-vk.svg';
-import InstagramIcon from '../../../assets/icons/icons8-instagram.svg';
-import TelegramIcon from '../../../assets/icons/icons8-telegram.svg';
-import OKIcon from '../../../assets/icons/icons8-odnoklassniki.svg';
+
+import { launchImageLibrary } from 'react-native-image-picker';
 
 import { styles } from './styles';
 
@@ -41,6 +40,7 @@ interface ProfileData {
   instagram: string;
   odnoklassniki: string;
   telegram: string;
+  avatarUri: string;
 }
 
 interface GenderSelectorProps {
@@ -115,6 +115,7 @@ const AccountScreen: React.FC = () => {
     instagram: '',
     odnoklassniki: '',
     telegram: '',
+    avatarUri: '',
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedBirthDateObj, setSelectedBirthDateObj] = useState(new Date());
@@ -226,6 +227,7 @@ const AccountScreen: React.FC = () => {
             vk,
             instagram,
             telegram,
+            avatarUri: parsed.avatarUri || '',
           }));
           setPhoneInput(formatPhone(parsed.phone || ''));
         }
@@ -274,6 +276,16 @@ const AccountScreen: React.FC = () => {
 
   const cancelDatePicker = () => {
     setShowDatePicker(false);
+  };
+
+  const pickAvatar = () => {
+    launchImageLibrary({ mediaType: 'photo' }, response => {
+      if (response.didCancel) return;
+      const uri = response.assets && response.assets[0]?.uri;
+      if (uri) {
+        setProfile(prev => ({ ...prev, avatarUri: uri }));
+      }
+    });
   };
 
   const save = async () => {
@@ -337,11 +349,25 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.headerTitle}>Профиль</Text>
               <View style={{ width: 24 }} />
             </View>
-            <View style={styles.avatarWrapper}>
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              onPress={pickAvatar}
+              activeOpacity={0.7}
+            >
               <View style={styles.avatar}>
-                <Icon name="account" size={40} color="#888" />
+                {profile.avatarUri ? (
+                  <Image
+                    source={{ uri: profile.avatarUri }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Icon name="account" size={40} color="#888" />
+                )}
+                <View style={styles.cameraOverlay}>
+                  <Icon name="camera" size={20} color="#fff" />
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Основные данные</Text>

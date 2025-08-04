@@ -25,14 +25,28 @@ export const styles = StyleSheet.create({
   avatarWrapper: {
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 20,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#2C2C2C',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#0008',
+    padding: 4,
+    borderRadius: 12,
   },
   section: {
     marginBottom: 20,

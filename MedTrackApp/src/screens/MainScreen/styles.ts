@@ -41,10 +41,6 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  placeholderName: {
-    color: '#888',
-    fontSize: 20,
-  },
   crown: {
     marginLeft: 5,
   },
