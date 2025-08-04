@@ -101,22 +101,16 @@ const Medications: React.FC = () => {
   });
 
   const navigateToCalendar = () => {
-    const parent = navigation.getParent?.();
-    const state = parent?.getState?.();
+    navigation.dispatch(StackActions.popToTop());
 
-    if (state?.routeNames?.includes('MedCalendar')) {
-      parent?.navigate({
-        name: 'MedCalendar',
-        params: { forceRefresh: Date.now() },
-        merge: true,
-      });
-      parent?.dispatch(StackActions.popToTop());
-    } else {
-      parent?.getParent?.()?.navigate('Лекарства', {
+    navigation.getParent()?.navigate({
+      name: 'Лекарства',
+      params: {
         screen: 'MedCalendar',
         params: { forceRefresh: Date.now() },
-      });
-    }
+      },
+      merge: true,
+    });
   };
 
   const stopCourse = async (id: number) => {
