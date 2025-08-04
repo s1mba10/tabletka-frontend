@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  StatusBar,
+  Alert,
+  Animated,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   format,
@@ -12,7 +21,8 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -48,9 +58,22 @@ const MedCalendarScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
+  const [fabOpen, setFabOpen] = useState(false);
+  const fabAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fabAnim, {
+      toValue: fabOpen ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [fabOpen, fabAnim]);
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+  const baseBottom = tabBarHeight + insets.bottom;
 
   const handleWeekSelect = (year: number, week: number) => {
     const target = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
@@ -400,17 +423,59 @@ const MedCalendarScreen: React.FC = () => {
           )}
         />
 
-        {/* Add Reminder FAB */}
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => {
-            navigation.navigate('ReminderAdd', {
-              selectedDate,
-              mainKey: route.key,
-            });
-          }}
+        {/* Speed Dial FAB */}
+        {fabOpen && (
+          <TouchableWithoutFeedback onPress={() => setFabOpen(false)}>
+            <View style={styles.overlay} />
+          </TouchableWithoutFeedback>
+        )}
+        <Animated.View
+          pointerEvents={fabOpen ? 'auto' : 'none'}
+          style={[
+            styles.speedDialActions,
+            {
+              bottom: baseBottom + 60,
+              opacity: fabAnim,
+              transform: [
+                {
+                  translateY: fabAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
         >
-          <Icon name="plus" size={30} color="white" />
+          <TouchableOpacity
+            style={styles.speedDialAction}
+            onPress={() => {
+              setFabOpen(false);
+              navigation.navigate('Medications');
+            }}
+          >
+            <Icon name="medical-bag" size={24} color="white" />
+            <Text style={styles.speedDialLabel}>Препараты</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.speedDialAction}
+            onPress={() => {
+              setFabOpen(false);
+              navigation.navigate('ReminderAdd', {
+                selectedDate,
+                mainKey: route.key,
+              });
+            }}
+          >
+            <Icon name="bell-plus" size={24} color="white" />
+            <Text style={styles.speedDialLabel}>Добавить напоминание</Text>
+          </TouchableOpacity>
+        </Animated.View>
+        <TouchableOpacity
+          style={[styles.fab, { bottom: baseBottom + 20 }]}
+          onPress={() => setFabOpen(prev => !prev)}
+        >
+          <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
         </TouchableOpacity>
         <WeekPickerModal
           visible={pickerVisible}

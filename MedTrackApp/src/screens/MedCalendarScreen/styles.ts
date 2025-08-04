@@ -154,7 +154,6 @@ export const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 20,
     right: 20,
     backgroundColor: '#007AFF',
     width: 60,
@@ -167,6 +166,28 @@ export const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  speedDialActions: {
+    position: 'absolute',
+    right: 20,
+    alignItems: 'flex-end',
+  },
+  speedDialAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 30,
+    marginBottom: 12,
+  },
+  speedDialLabel: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   emptyListContainer: {
     flex: 1,
