@@ -100,14 +100,17 @@ const Medications: React.FC = () => {
     return completed || c.endDate < today;
   });
 
-  const stopCourse = async (id: number) => {
-    await removeCourse(id);
-    await deleteByCourse(id);
-    navigation.navigate('Лекарства', {
-      screen: 'MedCalendar',
+  const navigateToCalendar = () =>
+    navigation.navigate({
+      name: 'MedCalendar',
       params: { forceRefresh: Date.now() },
       merge: true,
     });
+
+  const stopCourse = async (id: number) => {
+    await removeCourse(id);
+    await deleteByCourse(id);
+    navigateToCalendar();
   };
 
   const repeatCourse = (course: MedicationCourse) => {
@@ -130,11 +133,7 @@ const Medications: React.FC = () => {
   const deleteCourse = async (id: number) => {
     await removeCourse(id);
     await deleteByCourse(id);
-    navigation.navigate('Лекарства', {
-      screen: 'MedCalendar',
-      params: { forceRefresh: Date.now() },
-      merge: true,
-    });
+    navigateToCalendar();
   };
 
   return (
