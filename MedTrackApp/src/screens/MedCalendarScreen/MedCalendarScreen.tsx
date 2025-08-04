@@ -21,7 +21,7 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -58,10 +58,16 @@ const MedCalendarScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [pickerVisible, setPickerVisible] = useState(false);
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const [fabOpen, setFabOpen] = useState(false);
   const fabAnim = useRef(new Animated.Value(0)).current;
+
+  const FAB_SIZE = 60;
+  const FAB_MARGIN = 16;
+  const ACTION_SPACING = 56;
+  const ACTION_MARGIN = 12;
+  const fabBottom = tabBarHeight + FAB_MARGIN;
+  const actionsBottom = fabBottom + FAB_SIZE + ACTION_SPACING + ACTION_MARGIN;
 
   useEffect(() => {
     Animated.timing(fabAnim, {
@@ -73,7 +79,6 @@ const MedCalendarScreen: React.FC = () => {
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
-  const baseBottom = tabBarHeight + insets.bottom;
 
   const handleWeekSelect = (year: number, week: number) => {
     const target = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
@@ -434,7 +439,7 @@ const MedCalendarScreen: React.FC = () => {
           style={[
             styles.speedDialActions,
             {
-              bottom: baseBottom + 60,
+              bottom: actionsBottom,
               opacity: fabAnim,
               transform: [
                 {
@@ -472,7 +477,7 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableOpacity>
         </Animated.View>
         <TouchableOpacity
-          style={[styles.fab, { bottom: baseBottom + 20 }]}
+          style={[styles.fab, { bottom: fabBottom }]}
           onPress={() => setFabOpen(prev => !prev)}
         >
           <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
