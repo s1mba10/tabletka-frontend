@@ -100,12 +100,24 @@ const Medications: React.FC = () => {
     return completed || c.endDate < today;
   });
 
-  const navigateToCalendar = () =>
-    navigation.navigate({
-      name: 'MedCalendar',
-      params: { forceRefresh: Date.now() },
-      merge: true,
-    });
+  const navigateToCalendar = () => {
+    const state = navigation.getState();
+    const calendarRoute = state.routes.find(r => r.name === 'MedCalendar');
+
+    if (calendarRoute) {
+      navigation.navigate({
+        key: calendarRoute.key,
+        params: { forceRefresh: Date.now() },
+        merge: true,
+      });
+      navigation.goBack();
+    } else {
+      navigation.navigate('Лекарства', {
+        screen: 'MedCalendar',
+        params: { forceRefresh: Date.now() },
+      });
+    }
+  };
 
   const stopCourse = async (id: number) => {
     await removeCourse(id);
