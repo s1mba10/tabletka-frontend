@@ -65,6 +65,23 @@ const MedCalendarScreen: React.FC = () => {
   const ACTION_BUTTON_SIZE = 50;
   const ACTION_SPACING = 20;
   const ACTION_OFFSET = ACTION_BUTTON_SIZE + ACTION_SPACING;
+  const actionBaseBottom = Math.max(tabBarHeight + insets.bottom + 40, 100);
+  const fabActions = [
+    {
+      label: 'Добавить',
+      icon: 'plus',
+      onPress: () =>
+        navigation.navigate('ReminderAdd', {
+          selectedDate,
+          mainKey: route.key,
+        }),
+    },
+    {
+      label: 'Препараты',
+      icon: 'medical-bag',
+      onPress: () => navigation.navigate('Medications'),
+    },
+  ];
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -430,71 +447,45 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableWithoutFeedback>
         )}
 
-        <View style={[
-          styles.fabContainer,
-          { bottom: tabBarHeight + insets.bottom + 32 },
-        ]}>
+        {fabActions.map((action, index) => (
           <Animated.View
+            key={action.label}
             style={[
               styles.fabOption,
               {
+                bottom: actionBaseBottom + ACTION_OFFSET * index,
                 opacity: animation,
                 transform: [
                   { scale: animation },
                   {
                     translateY: animation.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0, -(ACTION_OFFSET * 2)],
+                      outputRange: [ACTION_OFFSET * (index + 1), 0],
                     }),
                   },
                 ],
               },
             ]}
           >
-            <Text style={styles.fabLabel}>Препараты</Text>
+            <Text style={styles.fabLabel}>{action.label}</Text>
             <TouchableOpacity
               style={styles.fabOptionButton}
               onPress={() => {
                 setFabOpen(false);
-                navigation.navigate('Medications');
+                action.onPress();
               }}
             >
-              <Icon name="medical-bag" size={24} color="white" />
+              <Icon name={action.icon} size={24} color="white" />
             </TouchableOpacity>
           </Animated.View>
+        ))}
 
-          <Animated.View
-            style={[
-              styles.fabOption,
-              {
-                opacity: animation,
-                transform: [
-                  { scale: animation },
-                  {
-                    translateY: animation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, -ACTION_OFFSET],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <Text style={styles.fabLabel}>Добавить</Text>
-            <TouchableOpacity
-              style={styles.fabOptionButton}
-              onPress={() => {
-                setFabOpen(false);
-                navigation.navigate('ReminderAdd', {
-                  selectedDate,
-                  mainKey: route.key,
-                });
-              }}
-            >
-              <Icon name="plus" size={24} color="white" />
-            </TouchableOpacity>
-          </Animated.View>
-
+        <View
+          style={[
+            styles.fabContainer,
+            { bottom: tabBarHeight + insets.bottom + 32 },
+          ]}
+        >
           <TouchableOpacity
             style={styles.fab}
             onPress={() => setFabOpen(prev => !prev)}

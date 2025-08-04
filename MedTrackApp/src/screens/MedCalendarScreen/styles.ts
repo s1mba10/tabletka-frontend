@@ -176,7 +176,7 @@ export const styles = StyleSheet.create({
   },
   fabOption: {
     position: 'absolute',
-    right: 0,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
