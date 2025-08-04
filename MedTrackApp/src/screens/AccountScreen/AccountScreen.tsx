@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,15 @@ import {
   Alert,
   Modal,
   Image,
+  Animated,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaskInput from 'react-native-mask-input';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
@@ -121,6 +124,27 @@ const AccountScreen: React.FC = () => {
   const [selectedBirthDateObj, setSelectedBirthDateObj] = useState(new Date());
   const [emailError, setEmailError] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
+  const [saveButtonY, setSaveButtonY] = useState<number | null>(null);
+  const [showFloating, setShowFloating] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: showFloating ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [showFloating, fadeAnim]);
+
+  const handleScroll = (
+    e: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    if (saveButtonY === null) return;
+    const { layoutMeasurement, contentOffset } = e.nativeEvent;
+    const bottom = contentOffset.y + layoutMeasurement.height;
+    setShowFloating(bottom < saveButtonY - 20);
+  };
 
   const capitalize = (val: string) =>
     val ? val.charAt(0).toUpperCase() + val.slice(1) : '';
@@ -338,7 +362,12 @@ const AccountScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.contentContainer}>
+          <View style={{ flex: 1 }}>
+            <ScrollView
+              contentContainerStyle={styles.contentContainer}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
             <View style={styles.header}>
               <Icon
                 name="arrow-left"
@@ -528,7 +557,11 @@ const AccountScreen: React.FC = () => {
               <Text style={styles.diaryButtonText}>Дневник тела</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.saveButton} onPress={save}>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={save}
+              onLayout={e => setSaveButtonY(e.nativeEvent.layout.y)}
+            >
               <Text style={styles.saveButtonText}>Сохранить</Text>
             </TouchableOpacity>
 
@@ -580,6 +613,18 @@ const AccountScreen: React.FC = () => {
               />
             )}
           </ScrollView>
+          <Animated.View
+            style={[
+              styles.floatingButton,
+              { opacity: fadeAnim, bottom: insets.bottom + 20 },
+            ]}
+            pointerEvents={showFloating ? 'auto' : 'none'}
+          >
+            <TouchableOpacity style={styles.saveButton} onPress={save}>
+              <Text style={styles.saveButtonText}>Сохранить</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>

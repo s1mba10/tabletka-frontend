@@ -166,6 +166,11 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  floatingButton: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+  },
   diaryButton: {
     backgroundColor: '#007AFF',
     padding: 15,
