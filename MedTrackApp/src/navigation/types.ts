@@ -22,4 +22,5 @@ export type RootStackParamList = {
   };
   Profile: undefined;
   Medications: undefined;
+  BodyDiary: undefined;
 };

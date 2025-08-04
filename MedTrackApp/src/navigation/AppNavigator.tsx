@@ -11,6 +11,7 @@ import AccountScreen from '../screens/AccountScreen';
 import MedCalendarScreen from '../screens/MedCalendarScreen';
 import Profile from '../screens/Profile';
 import Medications from '../screens/Medications';
+import BodyDiaryScreen from '../screens/BodyDiaryScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -19,6 +20,7 @@ const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="MainScreen" component={MainScreen} />
     <Stack.Screen name="Account" component={AccountScreen} />
+    <Stack.Screen name="BodyDiary" component={BodyDiaryScreen} />
   </Stack.Navigator>
 );
 

@@ -495,6 +495,13 @@ const AccountScreen: React.FC = () => {
               </View>
             </View>
 
+            <TouchableOpacity
+              style={styles.diaryButton}
+              onPress={() => navigation.navigate('BodyDiary')}
+            >
+              <Text style={styles.diaryButtonText}>Дневник тела</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.saveButton} onPress={save}>
               <Text style={styles.saveButtonText}>Сохранить</Text>
             </TouchableOpacity>
