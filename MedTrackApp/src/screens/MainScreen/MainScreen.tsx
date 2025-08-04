@@ -59,8 +59,8 @@ const MainScreen: React.FC = () => {
 
   const summaries = [
     { label: 'Лекарства', icon: 'pill', value: percentage },
-    { label: 'Тренировки', icon: 'dumbbell', value: 72 },
-    { label: 'Питание', icon: 'food-apple', value: 50 },
+    { label: 'Тренировки', icon: 'dumbbell', value: 90 },
+    { label: 'Питание', icon: 'food-apple', value: 65 },
   ];
 
   const renderAvatar = () => {
