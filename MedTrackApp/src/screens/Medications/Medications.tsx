@@ -101,25 +101,18 @@ const Medications: React.FC = () => {
   });
 
   const navigateToCalendar = () => {
-    let nav: any = navigation;
-    while (nav?.getState && !nav.getState().routes.find((r: any) => r.name === 'MedCalendar')) {
-      const parent = nav.getParent?.();
-      if (!parent) break;
-      nav = parent;
-    }
+    const parent = navigation.getParent?.();
+    const state = parent?.getState?.();
 
-    const state = nav?.getState?.();
-    const calendarRoute = state?.routes.find((r: any) => r.name === 'MedCalendar');
-
-    if (calendarRoute && nav) {
-      nav.navigate({
-        key: calendarRoute.key,
+    if (state?.routeNames?.includes('MedCalendar')) {
+      parent?.navigate({
+        name: 'MedCalendar',
         params: { forceRefresh: Date.now() },
         merge: true,
       });
-      nav.dispatch(StackActions.popToTop());
+      parent?.dispatch(StackActions.popToTop());
     } else {
-      navigation.navigate('Лекарства', {
+      parent?.getParent?.()?.navigate('Лекарства', {
         screen: 'MedCalendar',
         params: { forceRefresh: Date.now() },
       });
