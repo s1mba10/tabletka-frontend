@@ -62,8 +62,8 @@ const MedCalendarScreen: React.FC = () => {
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
-  const ACTION_SPACING = 24;
-  const ACTION_MARGIN = 12;
+  const ACTION_SPACING = 8;
+  const ACTION_MARGIN = 4;
   const fabBottom = FAB_MARGIN;
   const actionsBottom = fabBottom + FAB_SIZE + ACTION_SPACING + ACTION_MARGIN;
 
