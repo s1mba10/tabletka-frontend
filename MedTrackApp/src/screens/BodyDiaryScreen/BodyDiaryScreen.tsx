@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -66,12 +66,33 @@ const BodyDiaryScreen: React.FC = () => {
   const [tempGoal, setTempGoal] = useState<BodyEntry['goal']>('Поддержание формы');
   const [tempActivity, setTempActivity] = useState<BodyEntry['activity']>('Средний');
 
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollViewWidth = useRef(0);
+  const weekLayouts = useRef<Record<string, { x: number; width: number }>>({});
+
   useEffect(() => {
     (async () => {
       const json = await AsyncStorage.getItem(STORAGE_KEY);
       const parsed = json ? JSON.parse(json) : {};
       setData(parsed);
     })();
+  }, []);
+
+  useEffect(() => {
+    const currentWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const key = getWeekKey(currentWeek);
+    const timeout = setTimeout(() => {
+      const layout = weekLayouts.current[key];
+      const containerWidth = scrollViewWidth.current;
+      if (layout) {
+        const offset = Math.max(
+          0,
+          layout.x - containerWidth / 2 + layout.width / 2,
+        );
+        scrollRef.current?.scrollTo({ x: offset, animated: false });
+      }
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -138,7 +159,14 @@ const BodyDiaryScreen: React.FC = () => {
       </View>
 
       <View style={styles.weekPicker}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onLayout={e => {
+            scrollViewWidth.current = e.nativeEvent.layout.width;
+          }}
+        >
           {weeks.map(week => {
             const key = getWeekKey(week);
             const isSelected = isSameWeek(week, selectedWeek, {
@@ -152,6 +180,12 @@ const BodyDiaryScreen: React.FC = () => {
                   isSelected && styles.weekItemActive,
                 ]}
                 onPress={() => setSelectedWeek(week)}
+                onLayout={e => {
+                  weekLayouts.current[key] = {
+                    x: e.nativeEvent.layout.x,
+                    width: e.nativeEvent.layout.width,
+                  };
+                }}
               >
                 <Text style={styles.weekItemText}>{renderWeekLabel(week)}</Text>
               </TouchableOpacity>
