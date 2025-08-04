@@ -106,6 +106,7 @@ const Medications: React.FC = () => {
     navigation.navigate('Лекарства', {
       screen: 'MedCalendar',
       params: { forceRefresh: Date.now() },
+      merge: true,
     });
   };
 
@@ -132,6 +133,7 @@ const Medications: React.FC = () => {
     navigation.navigate('Лекарства', {
       screen: 'MedCalendar',
       params: { forceRefresh: Date.now() },
+      merge: true,
     });
   };
 
