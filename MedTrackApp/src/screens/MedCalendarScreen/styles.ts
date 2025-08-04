@@ -154,9 +154,8 @@ export const styles = StyleSheet.create({
   },
   fabContainer: {
     position: 'absolute',
-    bottom: 20,
     right: 20,
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   fab: {
     backgroundColor: '#007AFF',

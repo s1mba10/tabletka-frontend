@@ -21,7 +21,7 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -59,6 +59,10 @@ const MedCalendarScreen: React.FC = () => {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+  const ACTION_BUTTON_SIZE = 50;
+  const ACTION_SPACING = 20;
+  const ACTION_OFFSET = ACTION_BUTTON_SIZE + ACTION_SPACING;
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -424,11 +428,22 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableWithoutFeedback>
         )}
 
-        <View style={styles.fabContainer}>
+        <View style={[styles.fabContainer, { bottom: insets.bottom + 16 }]}>
           <Animated.View
             style={[
               styles.fabOption,
-              { bottom: 150, opacity: animation, transform: [{ scale: animation }] },
+              {
+                opacity: animation,
+                transform: [
+                  { scale: animation },
+                  {
+                    translateY: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -(ACTION_OFFSET * 2)],
+                    }),
+                  },
+                ],
+              },
             ]}
           >
             <Text style={styles.fabLabel}>Препараты</Text>
@@ -446,7 +461,18 @@ const MedCalendarScreen: React.FC = () => {
           <Animated.View
             style={[
               styles.fabOption,
-              { bottom: 80, opacity: animation, transform: [{ scale: animation }] },
+              {
+                opacity: animation,
+                transform: [
+                  { scale: animation },
+                  {
+                    translateY: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -ACTION_OFFSET],
+                    }),
+                  },
+                ],
+              },
             ]}
           >
             <Text style={styles.fabLabel}>Добавить</Text>
