@@ -166,51 +166,46 @@ const BodyDiaryScreen: React.FC = () => {
           <Text style={styles.selectorText}>{entry.goal}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>Рост (см)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder="Рост (см)"
           placeholderTextColor="#666"
           value={entry.height}
           onChangeText={text => setEntry(prev => ({ ...prev, height: text }))}
         />
 
-        <Text style={styles.label}>Вес (кг)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder="Вес (кг)"
           placeholderTextColor="#666"
           value={entry.weight}
           onChangeText={text => setEntry(prev => ({ ...prev, weight: text }))}
         />
 
-        <Text style={styles.label}>Обхват шеи (см)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder="Обхват шеи (см)"
           placeholderTextColor="#666"
           value={entry.neck}
           onChangeText={text => setEntry(prev => ({ ...prev, neck: text }))}
         />
 
-        <Text style={styles.label}>Обхват талии (см)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder="Обхват талии (см)"
           placeholderTextColor="#666"
           value={entry.waist}
           onChangeText={text => setEntry(prev => ({ ...prev, waist: text }))}
         />
 
-        <Text style={styles.label}>Обхват бедер (см)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder="Обхват бедер (см)"
           placeholderTextColor="#666"
           value={entry.hips}
           onChangeText={text => setEntry(prev => ({ ...prev, hips: text }))}
@@ -221,11 +216,10 @@ const BodyDiaryScreen: React.FC = () => {
           <Text style={styles.selectorText}>{entry.activity}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>Среднедневное количество шагов за неделю</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder="Среднедневное количество шагов за неделю"
           placeholderTextColor="#666"
           value={entry.steps}
           onChangeText={text => setEntry(prev => ({ ...prev, steps: text }))}

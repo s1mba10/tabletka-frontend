@@ -50,14 +50,12 @@ export const styles = StyleSheet.create({
     color: 'white',
     padding: 10,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#555',
+    marginTop: 12,
+    marginBottom: 10,
   },
   selector: {
     backgroundColor: '#1E1E1E',
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#555',
     padding: 12,
   },
   selectorText: {
