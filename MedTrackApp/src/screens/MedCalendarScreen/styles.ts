@@ -182,7 +182,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 30,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   speedDialLabel: {
     color: 'white',
