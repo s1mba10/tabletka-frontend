@@ -27,18 +27,13 @@ const MedCalendarStack = () => (
     <Stack.Screen name="MedCalendar" component={MedCalendarScreen} />
     <Stack.Screen name="ReminderEdit" component={ReminderEdit} />
     <Stack.Screen name="ReminderAdd" component={ReminderAdd} />
+    <Stack.Screen name="Medications" component={Medications} />
   </Stack.Navigator>
 );
 
 const ProfileStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Profile" component={Profile} />
-    <Stack.Screen name="Medications" component={Medications} />
-  </Stack.Navigator>
-);
-
-const MedicationsStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Medications" component={Medications} />
   </Stack.Navigator>
 );
@@ -56,11 +51,6 @@ const AppNavigator: React.FC = () => {
           name="Лекарства"
           component={MedCalendarStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="pill" size={30} color={color} /> }}
-        />
-        <Tab.Screen
-          name="Препараты"
-          component={MedicationsStack}
-          options={{ tabBarIcon: ({ color }) => <Icon name="medical-bag" size={30} color={color} /> }}
         />
         <Tab.Screen
           name="Статистика"

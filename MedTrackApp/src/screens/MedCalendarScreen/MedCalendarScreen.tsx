@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  StatusBar,
+  Alert,
+  Animated,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   format,
@@ -48,9 +57,18 @@ const MedCalendarScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+  const animation = useRef(new Animated.Value(0)).current;
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+
+  useEffect(() => {
+    Animated.spring(animation, {
+      toValue: fabOpen ? 1 : 0,
+      useNativeDriver: true,
+    }).start();
+  }, [fabOpen, animation]);
 
   const handleWeekSelect = (year: number, week: number) => {
     const target = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
@@ -400,18 +418,59 @@ const MedCalendarScreen: React.FC = () => {
           )}
         />
 
-        {/* Add Reminder FAB */}
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => {
-            navigation.navigate('ReminderAdd', {
-              selectedDate,
-              mainKey: route.key,
-            });
-          }}
-        >
-          <Icon name="plus" size={30} color="white" />
-        </TouchableOpacity>
+        {fabOpen && (
+          <TouchableWithoutFeedback onPress={() => setFabOpen(false)}>
+            <View style={styles.fabBackdrop} />
+          </TouchableWithoutFeedback>
+        )}
+
+        <View style={styles.fabContainer}>
+          <Animated.View
+            style={[
+              styles.fabOption,
+              { bottom: 150, opacity: animation, transform: [{ scale: animation }] },
+            ]}
+          >
+            <Text style={styles.fabLabel}>Препараты</Text>
+            <TouchableOpacity
+              style={styles.fabOptionButton}
+              onPress={() => {
+                setFabOpen(false);
+                navigation.navigate('Medications');
+              }}
+            >
+              <Icon name="medical-bag" size={24} color="white" />
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.fabOption,
+              { bottom: 80, opacity: animation, transform: [{ scale: animation }] },
+            ]}
+          >
+            <Text style={styles.fabLabel}>Добавить</Text>
+            <TouchableOpacity
+              style={styles.fabOptionButton}
+              onPress={() => {
+                setFabOpen(false);
+                navigation.navigate('ReminderAdd', {
+                  selectedDate,
+                  mainKey: route.key,
+                });
+              }}
+            >
+              <Icon name="plus" size={24} color="white" />
+            </TouchableOpacity>
+          </Animated.View>
+
+          <TouchableOpacity
+            style={styles.fab}
+            onPress={() => setFabOpen(prev => !prev)}
+          >
+            <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
+          </TouchableOpacity>
+        </View>
         <WeekPickerModal
           visible={pickerVisible}
           onClose={() => setPickerVisible(false)}

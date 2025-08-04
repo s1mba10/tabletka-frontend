@@ -152,10 +152,13 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 5,
   },
-  fab: {
+  fabContainer: {
     position: 'absolute',
     bottom: 20,
     right: 20,
+    alignItems: 'center',
+  },
+  fab: {
     backgroundColor: '#007AFF',
     width: 60,
     height: 60,
@@ -167,6 +170,33 @@ export const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
+  },
+  fabBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  fabOption: {
+    position: 'absolute',
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fabOptionButton: {
+    backgroundColor: '#007AFF',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  fabLabel: {
+    color: 'white',
+    fontSize: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
   },
   emptyListContainer: {
     flex: 1,
