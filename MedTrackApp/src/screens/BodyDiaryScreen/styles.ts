@@ -22,14 +22,16 @@ export const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   weekItem: {
-    backgroundColor: '#1E1E1E',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#2C2C2C',
   },
   weekItemActive: {
     backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
   },
   weekItemText: {
     color: 'white',
@@ -48,12 +50,17 @@ export const styles = StyleSheet.create({
     color: 'white',
     padding: 10,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555',
   },
-  pickerWrapper: {
+  selector: {
     backgroundColor: '#1E1E1E',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555',
+    padding: 12,
   },
-  picker: {
+  selectorText: {
     color: 'white',
   },
   saveButton: {
@@ -68,6 +75,58 @@ export const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#2C2C2C',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3A3A3A',
+    width: '100%',
+  },
+  modalTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    color: '#FF3B30',
+    fontSize: 16,
+    paddingRight: 8,
+  },
+  doneButton: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    paddingLeft: 8,
+  },
+  modalOption: {
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalOptionText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  modalOptionTextActive: {
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
 

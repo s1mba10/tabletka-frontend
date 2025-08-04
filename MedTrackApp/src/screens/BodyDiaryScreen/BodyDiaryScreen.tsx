@@ -5,12 +5,13 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   format,
@@ -60,6 +61,10 @@ const BodyDiaryScreen: React.FC = () => {
   );
   const [entry, setEntry] = useState<BodyEntry>(EMPTY_ENTRY);
   const [data, setData] = useState<Record<string, BodyEntry>>({});
+  const [goalModalVisible, setGoalModalVisible] = useState(false);
+  const [activityModalVisible, setActivityModalVisible] = useState(false);
+  const [tempGoal, setTempGoal] = useState<BodyEntry['goal']>('Поддержание формы');
+  const [tempActivity, setTempActivity] = useState<BodyEntry['activity']>('Средний');
 
   useEffect(() => {
     (async () => {
@@ -83,6 +88,26 @@ const BodyDiaryScreen: React.FC = () => {
     const newData = { ...data, [key]: entry };
     setData(newData);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+  };
+
+  const openGoalModal = () => {
+    setTempGoal(entry.goal);
+    setGoalModalVisible(true);
+  };
+
+  const confirmGoal = () => {
+    setEntry(prev => ({ ...prev, goal: tempGoal }));
+    setGoalModalVisible(false);
+  };
+
+  const openActivityModal = () => {
+    setTempActivity(entry.activity);
+    setActivityModalVisible(true);
+  };
+
+  const confirmActivity = () => {
+    setEntry(prev => ({ ...prev, activity: tempActivity }));
+    setActivityModalVisible(false);
   };
 
   const weeks = Array.from({ length: 52 }, (_, i) =>
@@ -137,23 +162,16 @@ const BodyDiaryScreen: React.FC = () => {
 
       <ScrollView contentContainerStyle={styles.form}>
         <Text style={styles.label}>Цель</Text>
-        <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={entry.goal}
-            onValueChange={value => setEntry(prev => ({ ...prev, goal: value }))}
-            style={styles.picker}
-            dropdownIconColor="#fff"
-          >
-            <Picker.Item label="Похудение" value="Похудение" />
-            <Picker.Item label="Набор массы" value="Набор массы" />
-            <Picker.Item label="Поддержание формы" value="Поддержание формы" />
-          </Picker>
-        </View>
+        <TouchableOpacity style={styles.selector} onPress={openGoalModal}>
+          <Text style={styles.selectorText}>{entry.goal}</Text>
+        </TouchableOpacity>
 
         <Text style={styles.label}>Рост (см)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor="#666"
           value={entry.height}
           onChangeText={text => setEntry(prev => ({ ...prev, height: text }))}
         />
@@ -162,6 +180,8 @@ const BodyDiaryScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor="#666"
           value={entry.weight}
           onChangeText={text => setEntry(prev => ({ ...prev, weight: text }))}
         />
@@ -170,6 +190,8 @@ const BodyDiaryScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor="#666"
           value={entry.neck}
           onChangeText={text => setEntry(prev => ({ ...prev, neck: text }))}
         />
@@ -178,6 +200,8 @@ const BodyDiaryScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor="#666"
           value={entry.waist}
           onChangeText={text => setEntry(prev => ({ ...prev, waist: text }))}
         />
@@ -186,30 +210,23 @@ const BodyDiaryScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor="#666"
           value={entry.hips}
           onChangeText={text => setEntry(prev => ({ ...prev, hips: text }))}
         />
 
         <Text style={styles.label}>Уровень физической активности</Text>
-        <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={entry.activity}
-            onValueChange={value =>
-              setEntry(prev => ({ ...prev, activity: value }))
-            }
-            style={styles.picker}
-            dropdownIconColor="#fff"
-          >
-            <Picker.Item label="Низкий" value="Низкий" />
-            <Picker.Item label="Средний" value="Средний" />
-            <Picker.Item label="Высокий" value="Высокий" />
-          </Picker>
-        </View>
+        <TouchableOpacity style={styles.selector} onPress={openActivityModal}>
+          <Text style={styles.selectorText}>{entry.activity}</Text>
+        </TouchableOpacity>
 
         <Text style={styles.label}>Среднедневное количество шагов за неделю</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor="#666"
           value={entry.steps}
           onChangeText={text => setEntry(prev => ({ ...prev, steps: text }))}
         />
@@ -218,6 +235,90 @@ const BodyDiaryScreen: React.FC = () => {
           <Text style={styles.saveButtonText}>Сохранить</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Goal Modal */}
+      <Modal
+        transparent
+        animationType="slide"
+        visible={goalModalVisible}
+        onRequestClose={() => setGoalModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setGoalModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setGoalModalVisible(false)}>
+                    <Text style={styles.cancelButton}>Отмена</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Цель</Text>
+                  <TouchableOpacity onPress={confirmGoal}>
+                    <Text style={styles.doneButton}>Готово</Text>
+                  </TouchableOpacity>
+                </View>
+                {['Похудение', 'Набор массы', 'Поддержание формы'].map(option => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.modalOption}
+                    onPress={() => setTempGoal(option as BodyEntry['goal'])}
+                  >
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        tempGoal === option && styles.modalOptionTextActive,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Activity Modal */}
+      <Modal
+        transparent
+        animationType="slide"
+        visible={activityModalVisible}
+        onRequestClose={() => setActivityModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setActivityModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setActivityModalVisible(false)}>
+                    <Text style={styles.cancelButton}>Отмена</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Уровень физической активности</Text>
+                  <TouchableOpacity onPress={confirmActivity}>
+                    <Text style={styles.doneButton}>Готово</Text>
+                  </TouchableOpacity>
+                </View>
+                {['Низкий', 'Средний', 'Высокий'].map(option => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.modalOption}
+                    onPress={() => setTempActivity(option as BodyEntry['activity'])}
+                  >
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        tempActivity === option && styles.modalOptionTextActive,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 };
