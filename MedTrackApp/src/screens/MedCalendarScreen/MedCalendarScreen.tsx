@@ -21,6 +21,7 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -60,6 +61,7 @@ const MedCalendarScreen: React.FC = () => {
   const [fabOpen, setFabOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const ACTION_BUTTON_SIZE = 50;
   const ACTION_SPACING = 20;
   const ACTION_OFFSET = ACTION_BUTTON_SIZE + ACTION_SPACING;
@@ -428,7 +430,10 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableWithoutFeedback>
         )}
 
-        <View style={[styles.fabContainer, { bottom: insets.bottom + 16 }]}>
+        <View style={[
+          styles.fabContainer,
+          { bottom: tabBarHeight + insets.bottom + 32 },
+        ]}>
           <Animated.View
             style={[
               styles.fabOption,
