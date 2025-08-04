@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, StackActions } from '@react-navigation/native';
 import { useMedications } from '../../hooks/useMedications';
 import { useCourses, useReminders } from '../../hooks';
 import { MedicationCourse } from '../../types';
@@ -101,16 +101,23 @@ const Medications: React.FC = () => {
   });
 
   const navigateToCalendar = () => {
-    const state = navigation.getState();
-    const calendarRoute = state.routes.find(r => r.name === 'MedCalendar');
+    let nav: any = navigation;
+    while (nav?.getState && !nav.getState().routes.find((r: any) => r.name === 'MedCalendar')) {
+      const parent = nav.getParent?.();
+      if (!parent) break;
+      nav = parent;
+    }
 
-    if (calendarRoute) {
-      navigation.navigate({
+    const state = nav?.getState?.();
+    const calendarRoute = state?.routes.find((r: any) => r.name === 'MedCalendar');
+
+    if (calendarRoute && nav) {
+      nav.navigate({
         key: calendarRoute.key,
         params: { forceRefresh: Date.now() },
         merge: true,
       });
-      navigation.goBack();
+      nav.dispatch(StackActions.popToTop());
     } else {
       navigation.navigate('Лекарства', {
         screen: 'MedCalendar',
