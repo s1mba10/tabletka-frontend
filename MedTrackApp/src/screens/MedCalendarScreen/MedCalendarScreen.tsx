@@ -22,7 +22,6 @@ import {
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -58,15 +57,14 @@ const MedCalendarScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [pickerVisible, setPickerVisible] = useState(false);
-  const tabBarHeight = useBottomTabBarHeight();
   const [fabOpen, setFabOpen] = useState(false);
   const fabAnim = useRef(new Animated.Value(0)).current;
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
-  const ACTION_SPACING = 56;
+  const ACTION_SPACING = 36;
   const ACTION_MARGIN = 12;
-  const fabBottom = tabBarHeight + FAB_MARGIN;
+  const fabBottom = FAB_MARGIN;
   const actionsBottom = fabBottom + FAB_SIZE + ACTION_SPACING + ACTION_MARGIN;
 
   useEffect(() => {
