@@ -293,7 +293,7 @@ const BodyDiaryScreen: React.FC = () => {
                   <TouchableOpacity onPress={() => setActivityModalVisible(false)}>
                     <Text style={styles.cancelButton}>Отмена</Text>
                   </TouchableOpacity>
-                  <Text style={styles.modalTitle}>Уровень физической активности</Text>
+                  <Text style={styles.modalTitle}>Уровень физ. активности</Text>
                   <TouchableOpacity onPress={confirmActivity}>
                     <Text style={styles.doneButton}>Готово</Text>
                   </TouchableOpacity>
