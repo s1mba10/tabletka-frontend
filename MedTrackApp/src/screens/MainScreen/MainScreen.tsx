@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Rect } from 'react-native-svg';
 import { AdherenceDisplay, CategorySummaryCard } from '../../components';
 import { useAdherence } from '../../hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,7 +26,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
 interface Feature {
   title: string;
-  icon: string;
+  icon?: string;
   tab?: string;
   backgroundImage?: ImageSourcePropType;
 }
@@ -64,8 +65,7 @@ const MainScreen: React.FC = () => {
   const features: Feature[] = [
     {
       title: 'Продуктовые корзины',
-      icon: 'basket',
-      backgroundImage: require('../../../assets/cards/groceriesBucket.png'),
+      backgroundImage: require('../../../assets/cards/roundPlate.png'),
     },
     { title: 'Тренировки', icon: 'dumbbell' },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
@@ -100,23 +100,42 @@ const MainScreen: React.FC = () => {
         onPressIn={onPressIn}
         onPressOut={onPressOut}
       >
-        <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}>
+        <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}> 
           <ImageBackground
             source={feature.backgroundImage}
             style={styles.imageBackground}
             imageStyle={styles.featureCardImage}
           >
             {feature.backgroundImage && (
-              <View style={styles.overlay} pointerEvents="none" />
-            )}
-            <View style={styles.featureContent}>
-              <View style={styles.iconWrapper}>
-                <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
+              <View style={styles.gradientOverlay} pointerEvents="none">
+                <Svg width="100%" height="100%">
+                  <Defs>
+                    <SvgLinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0%" stopColor="rgba(0,0,0,0)" />
+                      <Stop offset="50%" stopColor="rgba(0,0,0,0)" />
+                      <Stop offset="100%" stopColor="rgba(0,0,0,0.8)" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />
+                </Svg>
               </View>
-              <Text style={styles.featureLabel} numberOfLines={2}>
-                {feature.title}
-              </Text>
-            </View>
+            )}
+            {feature.icon ? (
+              <View style={styles.featureContent}>
+                <View style={styles.iconWrapper}>
+                  <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
+                </View>
+                <Text style={styles.featureLabel} numberOfLines={2}>
+                  {feature.title}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.labelOnlyContainer}>
+                <Text style={styles.labelOnly} numberOfLines={2}>
+                  {feature.title}
+                </Text>
+              </View>
+            )}
           </ImageBackground>
         </Animated.View>
       </TouchableOpacity>

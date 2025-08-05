@@ -77,9 +77,8 @@ export const styles = StyleSheet.create({
   featureCardImage: {
     borderRadius: 16,
   },
-  overlay: {
+  gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   featureContent: {
     flex: 1,
@@ -100,6 +99,18 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginTop: 6,
+  },
+  labelOnlyContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  labelOnly: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   adherenceWrapper: {
     alignItems: 'center',
