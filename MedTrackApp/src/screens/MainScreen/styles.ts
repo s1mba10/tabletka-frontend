@@ -87,6 +87,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  featureContentBottom: {
+    justifyContent: 'flex-end',
+    padding: 8,
+  },
   iconWrapper: {
     width: 48,
     height: 48,
@@ -101,6 +105,9 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginTop: 6,
+  },
+  featureLabelImage: {
+    marginTop: 0,
   },
   adherenceWrapper: {
     alignItems: 'center',

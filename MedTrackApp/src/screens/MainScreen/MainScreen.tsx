@@ -106,7 +106,12 @@ const MainScreen: React.FC = () => {
             imageStyle={styles.featureCardImage}
           >
             {feature.background && <View style={styles.featureOverlay} />}
-            <View style={styles.featureContent}>
+            <View
+              style={[
+                styles.featureContent,
+                feature.background && styles.featureContentBottom,
+              ]}
+            >
               {feature.icon && !feature.background && (
                 <View style={styles.iconWrapper}>
                   <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
@@ -115,9 +120,8 @@ const MainScreen: React.FC = () => {
               <Text
                 style={[
                   styles.featureLabel,
-                  feature.background && { color: '#FFFFFF' },
+                  feature.background && [styles.featureLabelImage, { color: '#FFFFFF' }],
                 ]}
-                numberOfLines={2}
               >
                 {feature.title}
               </Text>
