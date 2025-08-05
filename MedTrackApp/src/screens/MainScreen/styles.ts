@@ -97,6 +97,18 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 6,
   },
+  featureImageContent: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: 8,
+  },
+  featureImageLabel: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '500',
+  },
   adherenceWrapper: {
     alignItems: 'center',
     marginBottom: 20,
