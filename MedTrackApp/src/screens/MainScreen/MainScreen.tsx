@@ -122,6 +122,10 @@ const MainScreen: React.FC = () => {
                   styles.featureLabel,
                   feature.background && [styles.featureLabelImage, { color: '#FFFFFF' }],
                 ]}
+                numberOfLines={2}
+                ellipsizeMode="clip"
+                textBreakStrategy="simple"
+                lineBreakStrategyIOS="none"
               >
                 {feature.title}
               </Text>
