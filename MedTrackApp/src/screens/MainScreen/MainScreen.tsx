@@ -112,7 +112,7 @@ const MainScreen: React.FC = () => {
                 <Svg width="100%" height="100%">
                   <Defs>
                     <SvgLinearGradient id="grad" x1="0" y1="1" x2="0" y2="0">
-                      <Stop offset="0%" stopColor="rgba(0,0,0,0.06)" />
+                      <Stop offset="0%" stopColor="rgba(0,0,0,0.07)" />
                       <Stop offset="100%" stopColor="rgba(0,0,0,0)" />
                     </SvgLinearGradient>
                   </Defs>

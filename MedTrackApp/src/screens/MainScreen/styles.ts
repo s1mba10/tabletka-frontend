@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '25%',
+    height: '22%',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
   },
