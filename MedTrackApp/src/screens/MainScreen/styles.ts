@@ -77,6 +77,15 @@ export const styles = StyleSheet.create({
   featureCardImage: {
     borderRadius: 16,
   },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '22%',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
   featureContent: {
     flex: 1,
     justifyContent: 'center',
@@ -96,6 +105,24 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginTop: 6,
+  },
+  labelOnlyContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    paddingBottom: 8,
+    paddingHorizontal: 4,
+  },
+  labelOnly: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   adherenceWrapper: {
     alignItems: 'center',
