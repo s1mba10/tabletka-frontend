@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ImageBackground,
+  Pressable,
+  useColorScheme,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,6 +27,8 @@ const MainScreen: React.FC = () => {
   const { percentage, reloadStats } = useAdherence();
   const [userName, setUserName] = useState<string | undefined>();
   const [userImage, setUserImage] = useState<string | undefined>();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   useFocusEffect(
     React.useCallback(() => {
@@ -90,7 +101,10 @@ const MainScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView
+      edges={['top']}
+      style={[styles.container, { backgroundColor: isDark ? '#121212' : '#FFFFFF' }]}
+    >
       <TouchableOpacity style={styles.profileRow} onPress={() => navigation.navigate('Account')} activeOpacity={0.7}>
         <View style={styles.avatar}>{renderAvatar()}</View>
         <View style={styles.infoRow}>
@@ -103,20 +117,43 @@ const MainScreen: React.FC = () => {
       </TouchableOpacity>
 
       <View style={styles.featuresContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {features.map((feature) => (
-            <TouchableOpacity key={feature.title} activeOpacity={0.8} onPress={() => handleFeaturePress(feature)}>
-              <ImageBackground source={undefined} style={styles.featureCard} imageStyle={styles.featureCardImage}>
-                <View style={styles.featureContent}>
-                  <Icon name={feature.icon as any} size={40} color="#fff" style={styles.featureIcon} />
-                  <Text style={styles.featureLabel} numberOfLines={2}>
-                    {feature.title}
-                  </Text>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {features.map((feature) => (
+          <Pressable
+            key={feature.title}
+            onPress={() => handleFeaturePress(feature)}
+            android_ripple={{
+              color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            }}
+            style={({ pressed }) => [
+              styles.featureCard,
+              {
+                backgroundColor: isDark ? '#1E1E1E' : '#F2F2F2',
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              },
+            ]}
+          >
+            <ImageBackground
+              source={undefined}
+              style={styles.featureBackground}
+              imageStyle={styles.featureCardImage}
+            >
+              <View style={styles.featureContent}>
+                <Icon
+                  name={feature.icon as any}
+                  size={30}
+                  color={isDark ? '#fff' : '#000'}
+                />
+                <Text
+                  style={[styles.featureLabel, { color: isDark ? '#fff' : '#000' }]}
+                  numberOfLines={2}
+                >
+                  {feature.title}
+                </Text>
+              </View>
+            </ImageBackground>
+          </Pressable>
+        ))}
       </View>
 
       <View style={styles.adherenceWrapper}>

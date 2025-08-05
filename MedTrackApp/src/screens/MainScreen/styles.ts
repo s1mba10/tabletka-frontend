@@ -55,18 +55,21 @@ export const styles = StyleSheet.create({
   featuresContainer: {
     paddingVertical: 10,
     marginBottom: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   featureCard: {
-    width: 110,
-    height: 110,
-    backgroundColor: '#1E1E1E',
-    borderRadius: 10,
+    width: 96,
+    height: 96,
+    borderRadius: 16,
     overflow: 'hidden',
     marginRight: 12,
+    marginBottom: 12,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 2,
   },
   featureContent: {
@@ -74,16 +77,18 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  featureBackground: {
+    flex: 1,
+  },
   featureCardImage: {
-    borderRadius: 10,
+    borderRadius: 16,
   },
-  featureIcon: {
-    marginBottom: 8,
-  },
+  featureIcon: {},
   featureLabel: {
-    color: '#fff',
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 6,
   },
   adherenceWrapper: {
     alignItems: 'center',
