@@ -111,9 +111,9 @@ const MainScreen: React.FC = () => {
               <View style={styles.gradientOverlay} pointerEvents="none">
                 <Svg width="100%" height="100%">
                   <Defs>
-                    <SvgLinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="rgba(0,0,0,0)" />
-                      <Stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
+                    <SvgLinearGradient id="grad" x1="0" y1="1" x2="0" y2="0">
+                      <Stop offset="0%" stopColor="rgba(0,0,0,0.06)" />
+                      <Stop offset="100%" stopColor="rgba(0,0,0,0)" />
                     </SvgLinearGradient>
                   </Defs>
                   <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />

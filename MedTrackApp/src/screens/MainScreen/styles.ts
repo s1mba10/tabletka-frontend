@@ -83,6 +83,8 @@ export const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: '25%',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   featureContent: {
     flex: 1,
@@ -118,6 +120,9 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 13,
     fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   adherenceWrapper: {
     alignItems: 'center',
