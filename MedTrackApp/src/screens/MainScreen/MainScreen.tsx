@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+  ImageBackground,
+  Animated,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -79,6 +88,49 @@ const MainScreen: React.FC = () => {
     { label: 'Питание', icon: 'food-apple', value: 65 },
   ];
 
+  const FeatureButton: React.FC<{ feature: { title: string; icon: string; tab?: string } }> = ({
+    feature,
+  }) => {
+    const scale = React.useRef(new Animated.Value(1)).current;
+    const handlePressIn = () => {
+      Animated.spring(scale, {
+        toValue: 0.97,
+        useNativeDriver: true,
+      }).start();
+    };
+    const handlePressOut = () => {
+      Animated.spring(scale, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    };
+    return (
+      <Animated.View style={[styles.featureWrapper, { transform: [{ scale }] }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => handleFeaturePress(feature)}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+        >
+          <ImageBackground
+            source={undefined}
+            style={styles.featureCard}
+            imageStyle={styles.featureCardImage}
+          >
+            <View style={styles.featureContent}>
+              <View style={styles.iconCircle}>
+                <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
+              </View>
+              <Text style={styles.featureLabel} numberOfLines={2}>
+                {feature.title}
+              </Text>
+            </View>
+          </ImageBackground>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   const renderAvatar = () => {
     if (userImage) {
       return <Image source={{ uri: userImage }} style={styles.avatarImage} />;
@@ -105,16 +157,7 @@ const MainScreen: React.FC = () => {
       <View style={styles.featuresContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {features.map((feature) => (
-            <TouchableOpacity key={feature.title} activeOpacity={0.8} onPress={() => handleFeaturePress(feature)}>
-              <ImageBackground source={undefined} style={styles.featureCard} imageStyle={styles.featureCardImage}>
-                <View style={styles.featureContent}>
-                  <Icon name={feature.icon as any} size={40} color="#fff" style={styles.featureIcon} />
-                  <Text style={styles.featureLabel} numberOfLines={2}>
-                    {feature.title}
-                  </Text>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
+            <FeatureButton key={feature.title} feature={feature} />
           ))}
         </ScrollView>
       </View>
