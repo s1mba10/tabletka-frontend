@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '33%',
+    height: 40,
   },
   featureContent: {
     flex: 1,
@@ -109,7 +109,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '33%',
+    height: 40,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 8,
