@@ -122,6 +122,9 @@ const MainScreen: React.FC = () => {
                   styles.featureLabel,
                   feature.background && [styles.featureLabelImage, { color: '#FFFFFF' }],
                 ]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {feature.title}
               </Text>
