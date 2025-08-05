@@ -77,6 +77,11 @@ export const styles = StyleSheet.create({
   featureCardImage: {
     borderRadius: 16,
   },
+  featureOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 16,
+  },
   featureContent: {
     flex: 1,
     justifyContent: 'center',

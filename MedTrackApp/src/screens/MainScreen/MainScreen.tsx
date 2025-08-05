@@ -8,6 +8,7 @@ import {
   Alert,
   ImageBackground,
   Animated,
+  ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -53,8 +54,18 @@ const MainScreen: React.FC = () => {
     }, [reloadStats]),
   );
 
-  const features = [
-    { title: 'Продуктовые корзины', icon: 'basket' },
+  type Feature = {
+    title: string;
+    icon?: string;
+    tab?: string;
+    background?: ImageSourcePropType;
+  };
+
+  const features: Feature[] = [
+    {
+      title: 'Продуктовые корзины',
+      background: require('../../../assets/cards/roundPlate.png'),
+    },
     { title: 'Тренировки', icon: 'dumbbell' },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
     { title: 'ИИ-помощники', icon: 'robot' },
@@ -69,9 +80,7 @@ const MainScreen: React.FC = () => {
     }
   };
 
-  const FeatureButton: React.FC<{ feature: { title: string; icon: string; tab?: string } }> = ({
-    feature,
-  }) => {
+  const FeatureButton: React.FC<{ feature: Feature }> = ({ feature }) => {
     const scale = React.useRef(new Animated.Value(1)).current;
 
     const onPressIn = () => {
@@ -92,15 +101,24 @@ const MainScreen: React.FC = () => {
       >
         <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}>
           <ImageBackground
-            source={undefined}
+            source={feature.background}
             style={styles.imageBackground}
             imageStyle={styles.featureCardImage}
           >
+            {feature.background && <View style={styles.featureOverlay} />}
             <View style={styles.featureContent}>
-              <View style={styles.iconWrapper}>
-                <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
-              </View>
-              <Text style={styles.featureLabel} numberOfLines={2}>
+              {feature.icon && !feature.background && (
+                <View style={styles.iconWrapper}>
+                  <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
+                </View>
+              )}
+              <Text
+                style={[
+                  styles.featureLabel,
+                  feature.background && { color: '#FFFFFF' },
+                ]}
+                numberOfLines={2}
+              >
                 {feature.title}
               </Text>
             </View>
