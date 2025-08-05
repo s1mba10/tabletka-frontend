@@ -21,7 +21,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaskInput from 'react-native-mask-input';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
@@ -127,7 +127,6 @@ const AccountScreen: React.FC = () => {
   const [saveButtonY, setSaveButtonY] = useState<number | null>(null);
   const [showFloating, setShowFloating] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -618,7 +617,7 @@ const AccountScreen: React.FC = () => {
               styles.floatingButton,
               {
                 opacity: fadeAnim,
-                bottom: insets.bottom + 4,
+                bottom: 4,
               },
             ]}
             pointerEvents={showFloating ? 'auto' : 'none'}
