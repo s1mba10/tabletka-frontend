@@ -63,8 +63,12 @@ const MainScreen: React.FC = () => {
   const isPro = true; // placeholder
 
   const getAdherenceColor = (value: number) => {
-    if (value >= 80) return '#4CAF50';
-    if (value >= 60) return '#FFC107';
+    if (value >= 80) {
+      return '#4CAF50';
+    }
+    if (value >= 60) {
+      return '#FFC107';
+    }
     return '#FF5722';
   };
   const adherenceColor = getAdherenceColor(percentage);
@@ -90,7 +94,9 @@ const MainScreen: React.FC = () => {
       <TouchableOpacity style={styles.profileRow} onPress={() => navigation.navigate('Account')} activeOpacity={0.7}>
         <View style={styles.avatar}>{renderAvatar()}</View>
         <View style={styles.infoRow}>
-          <Text style={styles.profileName}>{userName || 'Имя не указано'}</Text>
+          <Text style={userName ? styles.profileName : styles.profileNamePlaceholder}>
+            {userName || 'Имя не указано'}
+          </Text>
           {isPro && <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />}
           <Icon name="chevron-right" size={24} color="#888" style={styles.chevron} />
         </View>

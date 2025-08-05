@@ -41,6 +41,11 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  profileNamePlaceholder: {
+    color: '#888',
+    fontSize: 20,
+    fontWeight: 'normal',
+  },
   crown: {
     marginLeft: 5,
   },
