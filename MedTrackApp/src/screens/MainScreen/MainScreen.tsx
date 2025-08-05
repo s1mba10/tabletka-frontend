@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Alert,
-  ImageBackground,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -24,7 +16,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 const MainScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { percentage, reloadStats } = useAdherence();
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState<string | undefined>();
   const [userImage, setUserImage] = useState<string | undefined>();
 
   useFocusEffect(
@@ -37,19 +29,19 @@ const MainScreen: React.FC = () => {
             const parsed = JSON.parse(stored);
             const firstName = parsed.firstName || '';
             const lastName = parsed.lastName || '';
-            setUserName(firstName && lastName ? `${firstName} ${lastName}` : '');
+            setUserName(firstName && lastName ? `${firstName} ${lastName}` : undefined);
             setUserImage(parsed.avatarUri || undefined);
           } else {
-            setUserName('');
+            setUserName(undefined);
             setUserImage(undefined);
           }
         } catch {
-          setUserName('');
+          setUserName(undefined);
           setUserImage(undefined);
         }
       };
       loadProfile();
-    }, [reloadStats])
+    }, [reloadStats]),
   );
 
   const features = [
@@ -93,49 +85,24 @@ const MainScreen: React.FC = () => {
     return <Icon name="account" size={28} color="#888" />;
   };
 
-
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
-      <TouchableOpacity
-        style={styles.profileRow}
-        onPress={() => navigation.navigate('Account')}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={styles.profileRow} onPress={() => navigation.navigate('Account')} activeOpacity={0.7}>
         <View style={styles.avatar}>{renderAvatar()}</View>
         <View style={styles.infoRow}>
-          {userName ? <Text style={styles.profileName}>{userName}</Text> : null}
-          {isPro && (
-            <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />
-          )}
-          <Icon
-            name="chevron-right"
-            size={24}
-            color="#888"
-            style={styles.chevron}
-          />
+          <Text style={styles.profileName}>{userName || 'Имя не указано'}</Text>
+          {isPro && <Icon name="crown" size={18} color="#FFD700" style={styles.crown} />}
+          <Icon name="chevron-right" size={24} color="#888" style={styles.chevron} />
         </View>
       </TouchableOpacity>
 
       <View style={styles.featuresContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {features.map(feature => (
-            <TouchableOpacity
-              key={feature.title}
-              activeOpacity={0.8}
-              onPress={() => handleFeaturePress(feature)}
-            >
-              <ImageBackground
-                source={undefined}
-                style={styles.featureCard}
-                imageStyle={styles.featureCardImage}
-              >
+          {features.map((feature) => (
+            <TouchableOpacity key={feature.title} activeOpacity={0.8} onPress={() => handleFeaturePress(feature)}>
+              <ImageBackground source={undefined} style={styles.featureCard} imageStyle={styles.featureCardImage}>
                 <View style={styles.featureContent}>
-                  <Icon
-                    name={feature.icon as any}
-                    size={40}
-                    color="#fff"
-                    style={styles.featureIcon}
-                  />
+                  <Icon name={feature.icon as any} size={40} color="#fff" style={styles.featureIcon} />
                   <Text style={styles.featureLabel} numberOfLines={2}>
                     {feature.title}
                   </Text>
@@ -151,13 +118,8 @@ const MainScreen: React.FC = () => {
       </View>
 
       <View style={styles.summaryRow}>
-        {summaries.map(item => (
-          <CategorySummaryCard
-            key={item.label}
-            icon={item.icon}
-            label={item.label}
-            percentage={item.value}
-          />
+        {summaries.map((item) => (
+          <CategorySummaryCard key={item.label} icon={item.icon} label={item.label} percentage={item.value} />
         ))}
       </View>
     </SafeAreaView>
