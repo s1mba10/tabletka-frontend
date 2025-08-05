@@ -618,7 +618,7 @@ const AccountScreen: React.FC = () => {
               styles.floatingButton,
               {
                 opacity: fadeAnim,
-                bottom: insets.bottom + 12,
+                bottom: insets.bottom + 4,
               },
             ]}
             pointerEvents={showFloating ? 'auto' : 'none'}
