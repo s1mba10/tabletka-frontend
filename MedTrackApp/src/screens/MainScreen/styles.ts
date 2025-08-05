@@ -89,7 +89,9 @@ export const styles = StyleSheet.create({
   },
   featureContentBottom: {
     justifyContent: 'flex-end',
-    padding: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 2,
   },
   iconWrapper: {
     width: 48,
@@ -105,6 +107,7 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginTop: 6,
+    android_hyphenationFrequency: 'none',
   },
   featureLabelImage: {
     marginTop: 0,
