@@ -3,9 +3,14 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
     paddingHorizontal: 20,
     paddingTop: 10,
+  },
+  containerDark: {
+    backgroundColor: '#121212',
+  },
+  containerLight: {
+    backgroundColor: '#FFFFFF',
   },
   profileRow: {
     flexDirection: 'row',
@@ -53,21 +58,37 @@ export const styles = StyleSheet.create({
     marginLeft: 10,
   },
   featuresContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingVertical: 10,
     marginBottom: 20,
   },
-  featureCard: {
-    width: 110,
-    height: 110,
-    backgroundColor: '#1E1E1E',
-    borderRadius: 10,
-    overflow: 'hidden',
+  featurePressable: {
+    borderRadius: 16,
     marginRight: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  featureCard: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 2,
+  },
+  featureCardDark: {
+    backgroundColor: '#1E1E1E',
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  featureCardLight: {
+    backgroundColor: '#F2F2F2',
+    borderColor: 'rgba(0,0,0,0.2)',
   },
   featureContent: {
     flex: 1,
@@ -75,15 +96,21 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   featureCardImage: {
-    borderRadius: 10,
+    borderRadius: 16,
   },
   featureIcon: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   featureLabel: {
-    color: '#fff',
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  featureLabelDark: {
+    color: '#fff',
+  },
+  featureLabelLight: {
+    color: '#000',
   },
   adherenceWrapper: {
     alignItems: 'center',
