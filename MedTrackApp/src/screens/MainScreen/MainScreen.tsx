@@ -8,6 +8,7 @@ import {
   Alert,
   ImageBackground,
   Animated,
+  ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -21,6 +22,13 @@ import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
+
+interface Feature {
+  title: string;
+  icon: string;
+  tab?: string;
+  backgroundImage?: ImageSourcePropType;
+}
 
 const MainScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -53,15 +61,19 @@ const MainScreen: React.FC = () => {
     }, [reloadStats]),
   );
 
-  const features = [
-    { title: 'Продуктовые корзины', icon: 'basket' },
+  const features: Feature[] = [
+    {
+      title: 'Продуктовые корзины',
+      icon: 'basket',
+      backgroundImage: require('../../../assets/cards/groceriesBucket.png'),
+    },
     { title: 'Тренировки', icon: 'dumbbell' },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
     { title: 'ИИ-помощники', icon: 'robot' },
     { title: 'Интересные факты', icon: 'lightbulb-on-outline' },
   ];
 
-  const handleFeaturePress = (feature: { title: string; tab?: string }) => {
+  const handleFeaturePress = (feature: Feature) => {
     if (feature.tab) {
       navigation.getParent()?.navigate(feature.tab as never);
     } else {
@@ -69,9 +81,7 @@ const MainScreen: React.FC = () => {
     }
   };
 
-  const FeatureButton: React.FC<{ feature: { title: string; icon: string; tab?: string } }> = ({
-    feature,
-  }) => {
+  const FeatureButton: React.FC<{ feature: Feature }> = ({ feature }) => {
     const scale = React.useRef(new Animated.Value(1)).current;
 
     const onPressIn = () => {
@@ -92,10 +102,13 @@ const MainScreen: React.FC = () => {
       >
         <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}>
           <ImageBackground
-            source={undefined}
+            source={feature.backgroundImage}
             style={styles.imageBackground}
             imageStyle={styles.featureCardImage}
           >
+            {feature.backgroundImage && (
+              <View style={styles.overlay} pointerEvents="none" />
+            )}
             <View style={styles.featureContent}>
               <View style={styles.iconWrapper}>
                 <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
