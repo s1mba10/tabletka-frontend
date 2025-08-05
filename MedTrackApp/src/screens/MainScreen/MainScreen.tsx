@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+  ImageBackground,
+  Animated,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -10,6 +19,49 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
+
+type Feature = { title: string; icon: string; tab?: string };
+
+const FeatureButton: React.FC<{ feature: Feature; onPress: (f: Feature) => void }> = ({
+  feature,
+  onPress,
+}) => {
+  const scale = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={() => onPress(feature)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}>
+        <ImageBackground
+          source={undefined}
+          style={styles.featureBackground}
+          imageStyle={styles.featureCardImage}
+        >
+          <View style={styles.featureContent}>
+            <View style={styles.iconWrapper}>
+              <Icon name={feature.icon as any} size={30} color="#F0F0F0" />
+            </View>
+            <Text style={styles.featureLabel} numberOfLines={2}>
+              {feature.title}
+            </Text>
+          </View>
+        </ImageBackground>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
@@ -44,7 +96,7 @@ const MainScreen: React.FC = () => {
     }, [reloadStats]),
   );
 
-  const features = [
+  const features: Feature[] = [
     { title: 'Продуктовые корзины', icon: 'basket' },
     { title: 'Тренировки', icon: 'dumbbell' },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
@@ -52,7 +104,7 @@ const MainScreen: React.FC = () => {
     { title: 'Интересные факты', icon: 'lightbulb-on-outline' },
   ];
 
-  const handleFeaturePress = (feature: { title: string; tab?: string }) => {
+  const handleFeaturePress = (feature: Feature) => {
     if (feature.tab) {
       navigation.getParent()?.navigate(feature.tab as never);
     } else {
@@ -105,16 +157,7 @@ const MainScreen: React.FC = () => {
       <View style={styles.featuresContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {features.map((feature) => (
-            <TouchableOpacity key={feature.title} activeOpacity={0.8} onPress={() => handleFeaturePress(feature)}>
-              <ImageBackground source={undefined} style={styles.featureCard} imageStyle={styles.featureCardImage}>
-                <View style={styles.featureContent}>
-                  <Icon name={feature.icon as any} size={40} color="#fff" style={styles.featureIcon} />
-                  <Text style={styles.featureLabel} numberOfLines={2}>
-                    {feature.title}
-                  </Text>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
+            <FeatureButton key={feature.title} feature={feature} onPress={handleFeaturePress} />
           ))}
         </ScrollView>
       </View>
