@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 40,
+    height: '30%',
   },
   featureContent: {
     flex: 1,
@@ -109,10 +109,9 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 40,
-    justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 8,
+    paddingHorizontal: 4,
   },
   labelOnly: {
     color: '#FFFFFF',
