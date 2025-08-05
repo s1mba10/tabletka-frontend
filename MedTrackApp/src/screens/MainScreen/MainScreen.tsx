@@ -65,7 +65,7 @@ const MainScreen: React.FC = () => {
   const features: Feature[] = [
     {
       title: 'Продуктовые корзины',
-      backgroundImage: require('../../../assets/cards/roundPlate.png'),
+      backgroundImage: require('../../../assets/cards/groceriesBucket.png'),
     },
     { title: 'Тренировки', icon: 'dumbbell' },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
@@ -100,11 +100,12 @@ const MainScreen: React.FC = () => {
         onPressIn={onPressIn}
         onPressOut={onPressOut}
       >
-        <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}> 
+        <Animated.View style={[styles.featureCard, { transform: [{ scale }] }]}>
           <ImageBackground
             source={feature.backgroundImage}
             style={styles.imageBackground}
             imageStyle={styles.featureCardImage}
+            resizeMode="cover"
           >
             {feature.backgroundImage && (
               <View style={styles.gradientOverlay} pointerEvents="none">
@@ -112,8 +113,7 @@ const MainScreen: React.FC = () => {
                   <Defs>
                     <SvgLinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
                       <Stop offset="0%" stopColor="rgba(0,0,0,0)" />
-                      <Stop offset="50%" stopColor="rgba(0,0,0,0)" />
-                      <Stop offset="100%" stopColor="rgba(0,0,0,0.8)" />
+                      <Stop offset="100%" stopColor="rgba(0,0,0,0.6)" />
                     </SvgLinearGradient>
                   </Defs>
                   <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />

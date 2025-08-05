@@ -78,7 +78,11 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
   },
   gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '33%',
   },
   featureContent: {
     flex: 1,
@@ -101,7 +105,11 @@ export const styles = StyleSheet.create({
     marginTop: 6,
   },
   labelOnlyContainer: {
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '33%',
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 8,
@@ -109,8 +117,8 @@ export const styles = StyleSheet.create({
   labelOnly: {
     color: '#FFFFFF',
     textAlign: 'center',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '500',
   },
   adherenceWrapper: {
     alignItems: 'center',
