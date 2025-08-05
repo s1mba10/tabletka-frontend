@@ -21,7 +21,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaskInput from 'react-native-mask-input';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -129,6 +129,7 @@ const AccountScreen: React.FC = () => {
   const [showFloating, setShowFloating] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -617,7 +618,10 @@ const AccountScreen: React.FC = () => {
           <Animated.View
             style={[
               styles.floatingButton,
-              { opacity: fadeAnim, bottom: tabBarHeight + 16 },
+              {
+                opacity: fadeAnim,
+                bottom: Math.max(tabBarHeight, insets.bottom) + 8,
+              },
             ]}
             pointerEvents={showFloating ? 'auto' : 'none'}
           >
