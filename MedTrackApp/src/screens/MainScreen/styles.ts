@@ -105,6 +105,7 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginTop: 6,
+    width: '100%',
   },
   featureLabelImage: {
     marginTop: 0,
