@@ -22,7 +22,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaskInput from 'react-native-mask-input';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
@@ -128,7 +127,6 @@ const AccountScreen: React.FC = () => {
   const [saveButtonY, setSaveButtonY] = useState<number | null>(null);
   const [showFloating, setShowFloating] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -620,7 +618,7 @@ const AccountScreen: React.FC = () => {
               styles.floatingButton,
               {
                 opacity: fadeAnim,
-                bottom: Math.max(tabBarHeight, insets.bottom) + 8,
+                bottom: insets.bottom + 12,
               },
             ]}
             pointerEvents={showFloating ? 'auto' : 'none'}
