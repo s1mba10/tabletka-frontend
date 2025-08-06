@@ -109,6 +109,7 @@ const MainScreen: React.FC = () => {
             <View
               style={[
                 styles.featureContent,
+                // @ts-ignore
                 feature.background && styles.featureContentBottom,
               ]}
             >
@@ -120,6 +121,7 @@ const MainScreen: React.FC = () => {
               <Text
                 style={[
                   styles.featureLabel,
+                  // @ts-ignore
                   feature.background && [styles.featureLabelImage, { color: '#FFFFFF' }],
                 ]}
               >

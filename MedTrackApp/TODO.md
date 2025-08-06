@@ -1,4 +1,6 @@
 # Here is plans for app
+- убрать одноклассники. 
+- скачать самые популярные календари и посмотреть юзабилити. 
 - Add icons on account screen right way. Now they are commented out.
 - Add opportunity to change avatar photo from phone album. 
 - Name and surname (Фамилия Имя) saved in account screen should be displayed on main screen. 
