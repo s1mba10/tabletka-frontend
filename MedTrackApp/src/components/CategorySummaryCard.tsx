@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
-import Svg, { Rect } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export type CategorySummaryCardProps = {
@@ -16,11 +15,16 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
 }) => {
   const [size, setSize] = useState(0);
 
-  const strokeWidth = size * 0.1;
-  const innerSize = size - strokeWidth;
+  const onLayout = (e: LayoutChangeEvent) => {
+    const newSize = e.nativeEvent.layout.width;
+    if (newSize !== size) {
+      setSize(newSize);
+    }
+  };
+
+  const thickness = size * 0.1;
   const borderRadius = 10;
-  const perimeter = 4 * (innerSize - borderRadius) + 2 * Math.PI * borderRadius;
-  const strokeDashoffset = perimeter - (perimeter * percentage) / 100;
+  const innerRadius = Math.max(0, borderRadius - thickness / 2);
 
   const getColor = (value: number) => {
     if (value >= 80) return '#4CAF50';
@@ -29,47 +33,99 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
   };
   const color = getColor(percentage);
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    const newSize = e.nativeEvent.layout.width;
-    if (newSize !== size) {
-      setSize(newSize);
-    }
-  };
+  // progress from 0 to 4 (number of sides)
+  const progress = Math.max(0, Math.min(percentage, 100)) / 25;
+  const sides = [
+    Math.min(progress, 1),
+    Math.min(Math.max(progress - 1, 0), 1),
+    Math.min(Math.max(progress - 2, 0), 1),
+    Math.min(Math.max(progress - 3, 0), 1),
+  ];
 
   return (
-    <View style={[styles.wrapper, { padding: strokeWidth / 2 }]} onLayout={onLayout}>
-      {size > 0 && (
-        <Svg height={size} width={size} style={styles.progress}>
-          <Rect
-            x={strokeWidth / 2}
-            y={strokeWidth / 2}
-            width={innerSize}
-            height={innerSize}
-            stroke="#2C2C2C"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            rx={borderRadius}
-            ry={borderRadius}
-          />
-          <Rect
-            x={strokeWidth / 2}
-            y={strokeWidth / 2}
-            width={innerSize}
-            height={innerSize}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${perimeter} ${perimeter}`}
-            strokeDashoffset={strokeDashoffset}
-            fill="transparent"
-            rx={borderRadius}
-            ry={borderRadius}
-          />
-        </Svg>
-      )}
-      <View style={styles.card}>
+    <View style={styles.wrapper} onLayout={onLayout}>
+      <View style={[styles.card, { margin: thickness, borderRadius: innerRadius }]}>
         <Icon name={icon} size={26} color="#fff" />
         <Text style={styles.label}>{label}</Text>
       </View>
+      {size > 0 && (
+        <>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.track,
+              {
+                borderWidth: thickness,
+                borderRadius,
+              },
+            ]}
+          />
+          {/* Top edge */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.edge,
+              {
+                top: 0,
+                left: 0,
+                height: thickness,
+                width: `${sides[0] * 100}%`,
+                backgroundColor: color,
+                borderTopLeftRadius: borderRadius,
+                borderTopRightRadius: sides[0] === 1 ? borderRadius : 0,
+              },
+            ]}
+          />
+          {/* Right edge */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.edge,
+              {
+                top: 0,
+                right: 0,
+                width: thickness,
+                height: `${sides[1] * 100}%`,
+                backgroundColor: color,
+                borderTopRightRadius: sides[0] === 1 ? borderRadius : 0,
+                borderBottomRightRadius: sides[1] === 1 ? borderRadius : 0,
+              },
+            ]}
+          />
+          {/* Bottom edge */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.edge,
+              {
+                bottom: 0,
+                right: 0,
+                height: thickness,
+                width: `${sides[2] * 100}%`,
+                backgroundColor: color,
+                borderBottomRightRadius: sides[1] === 1 ? borderRadius : 0,
+                borderBottomLeftRadius: sides[2] === 1 ? borderRadius : 0,
+              },
+            ]}
+          />
+          {/* Left edge */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.edge,
+              {
+                left: 0,
+                bottom: 0,
+                width: thickness,
+                height: `${sides[3] * 100}%`,
+                backgroundColor: color,
+                borderBottomLeftRadius: sides[2] === 1 ? borderRadius : 0,
+                borderTopLeftRadius: sides[3] === 1 ? borderRadius : 0,
+              },
+            ]}
+          />
+        </>
+      )}
     </View>
   );
 };
@@ -79,10 +135,12 @@ const styles = StyleSheet.create({
     flex: 1,
     aspectRatio: 1,
   },
-  progress: {
+  track: {
+    ...StyleSheet.absoluteFillObject,
+    borderColor: '#2C2C2C',
+  },
+  edge: {
     position: 'absolute',
-    top: 0,
-    left: 0,
   },
   card: {
     flex: 1,
