@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Rect } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export type CategorySummaryCardProps = {
@@ -16,10 +16,11 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
 }) => {
   const [size, setSize] = useState(0);
 
-  const strokeWidth = size * 0.12;
-  const radius = size / 2 - strokeWidth / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * percentage) / 100;
+  const strokeWidth = size * 0.1;
+  const innerSize = size - strokeWidth;
+  const borderRadius = 10;
+  const perimeter = 4 * (innerSize - borderRadius) + 2 * Math.PI * borderRadius;
+  const strokeDashoffset = perimeter - (perimeter * percentage) / 100;
 
   const getColor = (value: number) => {
     if (value >= 80) return '#4CAF50';
@@ -39,25 +40,30 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
     <View style={[styles.wrapper, { padding: strokeWidth / 2 }]} onLayout={onLayout}>
       {size > 0 && (
         <Svg height={size} width={size} style={styles.progress}>
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
+          <Rect
+            x={strokeWidth / 2}
+            y={strokeWidth / 2}
+            width={innerSize}
+            height={innerSize}
             stroke="#2C2C2C"
             strokeWidth={strokeWidth}
             fill="transparent"
+            rx={borderRadius}
+            ry={borderRadius}
           />
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
+          <Rect
+            x={strokeWidth / 2}
+            y={strokeWidth / 2}
+            width={innerSize}
+            height={innerSize}
             stroke={color}
             strokeWidth={strokeWidth}
-            strokeDasharray={circumference}
+            strokeDasharray={perimeter}
             strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
             fill="transparent"
-            transform={`rotate(-90, ${size / 2}, ${size / 2})`}
+            rx={borderRadius}
+            ry={borderRadius}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         </Svg>
       )}

@@ -28,7 +28,7 @@ const WeekPickerModal: React.FC<Props> = ({
     if (week > getISOWeeksInYear(new Date(year, 0, 4))) {
       setWeek(getISOWeeksInYear(new Date(year, 0, 4)));
     }
-  }, [year]);
+  }, [year, week]);
 
   useEffect(() => {
     setYear(initialYear);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -222,18 +222,21 @@ const ReminderAdd: React.FC = () => {
     setWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
-  const isWeekdayInRange = (day: number) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (d.getDay() === day) return true;
-    }
-    return false;
-  };
+  const isWeekdayInRange = useCallback(
+    (day: number) => {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        if (d.getDay() === day) return true;
+      }
+      return false;
+    },
+    [startDate, endDate],
+  );
 
   useEffect(() => {
     setWeekdays((prev) => prev.filter((d) => isWeekdayInRange(d)));
-  }, [startDate, endDate]);
+  }, [isWeekdayInRange]);
 
   const handleWeekdayPress = (day: number) => {
     if (!isWeekdayInRange(day)) {
