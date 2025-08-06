@@ -62,7 +62,7 @@ const GenderSelector: React.FC<GenderSelectorProps> = ({ value, onChange }) => {
         accessibilityRole="button"
       >
         <Icon
-          name="gender-male"
+          name="face-man"
           size={28}
           color={value === 'Мужской' ? 'white' : '#888'}
         />
@@ -84,7 +84,7 @@ const GenderSelector: React.FC<GenderSelectorProps> = ({ value, onChange }) => {
         accessibilityRole="button"
       >
         <Icon
-          name="gender-female"
+          name="face-woman"
           size={28}
           color={value === 'Женский' ? 'white' : '#888'}
         />
