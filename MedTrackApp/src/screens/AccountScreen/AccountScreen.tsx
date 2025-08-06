@@ -41,7 +41,6 @@ interface ProfileData {
   birthDate: string;
   vk: string;
   instagram: string;
-  odnoklassniki: string;
   telegram: string;
   avatarUri: string;
 }
@@ -116,7 +115,6 @@ const AccountScreen: React.FC = () => {
     birthDate: '',
     vk: '',
     instagram: '',
-    odnoklassniki: '',
     telegram: '',
     avatarUri: '',
   });
@@ -161,7 +159,7 @@ const AccountScreen: React.FC = () => {
     setProfile(prev => ({ ...prev, middleName: formatNameInput(text) }));
 
   const cleanSocial = (
-    platform: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram',
+    platform: 'vk' | 'instagram' | 'telegram',
     text: string,
   ) => {
     let value = text.trim();
@@ -183,12 +181,11 @@ const AccountScreen: React.FC = () => {
     }
 
     value = value.replace(/[^A-Za-z0-9_.]/g, '');
-    const limit = platform === 'odnoklassniki' ? 256 : 32;
-    return value.slice(0, limit);
+    return value.slice(0, 32);
   };
 
   const handleSocialChange = (
-    key: 'vk' | 'instagram' | 'odnoklassniki' | 'telegram',
+    key: 'vk' | 'instagram' | 'telegram',
   ) =>
     (text: string) =>
       setProfile(prev => ({ ...prev, [key]: cleanSocial(key, text) }));
@@ -245,7 +242,12 @@ const AccountScreen: React.FC = () => {
             : '';
           setProfile(prev => ({
             ...prev,
-            ...parsed,
+            lastName: parsed.lastName || prev.lastName,
+            firstName: parsed.firstName || prev.firstName,
+            middleName: parsed.middleName || prev.middleName,
+            phone: parsed.phone || prev.phone,
+            email: parsed.email || prev.email,
+            birthDate: parsed.birthDate || prev.birthDate,
             gender,
             vk,
             instagram,
@@ -327,7 +329,6 @@ const AccountScreen: React.FC = () => {
     if (
       (profile.vk && profile.vk.length < 3) ||
       (profile.instagram && profile.instagram.length < 3) ||
-      (profile.odnoklassniki && profile.odnoklassniki.length < 3) ||
       (profile.telegram && profile.telegram.length < 3)
     ) {
       Alert.alert('Ошибка', 'Неверный формат никнейма в соцсетях');
@@ -512,19 +513,6 @@ const AccountScreen: React.FC = () => {
                     onChangeText={handleSocialChange('instagram')}
                   />
                 </View>
-              </View>
-              <Text style={styles.label}>Одноклассники</Text>
-              <View style={styles.rowInput}>
-                {/* <OKIcon width={20} height={20} style={styles.svgIcon} fill="#fff" /> */}
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Одноклассники"
-                  placeholderTextColor="#666"
-                  autoCapitalize="none"
-                  maxLength={256}
-                  value={profile.odnoklassniki}
-                  onChangeText={handleSocialChange('odnoklassniki')}
-                />
               </View>
               <Text style={styles.label}>Telegram</Text>
               <View style={styles.rowInput}>
