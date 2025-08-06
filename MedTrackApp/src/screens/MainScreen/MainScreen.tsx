@@ -65,14 +65,22 @@ const MainScreen: React.FC = () => {
   const features: Feature[] = [
     {
       title: 'Продуктовые корзины',
-      background: require('../../../assets/cards/roundPlate.png'),
+      background: require('../../../assets/cards/darkRoundPlate.png'),
     },
     {
       title: 'Тренировки',
-      background: require('../../../assets/cards/dumbbell.png'),
+      background: require('../../../assets/cards/darkFitnessTimer.png'),
     },
-    { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
-    { title: 'ИИ-помощники', icon: 'robot' },
+    {
+      title: 'Дневник лекарств',
+      background: require('../../../assets/cards/pillsDiary.png'),
+      tab: 'Лекарства',
+    },
+    {
+      title: 'ИИ-помощники',
+      background: require('../../../assets/cards/AI-helpers.png'),
+      icon: 'robot',
+    },
     { title: 'Интересные факты', icon: 'lightbulb-on-outline' },
   ];
 
