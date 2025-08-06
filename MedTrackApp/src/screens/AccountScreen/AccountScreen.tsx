@@ -361,261 +361,266 @@ const AccountScreen: React.FC = () => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={{ flex: 1 }}>
-            <ScrollView
-              contentContainerStyle={styles.contentContainer}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-            >
-            <View style={styles.header}>
-              <Icon
-                name="arrow-left"
-                size={24}
-                color="white"
-                onPress={navigation.goBack}
-              />
-              <Text style={styles.headerTitle}>Профиль</Text>
-              <View style={{ width: 24 }} />
-            </View>
-            <TouchableOpacity
-              style={styles.avatarWrapper}
-              onPress={pickAvatar}
-              activeOpacity={0.7}
-            >
-              <View style={styles.avatar}>
-                {profile.avatarUri ? (
-                  <Image
-                    source={{ uri: profile.avatarUri }}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <Icon name="account" size={40} color="#888" />
-                )}
-                <View style={styles.cameraOverlay}>
-                  <Icon name="camera" size={20} color="#fff" />
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Основные данные</Text>
-              <Text style={styles.label}>Фамилия</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Фамилия"
-                placeholderTextColor="#666"
-                autoCapitalize="none"
-                value={profile.lastName}
-                onChangeText={handleLastNameChange}
-              />
-              <Text style={styles.label}>Имя</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Имя"
-                placeholderTextColor="#666"
-                autoCapitalize="none"
-                value={profile.firstName}
-                onChangeText={handleFirstNameChange}
-              />
-              <Text style={styles.label}>Отчество</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Отчество"
-                placeholderTextColor="#666"
-                autoCapitalize="none"
-                value={profile.middleName}
-                onChangeText={handleMiddleNameChange}
-              />
-              <Text style={styles.label}>Пол</Text>
-              <GenderSelector
-                value={profile.gender}
-                onChange={gender =>
-                  setProfile(prev => ({ ...prev, gender }))
-                }
-              />
-              <TouchableOpacity
-                style={styles.birthRow}
-                onPress={openDatePicker}
-              >
-                <View style={styles.birthTexts}>
-                  <Text style={styles.birthLabel}>Дата рождения</Text>
-                  <Text style={styles.birthValue}>
-                    {formatDate(profile.birthDate)}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#888" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Контакты</Text>
-              <Text style={styles.label}>Телефон</Text>
-              <MaskInput
-                style={styles.input}
-                placeholder="+7 (___) ___-__-__"
-                placeholderTextColor="#666"
-                keyboardType="phone-pad"
-                value={phoneInput}
-                onChangeText={handlePhoneChange}
-                mask={['+', '7', ' ', '(', /\d/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, '-', /\d/, /\d/]}
-              />
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#666"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={profile.email}
-                onChangeText={handleEmailChange}
-              />
-              {emailError ? (
-                <Text style={styles.errorText}>{emailError}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Соцсети</Text>
-              <Text style={styles.label}>ВКонтакте</Text>
-              <View style={styles.rowInput}>
-                {/* <VKIcon width={20} height={20} style={styles.svgIcon} fill="#fff" /> */}
-                <View style={styles.socialField}>
-                  <Text style={styles.prefixText}>vk.com/</Text>
-                  <TextInput
-                    style={styles.socialInput}
-                    placeholder="username"
-                    placeholderTextColor="#666"
-                    autoCapitalize="none"
-                    maxLength={32}
-                    value={profile.vk}
-                    onChangeText={handleSocialChange('vk')}
-                  />
-                </View>
-              </View>
-              <Text style={styles.label}>Instagram</Text>
-              <View style={styles.rowInput}>
-                {/* <InstagramIcon
-                  width={20}
-                  height={20}
-                  style={styles.svgIcon}
-                  fill="#fff"
-                /> */}
-                <View style={styles.socialField}>
-                  <Text style={styles.prefixText}>instagram.com/</Text>
-                  <TextInput
-                    style={styles.socialInput}
-                    placeholder="username"
-                    placeholderTextColor="#666"
-                    autoCapitalize="none"
-                    maxLength={32}
-                    value={profile.instagram}
-                    onChangeText={handleSocialChange('instagram')}
-                  />
-                </View>
-              </View>
-              <Text style={styles.label}>Telegram</Text>
-              <View style={styles.rowInput}>
-                {/* <TelegramIcon
-                  width={20}
-                  height={20}
-                  style={styles.svgIcon}
-                  fill="#fff"
-                /> */}
-                <View style={styles.socialField}>
-                  <Text style={styles.prefixText}>t.me/</Text>
-                  <TextInput
-                    style={styles.socialInput}
-                    placeholder="username"
-                    placeholderTextColor="#666"
-                    autoCapitalize="none"
-                    maxLength={32}
-                    value={profile.telegram}
-                    onChangeText={handleSocialChange('telegram')}
-                  />
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.diaryButton}
-              onPress={() => navigation.navigate('BodyDiary')}
-            >
-              <Text style={styles.diaryButtonText}>Дневник тела</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={save}
-              onLayout={e => setSaveButtonY(e.nativeEvent.layout.y)}
-            >
-              <Text style={styles.saveButtonText}>Сохранить</Text>
-            </TouchableOpacity>
-
-            {Platform.OS === 'ios' && showDatePicker && (
-              <Modal
-                transparent
-                animationType="slide"
-                visible={showDatePicker}
-                onRequestClose={cancelDatePicker}
-              >
-                <TouchableWithoutFeedback onPress={cancelDatePicker}>
-                  <View style={styles.modalOverlay}>
-                    <TouchableWithoutFeedback>
-                      <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                          <TouchableOpacity onPress={cancelDatePicker}>
-                            <Text style={styles.cancelButton}>Отмена</Text>
-                          </TouchableOpacity>
-                          <Text style={styles.modalTitle}>Дата рождения</Text>
-                          <TouchableOpacity onPress={confirmDate}>
-                            <Text style={styles.doneButton}>Готово</Text>
-                          </TouchableOpacity>
-                        </View>
-                        <DateTimePicker
-                          value={selectedBirthDateObj}
-                          mode="date"
-                          display="spinner"
-                          onChange={handleBirthChange}
-                          style={styles.timePickerIOS}
-                          textColor="white"
-                          themeVariant="dark"
-                          locale="ru-RU"
-                          maximumDate={new Date()}
-                        />
-                      </View>
-                    </TouchableWithoutFeedback>
-                  </View>
-                </TouchableWithoutFeedback>
-              </Modal>
-            )}
-            {Platform.OS === 'android' && showDatePicker && (
-              <DateTimePicker
-                value={selectedBirthDateObj}
-                mode="date"
-                display="default"
-                onChange={handleBirthChange}
-                maximumDate={new Date()}
-                locale="ru-RU"
-              />
-            )}
-          </ScrollView>
-          <Animated.View
-            style={[
-              styles.floatingButton,
-              {
-                opacity: fadeAnim,
-                bottom: 2,
-              },
-            ]}
-            pointerEvents={showFloating ? 'auto' : 'none'}
+        <ScrollView
+          style={{ flex: 1 }}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.contentContainer}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
           >
-            <TouchableOpacity style={styles.saveButton} onPress={save}>
-              <Text style={styles.saveButtonText}>Сохранить</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-        </TouchableWithoutFeedback>
+            <View>
+              <View style={styles.header}>
+                <Icon
+                  name="arrow-left"
+                  size={24}
+                  color="white"
+                  onPress={navigation.goBack}
+                />
+                <Text style={styles.headerTitle}>Профиль</Text>
+                <View style={{ width: 24 }} />
+              </View>
+              <TouchableOpacity
+                style={styles.avatarWrapper}
+                onPress={pickAvatar}
+                activeOpacity={0.7}
+              >
+                <View style={styles.avatar}>
+                  {profile.avatarUri ? (
+                    <Image
+                      source={{ uri: profile.avatarUri }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <Icon name="account" size={40} color="#888" />
+                  )}
+                  <View style={styles.cameraOverlay}>
+                    <Icon name="camera" size={20} color="#fff" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Основные данные</Text>
+                <Text style={styles.label}>Фамилия</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Фамилия"
+                  placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  value={profile.lastName}
+                  onChangeText={handleLastNameChange}
+                />
+                <Text style={styles.label}>Имя</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Имя"
+                  placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  value={profile.firstName}
+                  onChangeText={handleFirstNameChange}
+                />
+                <Text style={styles.label}>Отчество</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Отчество"
+                  placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  value={profile.middleName}
+                  onChangeText={handleMiddleNameChange}
+                />
+                <Text style={styles.label}>Пол</Text>
+                <GenderSelector
+                  value={profile.gender}
+                  onChange={gender =>
+                    setProfile(prev => ({ ...prev, gender }))
+                  }
+                />
+                <TouchableOpacity
+                  style={styles.birthRow}
+                  onPress={openDatePicker}
+                >
+                  <View style={styles.birthTexts}>
+                    <Text style={styles.birthLabel}>Дата рождения</Text>
+                    <Text style={styles.birthValue}>
+                      {formatDate(profile.birthDate)}
+                    </Text>
+                  </View>
+                  <Icon name="calendar" size={20} color="#888" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Контакты</Text>
+                <Text style={styles.label}>Телефон</Text>
+                <MaskInput
+                  style={styles.input}
+                  placeholder="+7 (___) ___-__-__"
+                  placeholderTextColor="#666"
+                  keyboardType="phone-pad"
+                  value={phoneInput}
+                  onChangeText={handlePhoneChange}
+                  mask={['+', '7', ' ', '(', /\d/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, '-', /\d/, /\d/]}
+                />
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#666"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={profile.email}
+                  onChangeText={handleEmailChange}
+                />
+                {emailError ? (
+                  <Text style={styles.errorText}>{emailError}</Text>
+                ) : null}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Соцсети</Text>
+                <Text style={styles.label}>ВКонтакте</Text>
+                <View style={styles.rowInput}>
+                  {/* <VKIcon width={20} height={20} style={styles.svgIcon} fill="#fff" /> */}
+                  <View style={styles.socialField}>
+                    <Text style={styles.prefixText}>vk.com/</Text>
+                    <TextInput
+                      style={styles.socialInput}
+                      placeholder="username"
+                      placeholderTextColor="#666"
+                      autoCapitalize="none"
+                      maxLength={32}
+                      value={profile.vk}
+                      onChangeText={handleSocialChange('vk')}
+                    />
+                  </View>
+                </View>
+                <Text style={styles.label}>Instagram</Text>
+                <View style={styles.rowInput}>
+                  {/* <InstagramIcon
+                    width={20}
+                    height={20}
+                    style={styles.svgIcon}
+                    fill="#fff"
+                  /> */}
+                  <View style={styles.socialField}>
+                    <Text style={styles.prefixText}>instagram.com/</Text>
+                    <TextInput
+                      style={styles.socialInput}
+                      placeholder="username"
+                      placeholderTextColor="#666"
+                      autoCapitalize="none"
+                      maxLength={32}
+                      value={profile.instagram}
+                      onChangeText={handleSocialChange('instagram')}
+                    />
+                  </View>
+                </View>
+                <Text style={styles.label}>Telegram</Text>
+                <View style={styles.rowInput}>
+                  {/* <TelegramIcon
+                    width={20}
+                    height={20}
+                    style={styles.svgIcon}
+                    fill="#fff"
+                  /> */}
+                  <View style={styles.socialField}>
+                    <Text style={styles.prefixText}>t.me/</Text>
+                    <TextInput
+                      style={styles.socialInput}
+                      placeholder="username"
+                      placeholderTextColor="#666"
+                      autoCapitalize="none"
+                      maxLength={32}
+                      value={profile.telegram}
+                      onChangeText={handleSocialChange('telegram')}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.diaryButton}
+                onPress={() => navigation.navigate('BodyDiary')}
+              >
+                <Text style={styles.diaryButtonText}>Дневник тела</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={save}
+                onLayout={e => setSaveButtonY(e.nativeEvent.layout.y)}
+              >
+                <Text style={styles.saveButtonText}>Сохранить</Text>
+              </TouchableOpacity>
+
+              {Platform.OS === 'ios' && showDatePicker && (
+                <Modal
+                  transparent
+                  animationType="slide"
+                  visible={showDatePicker}
+                  onRequestClose={cancelDatePicker}
+                >
+                  <TouchableWithoutFeedback onPress={cancelDatePicker}>
+                    <View style={styles.modalOverlay}>
+                      <TouchableWithoutFeedback>
+                        <View style={styles.modalContent}>
+                          <View style={styles.modalHeader}>
+                            <TouchableOpacity onPress={cancelDatePicker}>
+                              <Text style={styles.cancelButton}>Отмена</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.modalTitle}>Дата рождения</Text>
+                            <TouchableOpacity onPress={confirmDate}>
+                              <Text style={styles.doneButton}>Готово</Text>
+                            </TouchableOpacity>
+                          </View>
+                          <DateTimePicker
+                            value={selectedBirthDateObj}
+                            mode="date"
+                            display="spinner"
+                            onChange={handleBirthChange}
+                            style={styles.timePickerIOS}
+                            textColor="white"
+                            themeVariant="dark"
+                            locale="ru-RU"
+                            maximumDate={new Date()}
+                          />
+                        </View>
+                      </TouchableWithoutFeedback>
+                    </View>
+                  </TouchableWithoutFeedback>
+                </Modal>
+              )}
+              {Platform.OS === 'android' && showDatePicker && (
+                <DateTimePicker
+                  value={selectedBirthDateObj}
+                  mode="date"
+                  display="default"
+                  onChange={handleBirthChange}
+                  maximumDate={new Date()}
+                  locale="ru-RU"
+                />
+              )}
+            </View>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+        <Animated.View
+          style={[
+            styles.floatingButton,
+            {
+              opacity: fadeAnim,
+              bottom: 2,
+            },
+          ]}
+          pointerEvents={showFloating ? 'auto' : 'none'}
+        >
+          <TouchableOpacity style={styles.saveButton} onPress={save}>
+            <Text style={styles.saveButtonText}>Сохранить</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
