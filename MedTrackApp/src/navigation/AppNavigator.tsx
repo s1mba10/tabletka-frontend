@@ -58,7 +58,7 @@ const AppNavigator: React.FC = () => {
         <Tab.Screen
           name="Питание"
           component={DietScreen}
-          options={{ tabBarIcon: ({ color }) => <Icon name="food" size={30} color={color} /> }}
+          options={{ tabBarIcon: ({ color }) => <Icon name="food-apple" size={30} color={color} /> }}
         />
         <Tab.Screen
           name="Статистика"
