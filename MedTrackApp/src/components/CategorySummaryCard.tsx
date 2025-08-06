@@ -58,12 +58,11 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
             height={innerSize}
             stroke={color}
             strokeWidth={strokeWidth}
-            strokeDasharray={perimeter}
+            strokeDasharray={`${perimeter} ${perimeter}`}
             strokeDashoffset={strokeDashoffset}
             fill="transparent"
             rx={borderRadius}
             ry={borderRadius}
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         </Svg>
       )}
