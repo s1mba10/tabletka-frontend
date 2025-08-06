@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect } from 'react-native-svg';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export type CategorySummaryCardProps = {
@@ -14,12 +14,12 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
   label,
   percentage,
 }) => {
-  const size = 80;
-  const strokeWidth = 4;
-  const radius = 10;
+  const [size, setSize] = useState(0);
 
-  const perimeter = 4 * (size - strokeWidth);
-  const strokeDashoffset = perimeter - (perimeter * percentage) / 100;
+  const strokeWidth = size * 0.12;
+  const radius = size / 2 - strokeWidth / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (circumference * percentage) / 100;
 
   const getColor = (value: number) => {
     if (value >= 80) return '#4CAF50';
@@ -28,34 +28,39 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
   };
   const color = getColor(percentage);
 
+  const onLayout = (e: LayoutChangeEvent) => {
+    const newSize = e.nativeEvent.layout.width;
+    if (newSize !== size) {
+      setSize(newSize);
+    }
+  };
+
   return (
-    <View style={styles.wrapper}>
-      <Svg height={size} width={size} style={styles.progress}>
-        <Rect
-          x={strokeWidth / 2}
-          y={strokeWidth / 2}
-          width={size - strokeWidth}
-          height={size - strokeWidth}
-          rx={radius}
-          ry={radius}
-          stroke="#2C2C2C"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-        />
-        <Rect
-          x={strokeWidth / 2}
-          y={strokeWidth / 2}
-          width={size - strokeWidth}
-          height={size - strokeWidth}
-          rx={radius}
-          ry={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={perimeter}
-          strokeDashoffset={strokeDashoffset}
-          fill="transparent"
-        />
-      </Svg>
+    <View style={[styles.wrapper, { padding: strokeWidth / 2 }]} onLayout={onLayout}>
+      {size > 0 && (
+        <Svg height={size} width={size} style={styles.progress}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#2C2C2C"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="transparent"
+            transform={`rotate(-90, ${size / 2}, ${size / 2})`}
+          />
+        </Svg>
+      )}
       <View style={styles.card}>
         <Icon name={icon} size={26} color="#fff" />
         <Text style={styles.label}>{label}</Text>
@@ -66,10 +71,8 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: 80,
-    height: 80,
-    marginHorizontal: 5,
-    padding: 2,
+    flex: 1,
+    aspectRatio: 1,
   },
   progress: {
     position: 'absolute',

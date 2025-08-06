@@ -117,7 +117,7 @@ export const styles = StyleSheet.create({
   },
   summaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginVertical: 20,
+    gap: 12,
   },
 });
