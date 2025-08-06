@@ -59,6 +59,7 @@ const MainScreen: React.FC = () => {
     icon?: string;
     tab?: string;
     background?: ImageSourcePropType;
+    overlay?: boolean;
   };
 
   const features: Feature[] = [
@@ -66,7 +67,11 @@ const MainScreen: React.FC = () => {
       title: 'Продуктовые корзины',
       background: require('../../../assets/cards/roundPlate.png'),
     },
-    { title: 'Тренировки', icon: 'dumbbell' },
+    {
+      title: 'Тренировки',
+      background: require('../../../assets/cards/fitnessTimer.png'),
+      overlay: false,
+    },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
     { title: 'ИИ-помощники', icon: 'robot' },
     { title: 'Интересные факты', icon: 'lightbulb-on-outline' },
@@ -105,7 +110,9 @@ const MainScreen: React.FC = () => {
             style={styles.imageBackground}
             imageStyle={styles.featureCardImage}
           >
-            {feature.background && <View style={styles.featureOverlay} />}
+            {feature.background && feature.overlay !== false && (
+              <View style={styles.featureOverlay} />
+            )}
             <View
               style={[
                 styles.featureContent,
@@ -119,6 +126,7 @@ const MainScreen: React.FC = () => {
                 </View>
               )}
               <Text
+                numberOfLines={1}
                 style={[
                   styles.featureLabel,
                   // @ts-ignore
