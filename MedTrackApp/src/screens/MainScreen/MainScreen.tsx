@@ -69,8 +69,7 @@ const MainScreen: React.FC = () => {
     },
     {
       title: 'Тренировки',
-      background: require('../../../assets/cards/fitnessTimer.png'),
-      overlay: false,
+      background: require('../../../assets/cards/dumbbell.png'),
     },
     { title: 'Дневник лекарств', icon: 'clipboard-text', tab: 'Лекарства' },
     { title: 'ИИ-помощники', icon: 'robot' },
@@ -126,7 +125,7 @@ const MainScreen: React.FC = () => {
                 </View>
               )}
               <Text
-                numberOfLines={1}
+                numberOfLines={2}
                 style={[
                   styles.featureLabel,
                   // @ts-ignore
