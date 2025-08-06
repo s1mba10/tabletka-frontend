@@ -73,15 +73,18 @@ const MainScreen: React.FC = () => {
     },
     {
       title: 'Дневник лекарств',
-      background: require('../../../assets/cards/pillsDiary.png'),
+      background: require('../../../assets/cards/pillsDiary1.png'),
       tab: 'Лекарства',
     },
     {
       title: 'ИИ-помощники',
       background: require('../../../assets/cards/AI-helpers.png'),
-      icon: 'robot',
     },
-    { title: 'Интересные факты', icon: 'lightbulb-on-outline' },
+    {
+      title: 'Интересные факты',
+      icon: 'lightbulb-on-outline',
+      background: require('../../../assets/cards/lamp1.png'),
+    },
   ];
 
   const handleFeaturePress = (feature: { title: string; tab?: string }) => {
