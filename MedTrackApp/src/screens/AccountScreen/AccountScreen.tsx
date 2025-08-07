@@ -304,11 +304,21 @@ const AccountScreen: React.FC = () => {
   };
 
   const pickAvatar = () => {
-    launchImageLibrary({ mediaType: 'photo' }, response => {
+    launchImageLibrary({ mediaType: 'photo' }, async response => {
       if (response.didCancel) return;
       const uri = response.assets && response.assets[0]?.uri;
       if (uri) {
         setProfile(prev => ({ ...prev, avatarUri: uri }));
+        try {
+          const stored = await AsyncStorage.getItem(STORAGE_KEY);
+          const parsed = stored ? JSON.parse(stored) : {};
+          await AsyncStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ ...parsed, avatarUri: uri }),
+          );
+        } catch {
+          // ignore
+        }
       }
     });
   };
@@ -387,6 +397,7 @@ const AccountScreen: React.FC = () => {
                 style={styles.avatarWrapper}
                 onPress={pickAvatar}
                 activeOpacity={0.7}
+                testID="avatar-picker"
               >
                 <View style={styles.avatar}>
                   {profile.avatarUri ? (
