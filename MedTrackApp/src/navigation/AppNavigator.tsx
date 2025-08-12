@@ -13,6 +13,7 @@ import Profile from '../screens/Profile';
 import Medications from '../screens/Medications';
 import BodyDiaryScreen from '../screens/BodyDiaryScreen';
 import DietScreen from '../screens/DietScreen';
+import TrainingScreen from '../screens/TrainingScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -59,6 +60,11 @@ const AppNavigator: React.FC = () => {
           name="Питание"
           component={DietScreen}
           options={{ tabBarIcon: ({ color }) => <Icon name="food-apple" size={30} color={color} /> }}
+        />
+        <Tab.Screen
+          name="Тренировки"
+          component={TrainingScreen}
+          options={{ tabBarIcon: ({ color }) => <Icon name="dumbbell" size={30} color={color} /> }}
         />
         <Tab.Screen
           name="Статистика"
