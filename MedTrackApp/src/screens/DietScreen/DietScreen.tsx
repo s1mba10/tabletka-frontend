@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView } from 'react-native';
 import { format } from 'date-fns';
 
-import { NutritionCalendar } from '../../components';
+import { NutritionCalendar, NutritionCompactSummary } from '../../components';
 import { styles } from './styles';
 
 const DietScreen: React.FC = () => {
@@ -18,13 +19,19 @@ const DietScreen: React.FC = () => {
 
   const getHasFoodByDate = (date: string) => mockFoodDates.has(date);
 
+  const totals = { calories: 1200, protein: 45, fat: 60, carbs: 150 };
+  const targets = { calories: 2000, protein: 120, fat: 70, carbs: 250 };
+
   return (
     <SafeAreaView style={styles.container}>
-      <NutritionCalendar
-        value={selectedDate}
-        onChange={setSelectedDate}
-        getHasFoodByDate={getHasFoodByDate}
-      />
+      <ScrollView>
+        <NutritionCalendar
+          value={selectedDate}
+          onChange={setSelectedDate}
+          getHasFoodByDate={getHasFoodByDate}
+        />
+        <NutritionCompactSummary totals={totals} targets={targets} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
