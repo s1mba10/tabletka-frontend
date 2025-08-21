@@ -1,28 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export type MacroValue = {
-  consumed: number;
-  target?: number;
+export type MacronutrientSummaryProps = {
+  caloriesConsumed: number;
+  caloriesTarget?: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 };
 
-export type MacronutrientSummaryProps = {
-  calories: MacroValue;
-  protein: MacroValue;
-  fat: MacroValue;
-  carbs: MacroValue;
-};
+const formatNumber = (value: number) =>
+  value.toLocaleString('ru-RU', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 
 const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
-  calories,
+  caloriesConsumed,
+  caloriesTarget,
   protein,
   fat,
   carbs,
 }) => {
-  const percent = calories.target
-    ? Math.round((calories.consumed / calories.target) * 100)
+  const percent = caloriesTarget
+    ? Math.round((caloriesConsumed / caloriesTarget) * 100)
     : undefined;
   const barPercent = percent !== undefined ? Math.min(percent, 100) : 0;
+
   let barColor = '#22C55E';
   if (percent !== undefined) {
     if (percent > 120) {
@@ -32,16 +36,32 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
     }
   }
 
-  const summaryText = [
-    `Белки ${protein.consumed}/${protein.target ?? '—'}г`,
-    `Жиры ${fat.consumed}/${fat.target ?? '—'}г`,
-    `Углеводы ${carbs.consumed}/${carbs.target ?? '—'}г`,
-    `Ккал ${calories.consumed}/${calories.target ?? '—'}`,
-  ].join(' • ');
-
   return (
     <View style={styles.container}>
-      <Text style={styles.summaryText}>{summaryText}</Text>
+      <View style={styles.topRow}>
+        <View style={styles.column}>
+          <Text style={styles.label}>Жиры</Text>
+          <Text style={styles.value}>{formatNumber(fat)}</Text>
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.label}>Углев</Text>
+          <Text style={styles.value}>{formatNumber(carbs)}</Text>
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.label}>Белк</Text>
+          <Text style={styles.value}>{formatNumber(protein)}</Text>
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.label}>РСК</Text>
+          <Text style={styles.value}>{percent !== undefined ? `${percent}%` : '—'}</Text>
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.label}>Калории</Text>
+          <Text style={[styles.value, styles.caloriesValue]}>
+            {formatNumber(caloriesConsumed)}
+          </Text>
+        </View>
+      </View>
       <View style={styles.progressRow}>
         <View style={styles.progressBar}>
           {percent !== undefined && (
@@ -64,15 +84,29 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#1E1E1E',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 8,
     marginBottom: 16,
   },
-  summaryText: {
+  topRow: {
+    flexDirection: 'row',
+  },
+  column: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  label: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  value: {
     color: '#fff',
     fontSize: 12,
-    textAlign: 'center',
+  },
+  caloriesValue: {
+    fontWeight: '700',
   },
   progressRow: {
     flexDirection: 'row',
@@ -98,3 +132,4 @@ const styles = StyleSheet.create({
 });
 
 export default MacronutrientSummary;
+

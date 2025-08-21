@@ -17,10 +17,11 @@ const DietScreen: React.FC = () => {
   ]);
 
   const mockMacros = {
-    calories: { consumed: 1200, target: 2000 },
-    protein: { consumed: 45, target: 120 },
-    fat: { consumed: 60, target: 70 },
-    carbs: { consumed: 150, target: 250 },
+    caloriesConsumed: 294,
+    caloriesTarget: 3300,
+    protein: 20.42,
+    fat: 21.43,
+    carbs: 3.46,
   };
 
   const getHasFoodByDate = (date: string) => mockFoodDates.has(date);
@@ -38,3 +39,4 @@ const DietScreen: React.FC = () => {
 };
 
 export default DietScreen;
+
