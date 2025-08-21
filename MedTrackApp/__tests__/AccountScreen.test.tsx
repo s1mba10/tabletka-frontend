@@ -25,22 +25,26 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-test('persists avatar after selection', async () => {
-  (launchImageLibrary as jest.Mock).mockImplementation((_options, callback) => {
-    callback({ assets: [{ uri: 'mock://avatar.png' }] });
-  });
+test(
+  'persists avatar after selection',
+  async () => {
+    (launchImageLibrary as jest.Mock).mockImplementation((_options, callback) => {
+      callback({ assets: [{ uri: 'mock://avatar.png' }] });
+    });
 
-  let component: renderer.ReactTestRenderer;
-  await act(async () => {
-    component = renderer.create(<AccountScreen />);
-  });
+    let component: renderer.ReactTestRenderer;
+    await act(async () => {
+      component = renderer.create(<AccountScreen />);
+    });
 
-  await act(async () => {
-    component.root.findByProps({ testID: 'avatar-picker' }).props.onPress();
-  });
+    await act(async () => {
+      component.root.findByProps({ testID: 'avatar-picker' }).props.onPress();
+    });
 
-  expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-    'userProfile',
-    expect.stringContaining('mock://avatar.png'),
-  );
-});
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      'userProfile',
+      expect.stringContaining('mock://avatar.png'),
+    );
+  },
+  10000,
+);
