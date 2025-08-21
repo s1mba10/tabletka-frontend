@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 
-import { NutritionCalendar } from '../../components';
+import { NutritionCalendar, MacronutrientSummary } from '../../components';
 import { styles } from './styles';
 
 const DietScreen: React.FC = () => {
@@ -16,6 +16,13 @@ const DietScreen: React.FC = () => {
     '2025-08-22',
   ]);
 
+  const mockMacros = {
+    calories: { consumed: 1200, target: 2000 },
+    protein: { consumed: 45, target: 120 },
+    fat: { consumed: 60, target: 70 },
+    carbs: { consumed: 150, target: 250 },
+  };
+
   const getHasFoodByDate = (date: string) => mockFoodDates.has(date);
 
   return (
@@ -25,6 +32,7 @@ const DietScreen: React.FC = () => {
         onChange={setSelectedDate}
         getHasFoodByDate={getHasFoodByDate}
       />
+      <MacronutrientSummary {...mockMacros} />
     </SafeAreaView>
   );
 };
