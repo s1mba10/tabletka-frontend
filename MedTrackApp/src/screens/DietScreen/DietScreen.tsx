@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 
-import { NutritionCalendar } from '../../components';
+import { NutritionCalendar, NutritionSummary } from '../../components';
 import { styles } from './styles';
 
 const DietScreen: React.FC = () => {
@@ -24,6 +24,16 @@ const DietScreen: React.FC = () => {
         value={selectedDate}
         onChange={setSelectedDate}
         getHasFoodByDate={getHasFoodByDate}
+      />
+      <NutritionSummary
+        proteinConsumed={45}
+        proteinTarget={120}
+        fatConsumed={60}
+        fatTarget={70}
+        carbsConsumed={150}
+        carbsTarget={250}
+        caloriesConsumed={1200}
+        caloriesTarget={2000}
       />
     </SafeAreaView>
   );
