@@ -12,7 +12,7 @@ import MedCalendarScreen from '../screens/MedCalendarScreen';
 import Profile from '../screens/Profile';
 import Medications from '../screens/Medications';
 import BodyDiaryScreen from '../screens/BodyDiaryScreen';
-import DietScreen from '../screens/DietScreen';
+import NutritionScreen from '../screens/NutritionScreen';
 import TrainingScreen from '../screens/TrainingScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -58,7 +58,7 @@ const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="Питание"
-          component={DietScreen}
+          component={NutritionScreen}
           options={{ tabBarIcon: ({ color }) => <Icon name="food-apple" size={30} color={color} /> }}
         />
         <Tab.Screen
