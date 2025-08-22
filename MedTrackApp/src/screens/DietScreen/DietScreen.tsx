@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView } from 'react-native';
+import { ScrollView, Platform, ToastAndroid, Alert } from 'react-native';
 import { format } from 'date-fns';
 
 import {
@@ -92,6 +92,22 @@ const DietScreen: React.FC = () => {
 
   const getHasFoodByDate = (date: string) => mockFoodDates.has(date);
 
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert(message);
+    }
+  };
+
+  const handleCopyFromYesterday = (date: string) => {
+    showToast(`Скопировано из вчера для ${date}`);
+  };
+
+  const handleClearDay = (date: string) => {
+    showToast(`День ${date} очищен`);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -99,6 +115,8 @@ const DietScreen: React.FC = () => {
           value={selectedDate}
           onChange={setSelectedDate}
           getHasFoodByDate={getHasFoodByDate}
+          onCopyFromYesterday={handleCopyFromYesterday}
+          onClearDay={handleClearDay}
         />
         <MacronutrientSummary {...mockMacros} />
         {meals.map(({ key, ...meal }) => (

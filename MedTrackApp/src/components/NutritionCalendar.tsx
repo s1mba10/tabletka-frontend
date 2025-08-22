@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActionSheetIOS,
+  Alert,
+  Platform,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, addWeeks, getISOWeek, differenceInCalendarISOWeeks } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -12,6 +20,8 @@ export type NutritionCalendarProps = {
   onPrevWeek?: () => void;
   onNextWeek?: () => void;
   getHasFoodByDate: (date: string) => boolean;
+  onCopyFromYesterday?: (date: string) => void;
+  onClearDay?: (date: string) => void;
 };
 
 const NutritionCalendar: React.FC<NutritionCalendarProps> = ({
@@ -20,6 +30,8 @@ const NutritionCalendar: React.FC<NutritionCalendarProps> = ({
   onPrevWeek,
   onNextWeek,
   getHasFoodByDate,
+  onCopyFromYesterday,
+  onClearDay,
 }) => {
   const initialOffset = differenceInCalendarISOWeeks(new Date(value), new Date());
   const [weekOffset, setWeekOffset] = useState(initialOffset);
@@ -38,6 +50,54 @@ const NutritionCalendar: React.FC<NutritionCalendarProps> = ({
   const handleDayPress = (date: string) => {
     setSelectedDate(date);
     onChange(date);
+  };
+
+  const handleDayLongPress = (date: string) => {
+    handleDayPress(date);
+    if (!onCopyFromYesterday && !onClearDay) {
+      return;
+    }
+
+    const confirmCopy = () => {
+      Alert.alert('Скопировать из вчера?', '', [
+        { text: 'Отмена', style: 'cancel' },
+        { text: 'Скопировать', onPress: () => onCopyFromYesterday?.(date) },
+      ]);
+    };
+
+    const confirmClear = () => {
+      Alert.alert('Очистить день?', '', [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Очистить',
+          style: 'destructive',
+          onPress: () => onClearDay?.(date),
+        },
+      ]);
+    };
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Скопировать из вчера', 'Очистить день', 'Отмена'],
+          cancelButtonIndex: 2,
+          destructiveButtonIndex: 1,
+        },
+        buttonIndex => {
+          if (buttonIndex === 0) {
+            confirmCopy();
+          } else if (buttonIndex === 1) {
+            confirmClear();
+          }
+        },
+      );
+    } else {
+      Alert.alert('', 'Выберите действие', [
+        { text: 'Скопировать из вчера', onPress: confirmCopy },
+        { text: 'Очистить день', onPress: confirmClear, style: 'destructive' },
+        { text: 'Отмена', style: 'cancel' },
+      ]);
+    }
   };
 
   const handlePrevWeek = () => {
@@ -81,6 +141,7 @@ const NutritionCalendar: React.FC<NutritionCalendarProps> = ({
             <TouchableOpacity
               key={day.fullDate}
               onPress={() => handleDayPress(day.fullDate)}
+              onLongPress={() => handleDayLongPress(day.fullDate)}
               style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
             >
               <Text
