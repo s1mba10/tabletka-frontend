@@ -101,8 +101,8 @@ const DietScreen: React.FC = () => {
           getHasFoodByDate={getHasFoodByDate}
         />
         <MacronutrientSummary {...mockMacros} />
-        {meals.map(meal => (
-          <MealPanel key={meal.key} {...meal} />
+        {meals.map(({ key, ...meal }) => (
+          <MealPanel key={key} {...meal} />
         ))}
       </ScrollView>
     </SafeAreaView>
