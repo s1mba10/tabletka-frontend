@@ -7,13 +7,40 @@ import {
   NutritionCalendar,
   MacronutrientSummary,
   MealPanel,
+  AddFoodModal,
 } from '../../components';
+import type { MealEntry } from '../../components/MealPanel';
+import type { MealType, NormalizedEntry } from '../../components/AddFoodModal';
 import { styles } from './styles';
+
+const MEAL_TITLES: Record<MealType, string> = {
+  breakfast: 'Завтрак',
+  lunch: 'Обед',
+  dinner: 'Ужин',
+  snack: 'Перекус/Другое',
+};
 
 const DietScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(
     format(new Date(), 'yyyy-MM-dd'),
   );
+  const [modalMeal, setModalMeal] = useState<MealType | null>(null);
+  const [mealsEntries, setMealsEntries] = useState<Record<MealType, MealEntry[]>>({
+    breakfast: [
+      {
+        id: '1',
+        name: 'Омлет или Яичница',
+        amount: '3 яйца',
+        calories: 294,
+        fat: 21.43,
+        carbs: 3.46,
+        protein: 20.42,
+      },
+    ],
+    lunch: [],
+    dinner: [],
+    snack: [],
+  });
 
   const mockFoodDates = new Set([
     '2025-08-18',
@@ -33,61 +60,36 @@ const DietScreen: React.FC = () => {
     ? Math.round((mockMacros.caloriesConsumed / mockMacros.caloriesTarget) * 100)
     : undefined;
 
+  const buildMeal = (type: MealType, icon: string) => {
+    const entries = mealsEntries[type];
+    const totals = entries.reduce(
+      (acc, e) => ({
+        calories: acc.calories + e.calories,
+        fat: acc.fat + e.fat,
+        carbs: acc.carbs + e.carbs,
+        protein: acc.protein + e.protein,
+      }),
+      { calories: 0, fat: 0, carbs: 0, protein: 0 },
+    );
+    return {
+      key: type,
+      title: MEAL_TITLES[type],
+      icon,
+      totalCalories: totals.calories,
+      fat: totals.fat,
+      carbs: totals.carbs,
+      protein: totals.protein,
+      rskPercent: dayPercent,
+      entries,
+      onAdd: () => setModalMeal(type),
+    };
+  };
+
   const meals = [
-    {
-      key: 'breakfast',
-      title: 'Завтрак',
-      icon: '🌅',
-      totalCalories: 294,
-      fat: 21.43,
-      carbs: 3.46,
-      protein: 20.42,
-      rskPercent: dayPercent,
-      entries: [
-        {
-          id: '1',
-          name: 'Омлет или Яичница',
-          amount: '3 яйца',
-          calories: 294,
-          fat: 21.43,
-          carbs: 3.46,
-          protein: 20.42,
-        },
-      ],
-    },
-    {
-      key: 'lunch',
-      title: 'Обед',
-      icon: '☀️',
-      totalCalories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0,
-      rskPercent: dayPercent,
-      entries: [],
-    },
-    {
-      key: 'dinner',
-      title: 'Ужин',
-      icon: '🌇',
-      totalCalories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0,
-      rskPercent: dayPercent,
-      entries: [],
-    },
-    {
-      key: 'snack',
-      title: 'Перекус/Другое',
-      icon: '🌙',
-      totalCalories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0,
-      rskPercent: dayPercent,
-      entries: [],
-    },
+    buildMeal('breakfast', '🌅'),
+    buildMeal('lunch', '☀️'),
+    buildMeal('dinner', '🌇'),
+    buildMeal('snack', '🌙'),
   ];
 
   const getHasFoodByDate = (date: string) => mockFoodDates.has(date);
@@ -108,6 +110,26 @@ const DietScreen: React.FC = () => {
     showToast(`День ${date} очищен`);
   };
 
+  const handleConfirm = (entry: NormalizedEntry) => {
+    setMealsEntries(prev => ({
+      ...prev,
+      [entry.mealType]: [
+        ...prev[entry.mealType],
+        {
+          id: entry.id,
+          name: entry.name || 'Без названия',
+          amount: entry.portionGrams ? `${entry.portionGrams} г` : undefined,
+          calories: entry.calories,
+          fat: entry.fat,
+          carbs: entry.carbs,
+          protein: entry.protein,
+        },
+      ],
+    }));
+    setModalMeal(null);
+    showToast(`Добавлено в ${MEAL_TITLES[entry.mealType]}`);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -123,9 +145,15 @@ const DietScreen: React.FC = () => {
           <MealPanel key={key} {...meal} />
         ))}
       </ScrollView>
+      {modalMeal && (
+        <AddFoodModal
+          mealType={modalMeal}
+          onCancel={() => setModalMeal(null)}
+          onConfirm={handleConfirm}
+        />
+      )}
     </SafeAreaView>
   );
 };
 
 export default DietScreen;
-
