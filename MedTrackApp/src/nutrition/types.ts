@@ -26,6 +26,18 @@ export type FavoriteItem = {
   createdAt: number;
 };
 
+export type UserCatalogItem = {
+  id: string;
+  name: string;
+  per100g: {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+  };
+  createdAt: number;
+};
+
 export type RecentItem = {
   id: string;
   name: string;

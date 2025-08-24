@@ -8,13 +8,18 @@ import {
   TextInput,
   FlatList,
   ScrollView,
+  Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   AddFoodModalProps,
   CatalogItem,
   FavoriteItem,
   RecentItem,
+  UserCatalogItem,
   NormalizedEntry,
 } from '../nutrition/types';
 import { localCatalog } from '../nutrition/catalog';
@@ -23,6 +28,8 @@ import {
   loadRecents,
   saveFavorites,
   addRecent,
+  loadUserCatalog,
+  saveUserCatalog,
 } from '../nutrition/storage';
 
 const mealTitles: Record<string, string> = {
@@ -38,6 +45,19 @@ const formatNumber = (value: number) =>
     maximumFractionDigits: 2,
   });
 
+const showToast = (message: string) => {
+  if (Platform.OS === 'android') {
+    ToastAndroid.show(message, ToastAndroid.SHORT);
+  } else {
+    Alert.alert(message);
+  }
+};
+
+type SearchItem =
+  | { type: 'catalog'; item: CatalogItem }
+  | { type: 'user'; item: UserCatalogItem }
+  | { type: 'favorite'; item: FavoriteItem };
+
 const AddFoodModal: React.FC<AddFoodModalProps> = ({
   mealType,
   onCancel,
@@ -48,9 +68,11 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [tab, setTab] = useState<'search' | 'favorites' | 'recents' | 'manual'>('search');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [recents, setRecents] = useState<RecentItem[]>([]);
+  const [userCatalog, setUserCatalog] = useState<UserCatalogItem[]>([]);
   const [query, setQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<CatalogItem[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [selectedCatalog, setSelectedCatalog] = useState<CatalogItem | null>(null);
+  const [selectedSource, setSelectedSource] = useState<'catalog' | 'user' | null>(null);
   const [selectedFavorite, setSelectedFavorite] = useState<FavoriteItem | null>(null);
   const [selectedRecent, setSelectedRecent] = useState<RecentItem | null>(null);
   const [portion, setPortion] = useState('');
@@ -69,20 +91,40 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   useEffect(() => {
     loadFavorites().then(setFavorites);
     loadRecents().then(setRecents);
+    loadUserCatalog().then(setUserCatalog);
   }, []);
 
-  // simple search
+  const allSearchItems = useMemo<SearchItem[]>(() => {
+    const fromCatalog = localCatalog.map(item => ({ type: 'catalog' as const, item }));
+    const fromUser = userCatalog.map(item => ({ type: 'user' as const, item }));
+    const fromFav = favorites.map(item => ({ type: 'favorite' as const, item }));
+    return [...fromCatalog, ...fromUser, ...fromFav].sort((a, b) =>
+      a.item.name.localeCompare(b.item.name, 'ru')
+    );
+  }, [userCatalog, favorites]);
+
   useEffect(() => {
     const q = query.trim().toLowerCase();
-    if (!q) {
-      setSearchResults([]);
-      return;
-    }
-    const res = localCatalog.filter(item =>
-      item.name.toLowerCase().includes(q) || item.brand?.toLowerCase().includes(q),
-    );
-    setSearchResults(res);
-  }, [query]);
+    const timer = setTimeout(() => {
+      if (!q) {
+        if (tab === 'search') {
+          setSearchResults(allSearchItems.slice(0, 15));
+        } else {
+          setSearchResults([]);
+        }
+        return;
+      }
+      const res = allSearchItems.filter(it => {
+        const name = it.item.name.toLowerCase();
+        const brand = (it.type === 'catalog' && it.item.brand
+          ? it.item.brand.toLowerCase()
+          : '');
+        return name.includes(q) || brand.includes(q);
+      });
+      setSearchResults(res);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [query, allSearchItems, tab]);
 
   const portionNum = useMemo(() => parseFloat(portion.replace(',', '.')) || 0, [portion]);
 
@@ -133,7 +175,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         fat: computed.fat,
         carbs: computed.carbs,
         note,
-        source: 'search-catalog',
+        source: selectedSource === 'catalog' ? 'search-catalog' : 'search-saved',
         sourceRefId: selectedCatalog.id,
         createdAt: Date.now(),
       };
@@ -170,27 +212,27 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         createdAt: Date.now(),
       };
     }
-    if (
-      tab === 'manual' &&
-      manualCalories &&
-      manualProtein &&
-      manualFat &&
-      manualCarbs
-    ) {
-      const mass = parseFloat(manualMass.replace(',', '.')) || undefined;
-      return {
-        id: Math.random().toString(),
-        mealType,
-        name: manualName || undefined,
-        portionGrams: mass,
-        calories: parseFloat(manualCalories.replace(',', '.')) || 0,
-        protein: parseFloat(manualProtein.replace(',', '.')) || 0,
-        fat: parseFloat(manualFat.replace(',', '.')) || 0,
-        carbs: parseFloat(manualCarbs.replace(',', '.')) || 0,
-        note: manualNote || undefined,
-        source: 'manual',
-        createdAt: Date.now(),
-      };
+    if (tab === 'manual') {
+      const mass = parseFloat(manualMass.replace(',', '.'));
+      const cal = parseFloat(manualCalories.replace(',', '.'));
+      const prot = parseFloat(manualProtein.replace(',', '.'));
+      const fat = parseFloat(manualFat.replace(',', '.'));
+      const carb = parseFloat(manualCarbs.replace(',', '.'));
+      if (mass > 0 && !isNaN(cal) && !isNaN(prot) && !isNaN(fat) && !isNaN(carb)) {
+        return {
+          id: Math.random().toString(),
+          mealType,
+          name: manualName || undefined,
+          portionGrams: mass,
+          calories: (cal * mass) / 100,
+          protein: (prot * mass) / 100,
+          fat: (fat * mass) / 100,
+          carbs: (carb * mass) / 100,
+          note: manualNote || undefined,
+          source: 'manual',
+          createdAt: Date.now(),
+        };
+      }
     }
     return null;
   }, [
@@ -212,6 +254,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const resetSelection = () => {
     setSelectedCatalog(null);
+    setSelectedSource(null);
     setSelectedFavorite(null);
     setSelectedRecent(null);
     setPortion('');
@@ -245,36 +288,113 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       setFavorites(newList);
       await saveFavorites(newList);
     }
-    if (manualSaveFav && tab === 'manual' && manualName) {
+    if (pendingEntry.source === 'manual') {
+      const mass = parseFloat(manualMass.replace(',', '.'));
+      const per100 = {
+        calories: parseFloat(manualCalories.replace(',', '.')),
+        protein: parseFloat(manualProtein.replace(',', '.')),
+        fat: parseFloat(manualFat.replace(',', '.')),
+        carbs: parseFloat(manualCarbs.replace(',', '.')),
+      };
+      if (manualName) {
+        const existing = userCatalog.find(
+          u => u.name.toLowerCase() === manualName.toLowerCase(),
+        );
+        const userItem: UserCatalogItem = {
+          id: existing ? existing.id : Math.random().toString(),
+          name: manualName,
+          per100g: per100,
+          createdAt: Date.now(),
+        };
+        const others = userCatalog.filter(u => u.id !== userItem.id);
+        const newCat = [userItem, ...others];
+        setUserCatalog(newCat);
+        await saveUserCatalog(newCat);
+        if (manualSaveFav) {
+          const fav: FavoriteItem = {
+            id: Math.random().toString(),
+            sourceId: userItem.id,
+            name: manualName,
+            defaultPortionGrams: mass,
+            per100g: per100,
+            createdAt: Date.now(),
+          };
+          const newList = [fav, ...favorites];
+          setFavorites(newList);
+          await saveFavorites(newList);
+        }
+      }
+    }
+    showToast(`Добавлено в ${mealTitles[mealType]}`);
+    onCancel();
+  };
+
+  const toggleFavorite = async (it: SearchItem) => {
+    if (it.type === 'favorite' || favorites.some(f => f.sourceId === it.item.id)) {
+      const updated = favorites.filter(f =>
+        it.type === 'favorite' ? f.id !== it.item.id : f.sourceId !== it.item.id,
+      );
+      setFavorites(updated);
+      await saveFavorites(updated);
+      showToast('Удалено из избранного');
+    } else {
+      const base = it.item as CatalogItem | UserCatalogItem;
       const newFav: FavoriteItem = {
         id: Math.random().toString(),
-        name: manualName,
-        defaultPortionGrams: parseFloat(manualMass.replace(',', '.')) || undefined,
-        per100g: undefined,
+        sourceId: base.id,
+        name: base.name,
+        per100g: base.per100g,
         createdAt: Date.now(),
       };
       const newList = [newFav, ...favorites];
       setFavorites(newList);
       await saveFavorites(newList);
+      showToast('Добавлено в избранное');
     }
-    onCancel();
   };
 
-  const renderSearchItem = ({ item }: { item: CatalogItem }) => (
-    <TouchableOpacity
-      testID={`addfood-search-item-${item.id}`}
-      style={styles.listItem}
-      onPress={() => {
-        resetSelection();
-        setSelectedCatalog(item);
-      }}
-    >
-      <Text style={styles.itemName}>{item.name}</Text>
-      <Text style={styles.itemDetails}>
-        на 100 г: {item.per100g.calories} ккал • Б {item.per100g.protein} • Ж {item.per100g.fat} • У {item.per100g.carbs}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderSearchItem = ({ item }: { item: SearchItem }) => {
+    const data = item.item as any;
+    const isFav = item.type === 'favorite' || favorites.some(f => f.sourceId === data.id);
+    return (
+      <View style={styles.listItemRow}>
+        <TouchableOpacity
+          testID={`addfood-search-item-${data.id}`}
+          style={{ flex: 1 }}
+          onPress={() => {
+            resetSelection();
+            if (item.type === 'favorite') {
+              setSelectedFavorite(data as FavoriteItem);
+              setPortion(
+                (data as FavoriteItem).defaultPortionGrams
+                  ? String((data as FavoriteItem).defaultPortionGrams)
+                  : '',
+              );
+            } else {
+              setSelectedCatalog(data as CatalogItem);
+              setSelectedSource(item.type === 'catalog' ? 'catalog' : 'user');
+            }
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.itemName}>{data.name}</Text>
+            {data.brand && <Text style={styles.itemBrand}> {data.brand}</Text>}
+          </View>
+          {data.per100g && (
+            <Text style={styles.itemDetails}>
+              на 100 г: {data.per100g.calories} ккал • Б {data.per100g.protein} • Ж {data.per100g.fat} • У {data.per100g.carbs}
+            </Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.starButton}
+          onPress={() => toggleFavorite(item)}
+        >
+          <Text style={[styles.star, isFav && { color: '#22C55E' }]}>★</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => (
     <TouchableOpacity
@@ -354,6 +474,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const renderManual = () => (
     <ScrollView style={{ flex: 1 }}>
+      <Text style={styles.helper}>КБЖУ указываются на 100 г. Для добавления укажите массу порции.</Text>
       <Text style={styles.label}>Название</Text>
       <TextInput
         placeholder="Без названия"
@@ -368,7 +489,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         keyboardType="numeric"
         onChangeText={setManualMass}
       />
-      <Text style={styles.label}>Калории</Text>
+      <Text style={styles.label}>Калории (на 100 г)</Text>
       <TextInput
         testID="addfood-manual-calories"
         style={styles.input}
@@ -376,7 +497,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         keyboardType="numeric"
         onChangeText={setManualCalories}
       />
-      <Text style={styles.label}>Белки</Text>
+      <Text style={styles.label}>Белки (на 100 г)</Text>
       <TextInput
         testID="addfood-manual-protein"
         style={styles.input}
@@ -384,7 +505,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         keyboardType="numeric"
         onChangeText={setManualProtein}
       />
-      <Text style={styles.label}>Жиры</Text>
+      <Text style={styles.label}>Жиры (на 100 г)</Text>
       <TextInput
         testID="addfood-manual-fat"
         style={styles.input}
@@ -392,7 +513,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         keyboardType="numeric"
         onChangeText={setManualFat}
       />
-      <Text style={styles.label}>Углеводы</Text>
+      <Text style={styles.label}>Углеводы (на 100 г)</Text>
       <TextInput
         testID="addfood-manual-carbs"
         style={styles.input}
@@ -426,7 +547,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             ) : (
               <FlatList
                 data={searchResults}
-                keyExtractor={i => i.id}
+                keyExtractor={i => `${i.type}-${(i.item as any).id}`}
                 renderItem={renderSearchItem}
               />
             )}
@@ -466,7 +587,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   return (
     <Modal animationType="slide" transparent={false} visible onRequestClose={onCancel}>
-      <View style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onCancel} accessibilityLabel="Отмена">
             <Text style={styles.headerButton}>Отмена</Text>
@@ -535,13 +656,13 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             {footerLine}
           </Text>
         )}
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1E1E1E', paddingTop: 40 },
+  container: { flex: 1, backgroundColor: '#1E1E1E' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -568,13 +689,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
+  listItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
   itemName: { color: '#fff', fontSize: 16 },
+  itemBrand: { color: '#aaa', fontSize: 16 },
   itemDetails: { color: '#aaa', fontSize: 12, marginTop: 2 },
   empty: { color: '#aaa', padding: 16, textAlign: 'center' },
   details: { padding: 12, borderTopWidth: 1, borderTopColor: '#333' },
   detailsTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
   label: { color: '#fff', marginHorizontal: 8, marginTop: 8 },
+  helper: { color: '#aaa', margin: 8, fontSize: 12 },
   favToggle: { margin: 8 },
+  starButton: { padding: 8 },
+  star: { color: '#777', fontSize: 18 },
   footer: {
     color: '#aaa',
     textAlign: 'center',
