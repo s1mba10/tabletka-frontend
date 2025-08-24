@@ -3,11 +3,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, Platform, ToastAndroid, Alert } from 'react-native';
 import { format } from 'date-fns';
 
-import {
-  NutritionCalendar,
-  MacronutrientSummary,
-  MealPanel,
-} from '../../components';
+import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../components';
+import AddFoodModal from '../../components/AddFoodModal';
+import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { styles } from './styles';
 
 const DietScreen: React.FC = () => {
@@ -33,7 +31,7 @@ const DietScreen: React.FC = () => {
     ? Math.round((mockMacros.caloriesConsumed / mockMacros.caloriesTarget) * 100)
     : undefined;
 
-  const meals = [
+  const initialMeals = [
     {
       key: 'breakfast',
       title: 'Завтрак',
@@ -90,6 +88,9 @@ const DietScreen: React.FC = () => {
     },
   ];
 
+  const [meals, setMeals] = useState(initialMeals);
+  const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
+
   const getHasFoodByDate = (date: string) => mockFoodDates.has(date);
 
   const showToast = (message: string) => {
@@ -108,6 +109,37 @@ const DietScreen: React.FC = () => {
     showToast(`День ${date} очищен`);
   };
 
+  const handleConfirm = (entry: NormalizedEntry) => {
+    setMeals(prev =>
+      prev.map(meal =>
+        meal.key === entry.mealType
+          ? {
+              ...meal,
+              totalCalories: meal.totalCalories + entry.calories,
+              fat: meal.fat + entry.fat,
+              carbs: meal.carbs + entry.carbs,
+              protein: meal.protein + entry.protein,
+              entries: [
+                ...meal.entries,
+                {
+                  id: entry.id,
+                  name: entry.name || '',
+                  amount: entry.portionGrams
+                    ? `${entry.portionGrams} г`
+                    : undefined,
+                  calories: entry.calories,
+                  fat: entry.fat,
+                  carbs: entry.carbs,
+                  protein: entry.protein,
+                },
+              ],
+            }
+          : meal,
+      ),
+    );
+    setActiveMeal(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -120,9 +152,16 @@ const DietScreen: React.FC = () => {
         />
         <MacronutrientSummary {...mockMacros} />
         {meals.map(({ key, ...meal }) => (
-          <MealPanel key={key} {...meal} />
+          <MealPanel key={key} {...meal} onAdd={() => setActiveMeal(key as MealType)} />
         ))}
       </ScrollView>
+      {activeMeal && (
+        <AddFoodModal
+          mealType={activeMeal}
+          onCancel={() => setActiveMeal(null)}
+          onConfirm={handleConfirm}
+        />
+      )}
     </SafeAreaView>
   );
 };
