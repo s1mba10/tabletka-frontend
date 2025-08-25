@@ -12,7 +12,7 @@ import {
   ToastAndroid,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   AddFoodModalProps,
@@ -23,6 +23,7 @@ import {
   NormalizedEntry,
 } from '../nutrition/types';
 import { localCatalog } from '../nutrition/catalog';
+import { formatNumber } from '../utils/number';
 import {
   loadFavorites,
   loadRecents,
@@ -39,11 +40,6 @@ const mealTitles: Record<string, string> = {
   snack: 'Перекус/Другое',
 };
 
-const formatNumber = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 
 const showToast = (message: string) => {
   if (Platform.OS === 'android') {
@@ -65,6 +61,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   dayTotals,
   dayTargets,
 }) => {
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<'search' | 'favorites' | 'recents' | 'manual'>('search');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [favView, setFavView] = useState<FavoriteItem[]>([]);
@@ -436,7 +433,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           </View>
           {data.per100g && (
             <Text style={styles.itemDetails}>
-              на 100 г: {data.per100g.calories} ккал • Б {data.per100g.protein} • Ж {data.per100g.fat} • У {data.per100g.carbs}
+              на 100 г: {formatNumber(data.per100g.calories)} ккал • Б {formatNumber(data.per100g.protein)} • Ж {formatNumber(data.per100g.fat)} • У {formatNumber(data.per100g.carbs)}
             </Text>
           )}
         </TouchableOpacity>
@@ -466,7 +463,14 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         >
           <Text style={styles.itemName}>{item.name}</Text>
           {item.defaultPortionGrams && (
-            <Text style={styles.itemDetails}>обычно: {item.defaultPortionGrams} г</Text>
+            <Text style={styles.itemDetails}>
+              обычно: {formatNumber(item.defaultPortionGrams)} г
+            </Text>
+          )}
+          {item.per100g && (
+            <Text style={styles.itemDetails}>
+              на 100 г: {formatNumber(item.per100g.calories)} ккал • Б {formatNumber(item.per100g.protein)} • Ж {formatNumber(item.per100g.fat)} • У {formatNumber(item.per100g.carbs)}
+            </Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -493,8 +497,13 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         >
           <Text style={styles.itemName}>{item.name}</Text>
           {item.portionGrams && (
-            <Text style={styles.itemDetails}>порция: {item.portionGrams} г</Text>
+            <Text style={styles.itemDetails}>
+              порция: {formatNumber(item.portionGrams)} г
+            </Text>
           )}
+          <Text style={styles.itemDetails}>
+            итого: {formatNumber(item.calories)} ккал • Б {formatNumber(item.protein)} • Ж {formatNumber(item.fat)} • У {formatNumber(item.carbs)}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.starButton}
@@ -510,13 +519,26 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     if (!dayTotals) return null;
     const { protein, fat, carbs, calories } = dayTotals;
     if (dayTargets) {
-      const tp = dayTargets.protein ?? '—';
-      const tf = dayTargets.fat ?? '—';
-      const tc = dayTargets.carbs ?? '—';
-      const tcal = dayTargets.calories ?? '—';
-      const free = typeof dayTargets.calories === 'number' ? dayTargets.calories - calories : undefined;
-      return `За день: Б ${formatNumber(protein)}/${tp} • Ж ${formatNumber(fat)}/${tf} • У ${formatNumber(carbs)}/${tc} • Ккал ${formatNumber(calories)}/${tcal}` +
-        (free !== undefined ? ` (свободно: ${formatNumber(free)})` : '');
+      const tp =
+        dayTargets.protein !== undefined
+          ? formatNumber(dayTargets.protein)
+          : '—';
+      const tf =
+        dayTargets.fat !== undefined ? formatNumber(dayTargets.fat) : '—';
+      const tc =
+        dayTargets.carbs !== undefined ? formatNumber(dayTargets.carbs) : '—';
+      const tcal =
+        dayTargets.calories !== undefined
+          ? formatNumber(dayTargets.calories)
+          : '—';
+      const free =
+        typeof dayTargets.calories === 'number'
+          ? dayTargets.calories - calories
+          : undefined;
+      return (
+        `За день: Б ${formatNumber(protein)}/${tp} • Ж ${formatNumber(fat)}/${tf} • У ${formatNumber(carbs)}/${tc} • Ккал ${formatNumber(calories)}/${tcal}` +
+        (free !== undefined ? ` (свободно: ${formatNumber(free)})` : '')
+      );
     }
     return `За день: Б ${formatNumber(protein)} • Ж ${formatNumber(fat)} • У ${formatNumber(carbs)} • Ккал ${formatNumber(calories)}`;
   }, [dayTotals, dayTargets]);
@@ -524,7 +546,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const renderDetails = () => {
     if (!selectedName) return null;
     return (
-      <View style={styles.details}>
+      <View style={[styles.details, { paddingBottom: insets.bottom + 12 }]}>
         <Text style={styles.detailsTitle}>{selectedName}</Text>
         <Text style={styles.label}>Порция, г</Text>
         <TextInput
@@ -551,7 +573,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   };
 
   const renderManual = () => (
-    <ScrollView style={{ flex: 1 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom }}>
       <Text style={styles.helper}>КБЖУ указываются на 100 г. Для добавления укажите массу порции.</Text>
       <Text style={styles.label}>Название</Text>
       <TextInput
@@ -627,6 +649,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                 data={searchResults}
                 keyExtractor={i => itemKey(i.item as any, i.type)}
                 renderItem={renderSearchItem}
+                contentContainerStyle={{ paddingBottom: insets.bottom }}
               />
             )}
             {renderDetails()}
@@ -640,7 +663,12 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                 Вы ещё не добавляли избранные продукты. Отмечайте ★ в деталях продукта.
               </Text>
             ) : (
-              <FlatList data={favView} keyExtractor={i => i.id} renderItem={renderFavoriteItem} />
+              <FlatList
+                data={favView}
+                keyExtractor={i => i.id}
+                renderItem={renderFavoriteItem}
+                contentContainerStyle={{ paddingBottom: insets.bottom }}
+              />
             )}
             {renderDetails()}
           </View>
@@ -651,7 +679,12 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             {recents.length === 0 ? (
               <Text style={styles.empty}>Пока нет недавних записей.</Text>
             ) : (
-              <FlatList data={recents} keyExtractor={i => i.id} renderItem={renderRecentItem} />
+              <FlatList
+                data={recents}
+                keyExtractor={i => i.id}
+                renderItem={renderRecentItem}
+                contentContainerStyle={{ paddingBottom: insets.bottom }}
+              />
             )}
             {renderDetails()}
           </View>
@@ -665,7 +698,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   return (
     <Modal animationType="slide" transparent={false} visible onRequestClose={onCancel}>
-      <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onCancel} accessibilityLabel="Отмена">
             <Text style={styles.headerButton}>Отмена</Text>

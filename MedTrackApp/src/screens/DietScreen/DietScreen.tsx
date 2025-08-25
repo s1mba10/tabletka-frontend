@@ -7,6 +7,7 @@ import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../compon
 import AddFoodModal from '../../components/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { aggregateMeals, computeDayRsk, computeMealRsk } from '../../nutrition/aggregate';
+import { formatNumber } from '../../utils/number';
 import { styles } from './styles';
 
 const DietScreen: React.FC = () => {
@@ -81,7 +82,7 @@ const DietScreen: React.FC = () => {
         entries: dayEntries[key].map(e => ({
           id: e.id,
           name: e.name || '',
-          amount: e.portionGrams ? `${e.portionGrams} г` : undefined,
+          amount: e.portionGrams ? `${formatNumber(e.portionGrams)} г` : undefined,
           calories: e.calories,
           fat: e.fat,
           carbs: e.carbs,

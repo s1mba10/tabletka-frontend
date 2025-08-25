@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { formatNumber } from '../utils/number';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { MealType } from '../nutrition/types';
 
@@ -29,12 +30,6 @@ export type MealPanelProps = {
   onSaveMeal?: () => void;
   onCamera?: () => void;
 };
-
-const formatNumber = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 
 const MealPanel: React.FC<MealPanelProps> = ({
   mealKey,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { formatNumber } from '../utils/number';
 
 export type MacronutrientSummaryProps = {
   caloriesConsumed: number;
@@ -8,12 +9,6 @@ export type MacronutrientSummaryProps = {
   fat: number;
   carbs: number;
 };
-
-const formatNumber = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 
 const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
   caloriesConsumed,
