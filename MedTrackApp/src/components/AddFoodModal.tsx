@@ -12,7 +12,7 @@ import {
   ToastAndroid,
   Alert,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   AddFoodModalProps,
@@ -698,7 +698,12 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   return (
     <Modal animationType="slide" transparent={false} visible onRequestClose={onCancel}>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
+        ]}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={onCancel} accessibilityLabel="Отмена">
             <Text style={styles.headerButton}>Отмена</Text>
@@ -767,7 +772,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             {footerLine}
           </Text>
         )}
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
