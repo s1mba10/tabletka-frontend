@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { formatNumber } from '../utils/number';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MealType } from '../nutrition/types';
 
 export type MealEntry = {
   id: string;
@@ -13,6 +15,7 @@ export type MealEntry = {
 };
 
 export type MealPanelProps = {
+  mealKey: MealType;
   icon: string;
   title: string;
   totalCalories: number;
@@ -28,13 +31,8 @@ export type MealPanelProps = {
   onCamera?: () => void;
 };
 
-const formatNumber = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-
 const MealPanel: React.FC<MealPanelProps> = ({
+  mealKey,
   icon,
   title,
   totalCalories,
@@ -59,7 +57,9 @@ const MealPanel: React.FC<MealPanelProps> = ({
           <Text style={styles.icon}>{icon}</Text>
           <Text style={styles.title}>{title}</Text>
           <View style={styles.calorieBlock}>
-            <Text style={styles.calories}>{formatNumber(totalCalories)}</Text>
+            <Text style={styles.calories} testID={`meal-${mealKey}-cal`}>
+              {formatNumber(totalCalories)}
+            </Text>
             <Text style={styles.caloriesLabel}>Калории</Text>
           </View>
         </TouchableOpacity>
@@ -75,10 +75,16 @@ const MealPanel: React.FC<MealPanelProps> = ({
       <View style={styles.divider} />
       <TouchableOpacity style={styles.metricsRow} onPress={toggle} activeOpacity={0.7}>
         <View style={styles.metrics}>
-          <Text style={styles.metric}>{formatNumber(fat)}</Text>
-          <Text style={styles.metric}>{formatNumber(carbs)}</Text>
-          <Text style={styles.metric}>{formatNumber(protein)}</Text>
-          <Text style={styles.metric}>
+          <Text style={styles.metric} testID={`meal-${mealKey}-fat`}>
+            {formatNumber(fat)}
+          </Text>
+          <Text style={styles.metric} testID={`meal-${mealKey}-carb`}>
+            {formatNumber(carbs)}
+          </Text>
+          <Text style={styles.metric} testID={`meal-${mealKey}-protein`}>
+            {formatNumber(protein)}
+          </Text>
+          <Text style={styles.metric} testID={`meal-${mealKey}-rsk`}>
             {rskPercent !== undefined ? `${rskPercent}%` : '—'}
           </Text>
         </View>

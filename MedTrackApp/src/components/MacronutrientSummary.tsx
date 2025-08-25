@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { formatNumber } from '../utils/number';
 
 export type MacronutrientSummaryProps = {
   caloriesConsumed: number;
@@ -8,12 +9,6 @@ export type MacronutrientSummaryProps = {
   fat: number;
   carbs: number;
 };
-
-const formatNumber = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 
 const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
   caloriesConsumed,
@@ -41,23 +36,34 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
       <View style={styles.topRow}>
         <View style={styles.column}>
           <Text style={styles.label}>Жиры</Text>
-          <Text style={styles.value}>{formatNumber(fat)}</Text>
+          <Text style={styles.value} testID="summary-fat">
+            {formatNumber(fat)}
+          </Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>Углев</Text>
-          <Text style={styles.value}>{formatNumber(carbs)}</Text>
+          <Text style={styles.value} testID="summary-carb">
+            {formatNumber(carbs)}
+          </Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>Белк</Text>
-          <Text style={styles.value}>{formatNumber(protein)}</Text>
+          <Text style={styles.value} testID="summary-protein">
+            {formatNumber(protein)}
+          </Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>РСК</Text>
-          <Text style={styles.value}>{percent !== undefined ? `${percent}%` : '—'}</Text>
+          <Text style={styles.value} testID="summary-rsk">
+            {percent !== undefined ? `${percent}%` : '—'}
+          </Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>Калории</Text>
-          <Text style={[styles.value, styles.caloriesValue]}>
+          <Text
+            style={[styles.value, styles.caloriesValue]}
+            testID="summary-calories"
+          >
             {formatNumber(caloriesConsumed)}
           </Text>
         </View>
@@ -73,7 +79,7 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
             />
           )}
         </View>
-        <Text style={styles.percentage}>
+        <Text style={styles.percentage} testID="summary-bar-pct">
           {percent !== undefined ? `${percent}%` : '—'}
         </Text>
       </View>
