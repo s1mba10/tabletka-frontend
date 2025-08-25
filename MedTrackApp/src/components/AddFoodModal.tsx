@@ -67,6 +67,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 }) => {
   const [tab, setTab] = useState<'search' | 'favorites' | 'recents' | 'manual'>('search');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [favView, setFavView] = useState<FavoriteItem[]>([]);
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const [userCatalog, setUserCatalog] = useState<UserCatalogItem[]>([]);
   const [query, setQuery] = useState('');
@@ -89,17 +90,36 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [manualSaveFav, setManualSaveFav] = useState(false);
 
   useEffect(() => {
-    loadFavorites().then(setFavorites);
+    loadFavorites().then(f => {
+      setFavorites(f);
+      setFavView(f);
+    });
     loadRecents().then(setRecents);
     loadUserCatalog().then(setUserCatalog);
   }, []);
 
+  useEffect(() => {
+    if (tab !== 'favorites') {
+      setFavView(favorites);
+    }
+  }, [favorites, tab]);
+
+  const favKey = (f: FavoriteItem) => f.sourceId || `fav-${f.id}`;
+
+  const itemKey = (
+    item: CatalogItem | UserCatalogItem | FavoriteItem,
+    type: 'catalog' | 'user' | 'favorite',
+  ) => (type === 'favorite' ? favKey(item as FavoriteItem) : item.id);
+
   const allSearchItems = useMemo<SearchItem[]>(() => {
-    const fromCatalog = localCatalog.map(item => ({ type: 'catalog' as const, item }));
-    const fromUser = userCatalog.map(item => ({ type: 'user' as const, item }));
-    const fromFav = favorites.map(item => ({ type: 'favorite' as const, item }));
-    return [...fromCatalog, ...fromUser, ...fromFav].sort((a, b) =>
-      a.item.name.localeCompare(b.item.name, 'ru')
+    const map = new Map<string, SearchItem>();
+    localCatalog.forEach(it => map.set(itemKey(it, 'catalog'), { type: 'catalog', item: it }));
+    userCatalog.forEach(it => map.set(itemKey(it, 'user'), { type: 'user', item: it }));
+    favorites.forEach(it =>
+      map.set(itemKey(it, 'favorite'), { type: 'favorite', item: it }),
+    );
+    return Array.from(map.values()).sort((a, b) =>
+      a.item.name.localeCompare(b.item.name, 'ru'),
     );
   }, [userCatalog, favorites]);
 
@@ -330,20 +350,53 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   };
 
   const toggleFavorite = async (it: SearchItem) => {
-    if (it.type === 'favorite' || favorites.some(f => f.sourceId === it.item.id)) {
-      const updated = favorites.filter(f =>
-        it.type === 'favorite' ? f.id !== it.item.id : f.sourceId !== it.item.id,
-      );
+    const key = itemKey(it.item as any, it.type);
+    if (favorites.some(f => favKey(f) === key)) {
+      const updated = favorites.filter(f => favKey(f) !== key);
       setFavorites(updated);
       await saveFavorites(updated);
       showToast('Удалено из избранного');
     } else {
-      const base = it.item as CatalogItem | UserCatalogItem;
+      const base = it.item as CatalogItem | UserCatalogItem | FavoriteItem;
       const newFav: FavoriteItem = {
         id: Math.random().toString(),
-        sourceId: base.id,
+        sourceId: (base as any).sourceId || (base as any).id,
         name: base.name,
-        per100g: base.per100g,
+        per100g: (base as any).per100g,
+        defaultPortionGrams: (base as any).defaultPortionGrams,
+        createdAt: Date.now(),
+      };
+      const newList = [newFav, ...favorites];
+      setFavorites(newList);
+      await saveFavorites(newList);
+      showToast('Добавлено в избранное');
+    }
+  };
+
+  const toggleFavoriteRecent = async (item: RecentItem) => {
+    const key = item.id;
+    if (favorites.some(f => favKey(f) === key)) {
+      const updated = favorites.filter(f => favKey(f) !== key);
+      setFavorites(updated);
+      await saveFavorites(updated);
+      showToast('Удалено из избранного');
+    } else {
+      const factor = item.portionGrams ? 100 / item.portionGrams : undefined;
+      const per100g =
+        factor !== undefined
+          ? {
+              calories: item.calories * factor,
+              protein: item.protein * factor,
+              fat: item.fat * factor,
+              carbs: item.carbs * factor,
+            }
+          : undefined;
+      const newFav: FavoriteItem = {
+        id: Math.random().toString(),
+        sourceId: item.id,
+        name: item.name,
+        defaultPortionGrams: item.portionGrams,
+        per100g,
         createdAt: Date.now(),
       };
       const newList = [newFav, ...favorites];
@@ -355,7 +408,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const renderSearchItem = ({ item }: { item: SearchItem }) => {
     const data = item.item as any;
-    const isFav = item.type === 'favorite' || favorites.some(f => f.sourceId === data.id);
+    const key = itemKey(data, item.type);
+    const isFav = favorites.some(f => favKey(f) === key);
     return (
       <View style={styles.listItemRow}>
         <TouchableOpacity
@@ -396,37 +450,61 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     );
   };
 
-  const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => {
-        resetSelection();
-        setSelectedFavorite(item);
-        setPortion(item.defaultPortionGrams ? String(item.defaultPortionGrams) : '');
-      }}
-    >
-      <Text style={styles.itemName}>{item.name}</Text>
-      {item.defaultPortionGrams && (
-        <Text style={styles.itemDetails}>обычно: {item.defaultPortionGrams} г</Text>
-      )}
-    </TouchableOpacity>
-  );
+  const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => {
+    const isFav = favorites.some(f => favKey(f) === favKey(item));
+    return (
+      <View style={styles.listItemRow}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => {
+            resetSelection();
+            setSelectedFavorite(item);
+            setPortion(
+              item.defaultPortionGrams ? String(item.defaultPortionGrams) : '',
+            );
+          }}
+        >
+          <Text style={styles.itemName}>{item.name}</Text>
+          {item.defaultPortionGrams && (
+            <Text style={styles.itemDetails}>обычно: {item.defaultPortionGrams} г</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.starButton}
+          onPress={() => toggleFavorite({ type: 'favorite', item })}
+        >
+          <Text style={[styles.star, isFav && { color: '#22C55E' }]}>★</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
-  const renderRecentItem = ({ item }: { item: RecentItem }) => (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => {
-        resetSelection();
-        setSelectedRecent(item);
-        setPortion(item.portionGrams ? String(item.portionGrams) : '');
-      }}
-    >
-      <Text style={styles.itemName}>{item.name}</Text>
-      {item.portionGrams && (
-        <Text style={styles.itemDetails}>порция: {item.portionGrams} г</Text>
-      )}
-    </TouchableOpacity>
-  );
+  const renderRecentItem = ({ item }: { item: RecentItem }) => {
+    const isFav = favorites.some(f => favKey(f) === item.id);
+    return (
+      <View style={styles.listItemRow}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => {
+            resetSelection();
+            setSelectedRecent(item);
+            setPortion(item.portionGrams ? String(item.portionGrams) : '');
+          }}
+        >
+          <Text style={styles.itemName}>{item.name}</Text>
+          {item.portionGrams && (
+            <Text style={styles.itemDetails}>порция: {item.portionGrams} г</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.starButton}
+          onPress={() => toggleFavoriteRecent(item)}
+        >
+          <Text style={[styles.star, isFav && { color: '#22C55E' }]}>★</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const footerLine = useMemo(() => {
     if (!dayTotals) return null;
@@ -547,7 +625,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             ) : (
               <FlatList
                 data={searchResults}
-                keyExtractor={i => `${i.type}-${(i.item as any).id}`}
+                keyExtractor={i => itemKey(i.item as any, i.type)}
                 renderItem={renderSearchItem}
               />
             )}
@@ -557,12 +635,12 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       case 'favorites':
         return (
           <View style={{ flex: 1 }}>
-            {favorites.length === 0 ? (
+            {favView.length === 0 ? (
               <Text style={styles.empty}>
                 Вы ещё не добавляли избранные продукты. Отмечайте ★ в деталях продукта.
               </Text>
             ) : (
-              <FlatList data={favorites} keyExtractor={i => i.id} renderItem={renderFavoriteItem} />
+              <FlatList data={favView} keyExtractor={i => i.id} renderItem={renderFavoriteItem} />
             )}
             {renderDetails()}
           </View>
