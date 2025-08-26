@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Platform,
+  ToastAndroid,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -7,37 +15,73 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { RootStackParamList } from '../../navigation';
 import { NormalizedEntry, FavoriteItem } from '../../nutrition/types';
-import { loadFavorites, saveFavorites } from '../../nutrition/storage';
+import {
+  loadFavorites,
+  saveFavorites,
+  loadDiary,
+  saveDiary,
+} from '../../nutrition/storage';
 import { formatNumber } from '../../utils/number';
 import { styles } from './styles';
 
 export type FoodEditRouteProp = RouteProp<RootStackParamList, 'FoodEdit'>;
 export type FoodEditNavProp = StackNavigationProp<RootStackParamList, 'FoodEdit'>;
 
+const showToast = (message: string) => {
+  if (Platform.OS === 'android') {
+    ToastAndroid.show(message, ToastAndroid.SHORT);
+  } else {
+    Alert.alert(message);
+  }
+};
+
 const FoodEditScreen: React.FC = () => {
   const navigation = useNavigation<FoodEditNavProp>();
   const { params } = useRoute<FoodEditRouteProp>();
-  const { entry, onSave } = params;
+  const { date, meal, entryId } = params;
 
-  const [portion, setPortion] = useState(
-    entry.portionGrams ? String(entry.portionGrams) : '',
-  );
-  const [note, setNote] = useState(entry.note || '');
+  const [entry, setEntry] = useState<NormalizedEntry | null>(null);
+  const [portion, setPortion] = useState('');
+  const [note, setNote] = useState('');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
-  const favKey = entry.sourceRefId || entry.id;
-  const isFavorite = favorites.some(f => f.sourceId === favKey);
+  const favKey = entry?.sourceRefId || entry?.id || '';
+  const isFavorite = favKey
+    ? favorites.some(f => f.sourceId === favKey)
+    : false;
 
   useEffect(() => {
     loadFavorites().then(setFavorites);
-  }, []);
+    loadDiary()
+      .then(data => {
+        const day = data[date];
+        const found = day?.[meal].find(e => e.id === entryId) || null;
+        if (found) {
+          setEntry(found);
+          setPortion(found.portionGrams ? String(found.portionGrams) : '');
+          setNote(found.note || '');
+        } else {
+          navigation.goBack();
+        }
+      })
+      .catch(() => {
+        showToast('Не удалось загрузить данные');
+        navigation.goBack();
+      });
+  }, [date, meal, entryId, navigation]);
 
   const toggleFavorite = async () => {
+    if (!entry) return;
     if (isFavorite) {
       const updated = favorites.filter(f => f.sourceId !== favKey);
       setFavorites(updated);
       const ok = await saveFavorites(updated);
-      if (!ok) setFavorites(favorites);
+      if (!ok) {
+        setFavorites(favorites);
+        showToast('Не удалось сохранить изменения');
+      } else {
+        showToast('Удалено из избранного');
+      }
     } else {
       const factor = entry.portionGrams ? 100 / entry.portionGrams : undefined;
       const per100g =
@@ -60,11 +104,17 @@ const FoodEditScreen: React.FC = () => {
       const updated = [newFav, ...favorites];
       setFavorites(updated);
       const ok = await saveFavorites(updated);
-      if (!ok) setFavorites(favorites);
+      if (!ok) {
+        setFavorites(favorites);
+        showToast('Не удалось сохранить изменения');
+      } else {
+        showToast('Добавлено в избранное');
+      }
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!entry) return;
     const p = parseFloat(portion.replace(',', '.'));
     if (!entry.portionGrams || isNaN(p) || p <= 0) {
       navigation.goBack();
@@ -80,14 +130,44 @@ const FoodEditScreen: React.FC = () => {
       carbs: entry.carbs * factor,
       note: note || undefined,
     };
-    onSave(updated);
-    navigation.goBack();
+    const diary = await loadDiary();
+    const day = diary[date];
+    if (!day) {
+      showToast('Не удалось сохранить изменения');
+      return;
+    }
+    day[entry.mealType] = day[entry.mealType].map(e =>
+      e.id === entryId ? updated : e,
+    );
+    diary[date] = day;
+    const ok = await saveDiary(diary);
+    if (ok) {
+      showToast('Сохранено');
+      navigation.goBack();
+    } else {
+      showToast('Не удалось сохранить изменения');
+    }
   };
 
-  const handleDelete = () => {
-    onSave(null);
-    navigation.goBack();
+  const handleDelete = async () => {
+    const diary = await loadDiary();
+    const day = diary[date];
+    if (!day) {
+      showToast('Не удалось сохранить изменения');
+      return;
+    }
+    day[meal] = day[meal].filter(e => e.id !== entryId);
+    diary[date] = day;
+    const ok = await saveDiary(diary);
+    if (ok) {
+      showToast('Удалено');
+      navigation.goBack();
+    } else {
+      showToast('Не удалось сохранить изменения');
+    }
   };
+
+  if (!entry) return null;
 
   const portionNum = parseFloat(portion.replace(',', '.'));
   const factor =

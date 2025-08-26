@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, Platform, ToastAndroid, Alert } from 'react-native';
 import { format, addDays } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../components';
@@ -12,6 +12,7 @@ import { RootStackParamList } from '../../navigation';
 import { aggregateMeals, computeRskPercents } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
 import { styles } from './styles';
+import { loadDiary, saveDiary } from '../../nutrition/storage';
 
 type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
 
@@ -32,6 +33,7 @@ const DietScreen: React.FC = () => {
   const [entriesByDate, setEntriesByDate] = useState<
     Record<string, Record<MealType, NormalizedEntry[]>>
   >({});
+  const isLoaded = useRef(false);
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
 
   const dayEntries = entriesByDate[selectedDate] || createEmptyDay();
@@ -131,27 +133,39 @@ const DietScreen: React.FC = () => {
   };
 
   const handleSelectEntry = (meal: MealType, id: string) => {
-    const entry = dayEntries[meal].find(e => e.id === id);
-    if (!entry) return;
     navigation.navigate('FoodEdit', {
-      entry,
-      onSave: updated => {
-        setEntriesByDate(prev => {
-          const day = prev[selectedDate] || createEmptyDay();
-          if (!updated) {
-            const mealArr = day[entry.mealType].filter(e => e.id !== entry.id);
-            const updatedDay = { ...day, [entry.mealType]: mealArr };
-            return { ...prev, [selectedDate]: updatedDay };
-          }
-          const mealArr = day[updated.mealType].map(e =>
-            e.id === updated.id ? updated : e,
-          );
-          const updatedDay = { ...day, [updated.mealType]: mealArr };
-          return { ...prev, [selectedDate]: updatedDay };
-        });
-      },
+      date: selectedDate,
+      meal,
+      entryId: id,
     });
   };
+
+  useEffect(() => {
+    loadDiary()
+      .then(data => {
+        setEntriesByDate(data);
+        isLoaded.current = true;
+      })
+      .catch(() => showToast('Не удалось загрузить данные'));
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDiary()
+        .then(data => {
+          setEntriesByDate(data);
+          isLoaded.current = true;
+        })
+        .catch(() => showToast('Не удалось загрузить данные'));
+    }, []),
+  );
+
+  useEffect(() => {
+    if (!isLoaded.current) return;
+    saveDiary(entriesByDate).then(ok => {
+      if (!ok) showToast('Не удалось сохранить изменения');
+    });
+  }, [entriesByDate]);
 
   return (
     <SafeAreaView style={styles.container}>

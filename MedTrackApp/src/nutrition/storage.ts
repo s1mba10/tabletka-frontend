@@ -1,9 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FavoriteItem, RecentItem, UserCatalogItem } from './types';
+import {
+  FavoriteItem,
+  RecentItem,
+  UserCatalogItem,
+  MealType,
+  NormalizedEntry,
+} from './types';
 
 export const FAVORITES_KEY = 'nutrition:favorites:v1';
 export const RECENTS_KEY = 'nutrition:recents:v1';
 export const USER_CATALOG_KEY = 'nutrition:userCatalog:v1';
+export const DIARY_KEY = 'nutrition:diary:v1';
+
+export type DiaryData = Record<string, Record<MealType, NormalizedEntry[]>>;
 
 export async function loadFavorites(): Promise<FavoriteItem[]> {
   try {
@@ -58,4 +67,22 @@ export async function saveUserCatalog(items: UserCatalogItem[]) {
   try {
     await AsyncStorage.setItem(USER_CATALOG_KEY, JSON.stringify(items));
   } catch (e) {}
+}
+
+export async function loadDiary(): Promise<DiaryData> {
+  try {
+    const raw = await AsyncStorage.getItem(DIARY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export async function saveDiary(data: DiaryData): Promise<boolean> {
+  try {
+    await AsyncStorage.setItem(DIARY_KEY, JSON.stringify(data));
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
