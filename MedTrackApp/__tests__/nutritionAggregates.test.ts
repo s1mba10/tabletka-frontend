@@ -5,6 +5,7 @@ import {
   computeRskPercents,
 } from '../src/nutrition/aggregate';
 import { MealType, NormalizedEntry } from '../src/nutrition/types';
+import { colorForDayPct } from '../src/utils/rsk';
 
 describe('nutrition aggregates', () => {
   const emptyMeals: Record<MealType, NormalizedEntry[]> = {
@@ -80,5 +81,38 @@ describe('nutrition aggregates', () => {
     const res = computeRskPercents(mealCal, 1000)!;
     expect(res.day).toBe(5);
     expect(res.byMeal).toEqual({ breakfast: 3, lunch: 0, dinner: 2, snack: 0 });
+  });
+
+  it('handles surplus day and distributes percents to meals', () => {
+    const mealCal = { breakfast: 300, lunch: 900, dinner: 900, snack: 0 };
+    const res = computeRskPercents(mealCal, 2000)!;
+    expect(res.day).toBe(105);
+    expect(res.byMeal).toEqual({ breakfast: 15, lunch: 45, dinner: 45, snack: 0 });
+    expect(Object.values(res.byMeal).reduce((a, b) => a + b, 0)).toBe(105);
+  });
+
+  describe('day percent color thresholds', () => {
+    it('0 of 2000 -> 0% and green', () => {
+      const res = computeRskPercents(
+        { breakfast: 0, lunch: 0, dinner: 0, snack: 0 },
+        2000,
+      )!;
+      expect(res.day).toBe(0);
+      expect(colorForDayPct(0)).toBe('#22C55E');
+    });
+
+    it('2000 of 2000 -> 100% and amber', () => {
+      const mealCal = { breakfast: 1000, lunch: 1000, dinner: 0, snack: 0 };
+      const res = computeRskPercents(mealCal, 2000)!;
+      expect(res.day).toBe(100);
+      expect(colorForDayPct(100)).toBe('#F59E0B');
+    });
+
+    it('2500 of 2000 -> 125% and red', () => {
+      const mealCal = { breakfast: 1000, lunch: 1000, dinner: 500, snack: 0 };
+      const res = computeRskPercents(mealCal, 2000)!;
+      expect(res.day).toBe(125);
+      expect(colorForDayPct(125)).toBe('#EF4444');
+    });
   });
 });

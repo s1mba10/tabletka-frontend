@@ -69,9 +69,10 @@ export const computeRskPercents = (
   const keys: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
   const dayCal = keys.reduce((sum, k) => sum + mealCal[k], 0);
 
-  const clamp = (n: number) => Math.max(0, Math.min(100, n));
+  const dayPctExact = (dayCal / targetCal) * 100;
+  const dayPctShown = Math.round(dayPctExact);
 
-  const dayPctShown = clamp(Math.round((dayCal / targetCal) * 100));
+  const clamp = (n: number) => Math.max(0, Math.min(1000, n));
 
   let lastNonEmpty: MealType | null = null;
   keys.forEach(k => {

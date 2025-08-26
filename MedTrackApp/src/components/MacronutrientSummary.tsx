@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { formatNumber } from '../utils/number';
+import { colorForDayPct } from '../utils/rsk';
 
 export type MacronutrientSummaryProps = {
   caloriesConsumed: number;
+  targetCalories?: number;
   rskPercent?: number;
   protein: number;
   fat: number;
@@ -12,22 +14,24 @@ export type MacronutrientSummaryProps = {
 
 const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
   caloriesConsumed,
+  targetCalories,
   rskPercent,
   protein,
   fat,
   carbs,
 }) => {
-  const percent = rskPercent;
-  const barPercent = percent !== undefined ? Math.min(percent, 100) : 0;
-
-  let barColor = '#22C55E';
-  if (percent !== undefined) {
-    if (percent > 120) {
-      barColor = '#EF4444';
-    } else if (percent > 100) {
-      barColor = '#F59E0B';
-    }
-  }
+  const dayPctExact =
+    targetCalories && targetCalories > 0
+      ? (caloriesConsumed / targetCalories) * 100
+      : null;
+  const fill =
+    dayPctExact !== null
+      ? Math.max(0, Math.min(1, caloriesConsumed / targetCalories!))
+      : 0;
+  const percentLabel =
+    rskPercent !== undefined ? `${rskPercent}%` : '—';
+  const barColor =
+    dayPctExact !== null ? colorForDayPct(dayPctExact) : '#22C55E';
 
   return (
     <View style={styles.container}>
@@ -53,7 +57,7 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
         <View style={styles.column}>
           <Text style={styles.label}>РСК</Text>
           <Text style={styles.value} testID="summary-rsk">
-            {percent !== undefined ? `${percent}%` : '—'}
+            {percentLabel}
           </Text>
         </View>
         <View style={styles.column}>
@@ -68,17 +72,17 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
       </View>
       <View style={styles.progressRow}>
         <View style={styles.progressBar}>
-          {percent !== undefined && (
+          {dayPctExact !== null && (
             <View
               style={[
                 styles.progressFill,
-                { width: `${barPercent}%`, backgroundColor: barColor },
+                { width: `${fill * 100}%`, backgroundColor: barColor },
               ]}
             />
           )}
         </View>
         <Text style={styles.percentage} testID="summary-bar-pct">
-          {percent !== undefined ? `${percent}%` : '—'}
+          {percentLabel}
         </Text>
       </View>
     </View>

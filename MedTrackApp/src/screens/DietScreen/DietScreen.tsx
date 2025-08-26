@@ -165,6 +165,7 @@ const DietScreen: React.FC = () => {
         />
         <MacronutrientSummary
           caloriesConsumed={dayTotals.calories}
+          targetCalories={targetCalories}
           rskPercent={dayRskDisplay}
           protein={dayTotals.protein}
           fat={dayTotals.fat}
