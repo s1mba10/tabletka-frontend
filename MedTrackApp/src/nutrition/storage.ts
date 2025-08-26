@@ -14,10 +14,13 @@ export async function loadFavorites(): Promise<FavoriteItem[]> {
   }
 }
 
-export async function saveFavorites(items: FavoriteItem[]) {
+export async function saveFavorites(items: FavoriteItem[]): Promise<boolean> {
   try {
     await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
-  } catch (e) {}
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 export async function loadRecents(): Promise<RecentItem[]> {

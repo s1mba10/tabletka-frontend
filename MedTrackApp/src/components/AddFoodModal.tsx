@@ -75,7 +75,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [selectedRecent, setSelectedRecent] = useState<RecentItem | null>(null);
   const [portion, setPortion] = useState('');
   const [note, setNote] = useState('');
-  const [saveFav, setSaveFav] = useState(false);
 
   const [manualName, setManualName] = useState('');
   const [manualMass, setManualMass] = useState('');
@@ -276,7 +275,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     setSelectedRecent(null);
     setPortion('');
     setNote('');
-    setSaveFav(false);
   };
 
   const handleConfirm = async () => {
@@ -292,19 +290,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       carbs: pendingEntry.carbs,
       createdAt: Date.now(),
     });
-    if (saveFav && selectedCatalog) {
-      const newFav: FavoriteItem = {
-        id: Math.random().toString(),
-        sourceId: selectedCatalog.id,
-        name: selectedCatalog.name,
-        defaultPortionGrams: portionNum,
-        per100g: selectedCatalog.per100g,
-        createdAt: Date.now(),
-      };
-      const newList = [newFav, ...favorites];
-      setFavorites(newList);
-      await saveFavorites(newList);
-    }
     if (pendingEntry.source === 'manual') {
       const mass = parseFloat(manualMass.replace(',', '.'));
       const per100 = {
@@ -336,9 +321,14 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             per100g: per100,
             createdAt: Date.now(),
           };
+          const prev = favorites;
           const newList = [fav, ...favorites];
           setFavorites(newList);
-          await saveFavorites(newList);
+          const ok = await saveFavorites(newList);
+          if (!ok) {
+            setFavorites(prev);
+            showToast('Не удалось сохранить изменения');
+          }
         }
       }
     }
@@ -349,10 +339,16 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const toggleFavorite = async (it: SearchItem) => {
     const key = itemKey(it.item as any, it.type);
     if (favorites.some(f => favKey(f) === key)) {
+      const prev = favorites;
       const updated = favorites.filter(f => favKey(f) !== key);
       setFavorites(updated);
-      await saveFavorites(updated);
-      showToast('Удалено из избранного');
+      const ok = await saveFavorites(updated);
+      if (ok) {
+        showToast('Удалено из избранного');
+      } else {
+        setFavorites(prev);
+        showToast('Не удалось сохранить изменения');
+      }
     } else {
       const base = it.item as CatalogItem | UserCatalogItem | FavoriteItem;
       const newFav: FavoriteItem = {
@@ -363,20 +359,32 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         defaultPortionGrams: (base as any).defaultPortionGrams,
         createdAt: Date.now(),
       };
+      const prev = favorites;
       const newList = [newFav, ...favorites];
       setFavorites(newList);
-      await saveFavorites(newList);
-      showToast('Добавлено в избранное');
+      const ok = await saveFavorites(newList);
+      if (ok) {
+        showToast('Добавлено в избранное');
+      } else {
+        setFavorites(prev);
+        showToast('Не удалось сохранить изменения');
+      }
     }
   };
 
   const toggleFavoriteRecent = async (item: RecentItem) => {
     const key = item.id;
     if (favorites.some(f => favKey(f) === key)) {
+      const prev = favorites;
       const updated = favorites.filter(f => favKey(f) !== key);
       setFavorites(updated);
-      await saveFavorites(updated);
-      showToast('Удалено из избранного');
+      const ok = await saveFavorites(updated);
+      if (ok) {
+        showToast('Удалено из избранного');
+      } else {
+        setFavorites(prev);
+        showToast('Не удалось сохранить изменения');
+      }
     } else {
       const factor = item.portionGrams ? 100 / item.portionGrams : undefined;
       const per100g =
@@ -396,10 +404,16 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         per100g,
         createdAt: Date.now(),
       };
+      const prev = favorites;
       const newList = [newFav, ...favorites];
       setFavorites(newList);
-      await saveFavorites(newList);
-      showToast('Добавлено в избранное');
+      const ok = await saveFavorites(newList);
+      if (ok) {
+        showToast('Добавлено в избранное');
+      } else {
+        setFavorites(prev);
+        showToast('Не удалось сохранить изменения');
+      }
     }
   };
 
@@ -438,6 +452,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           )}
         </TouchableOpacity>
         <TouchableOpacity
+          testID={`list-star-${key}`}
           style={styles.starButton}
           onPress={() => toggleFavorite(item)}
         >
@@ -448,7 +463,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   };
 
   const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => {
-    const isFav = favorites.some(f => favKey(f) === favKey(item));
+    const key = favKey(item);
+    const isFav = favorites.some(f => favKey(f) === key);
     return (
       <View style={styles.listItemRow}>
         <TouchableOpacity
@@ -474,6 +490,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           )}
         </TouchableOpacity>
         <TouchableOpacity
+          testID={`list-star-${key}`}
           style={styles.starButton}
           onPress={() => toggleFavorite({ type: 'favorite', item })}
         >
@@ -484,7 +501,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   };
 
   const renderRecentItem = ({ item }: { item: RecentItem }) => {
-    const isFav = favorites.some(f => favKey(f) === item.id);
+    const key = item.id;
+    const isFav = favorites.some(f => favKey(f) === key);
     return (
       <View style={styles.listItemRow}>
         <TouchableOpacity
@@ -506,6 +524,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
+          testID={`list-star-${key}`}
           style={styles.starButton}
           onPress={() => toggleFavoriteRecent(item)}
         >
@@ -545,6 +564,36 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const renderDetails = () => {
     if (!selectedName) return null;
+
+    const currentKey = (() => {
+      if (selectedCatalog) {
+        const type = selectedSource === 'user' ? 'user' : 'catalog';
+        return itemKey(selectedCatalog, type);
+      }
+      if (selectedFavorite) {
+        return favKey(selectedFavorite);
+      }
+      if (selectedRecent) {
+        return selectedRecent.id;
+      }
+      return null;
+    })();
+
+    const isFav = currentKey
+      ? favorites.some(f => favKey(f) === currentKey)
+      : false;
+
+    const handleToggle = () => {
+      if (selectedCatalog) {
+        const type = selectedSource === 'user' ? 'user' : 'catalog';
+        toggleFavorite({ type, item: selectedCatalog });
+      } else if (selectedFavorite) {
+        toggleFavorite({ type: 'favorite', item: selectedFavorite });
+      } else if (selectedRecent) {
+        toggleFavoriteRecent(selectedRecent);
+      }
+    };
+
     return (
       <View style={[styles.details, { paddingBottom: insets.bottom + 12 }]}>
         <Text style={styles.detailsTitle}>{selectedName}</Text>
@@ -563,11 +612,21 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         )}
         <Text style={styles.label}>Заметка (опционально)</Text>
         <TextInput style={styles.input} value={note} onChangeText={setNote} />
-        {selectedCatalog && (
-          <TouchableOpacity onPress={() => setSaveFav(!saveFav)} style={styles.favToggle}>
-            <Text style={{ color: saveFav ? '#22C55E' : '#fff' }}>★ В избранное</Text>
+        <View testID="details-fav-row" style={styles.favRow}>
+          <TouchableOpacity
+            testID="details-fav-star"
+            accessibilityLabel={
+              isFav
+                ? 'В избранном. Нажмите, чтобы убрать'
+                : 'Не в избранном. Нажмите, чтобы добавить'
+            }
+            onPress={handleToggle}
+            style={styles.starButton}
+          >
+            <Text style={[styles.star, isFav && { color: '#22C55E' }]}>★</Text>
           </TouchableOpacity>
-        )}
+          <Text style={[styles.favLabel, isFav && { color: '#22C55E' }]}>В избранное</Text>
+        </View>
       </View>
     );
   };
@@ -821,6 +880,8 @@ const styles = StyleSheet.create({
   label: { color: '#fff', marginHorizontal: 8, marginTop: 8 },
   helper: { color: '#aaa', margin: 8, fontSize: 12 },
   favToggle: { margin: 8 },
+  favRow: { flexDirection: 'row', alignItems: 'center', margin: 8 },
+  favLabel: { color: '#fff', marginLeft: 4 },
   starButton: { padding: 8 },
   star: { color: '#777', fontSize: 18 },
   footer: {
