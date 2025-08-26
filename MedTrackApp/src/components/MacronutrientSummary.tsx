@@ -4,7 +4,7 @@ import { formatNumber } from '../utils/number';
 
 export type MacronutrientSummaryProps = {
   caloriesConsumed: number;
-  caloriesTarget?: number;
+  rskPercent?: number;
   protein: number;
   fat: number;
   carbs: number;
@@ -12,14 +12,12 @@ export type MacronutrientSummaryProps = {
 
 const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
   caloriesConsumed,
-  caloriesTarget,
+  rskPercent,
   protein,
   fat,
   carbs,
 }) => {
-  const percent = caloriesTarget
-    ? Math.round((caloriesConsumed / caloriesTarget) * 100)
-    : undefined;
+  const percent = rskPercent;
   const barPercent = percent !== undefined ? Math.min(percent, 100) : 0;
 
   let barColor = '#22C55E';

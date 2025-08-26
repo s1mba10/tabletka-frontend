@@ -1,4 +1,9 @@
-import { aggregateMeals, computeDayRsk, computeMealRsk } from '../src/nutrition/aggregate';
+import {
+  aggregateMeals,
+  computeDayRsk,
+  computeMealRsk,
+  computeRskPercents,
+} from '../src/nutrition/aggregate';
 import { MealType, NormalizedEntry } from '../src/nutrition/types';
 
 describe('nutrition aggregates', () => {
@@ -58,30 +63,22 @@ describe('nutrition aggregates', () => {
   it('returns null percentages when target missing', () => {
     expect(computeDayRsk(500, undefined)).toBeNull();
     expect(computeMealRsk(200, null)).toBeNull();
+    expect(
+      computeRskPercents({ breakfast: 0, lunch: 0, dinner: 0, snack: 0 }, 0),
+    ).toBeNull();
   });
 
-  it('rounding keeps meal percents sum equal day percent', () => {
-    const entries: Record<MealType, NormalizedEntry[]> = {
-      breakfast: [
-        { id: '1', mealType: 'breakfast', calories: 333, protein: 0, fat: 0, carbs: 0, source: 'manual', createdAt: 0 },
-      ],
-      lunch: [
-        { id: '2', mealType: 'lunch', calories: 333, protein: 0, fat: 0, carbs: 0, source: 'manual', createdAt: 0 },
-      ],
-      dinner: [
-        { id: '3', mealType: 'dinner', calories: 334, protein: 0, fat: 0, carbs: 0, source: 'manual', createdAt: 0 },
-      ],
-      snack: [],
-    };
-    const { mealTotals, dayTotals } = aggregateMeals(entries);
-    const target = 1000;
-    const day = computeDayRsk(dayTotals.calories, target)!;
-    const mealPercents = (Object.keys(mealTotals) as MealType[]).map(meal =>
-      computeMealRsk(mealTotals[meal].calories, target)!,
-    );
-    const displayed = mealPercents.map(p => Math.round(p));
-    const dayDisplayed = Math.round(day);
-    displayed[2] = dayDisplayed - displayed[0] - displayed[1];
-    expect(displayed[0] + displayed[1] + displayed[2]).toBe(dayDisplayed);
+  it('rounds meal percents and keeps total equal to day percent', () => {
+    const mealCal = { breakfast: 24, lunch: 64, dinner: 0, snack: 0 };
+    const res = computeRskPercents(mealCal, 1000)!;
+    expect(res.day).toBe(9);
+    expect(res.byMeal).toEqual({ breakfast: 2, lunch: 7, dinner: 0, snack: 0 });
+  });
+
+  it('assigns remainder to the last non-empty meal', () => {
+    const mealCal = { breakfast: 26, lunch: 0, dinner: 26, snack: 0 };
+    const res = computeRskPercents(mealCal, 1000)!;
+    expect(res.day).toBe(5);
+    expect(res.byMeal).toEqual({ breakfast: 3, lunch: 0, dinner: 2, snack: 0 });
   });
 });

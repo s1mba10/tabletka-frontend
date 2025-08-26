@@ -6,7 +6,7 @@ import { format, addDays } from 'date-fns';
 import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../components';
 import AddFoodModal from '../../components/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
-import { aggregateMeals, computeDayRsk, computeMealRsk } from '../../nutrition/aggregate';
+import { aggregateMeals, computeRskPercents } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
 import { styles } from './styles';
 
@@ -43,30 +43,20 @@ const DietScreen: React.FC = () => {
     [dayEntries],
   );
 
-  const dayRsk = computeDayRsk(dayTotals.calories, targetCalories);
+  const rsk = computeRskPercents(
+    {
+      breakfast: mealTotals.breakfast.calories,
+      lunch: mealTotals.lunch.calories,
+      dinner: mealTotals.dinner.calories,
+      snack: mealTotals.snack.calories,
+    },
+    targetCalories,
+  );
 
-  let mealRskDisplay: Record<MealType, number | undefined> = {
-    breakfast: undefined,
-    lunch: undefined,
-    dinner: undefined,
-    snack: undefined,
-  };
-
-  if (dayRsk !== null) {
-    const keys: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
-    const raw = keys.map(k =>
-      computeMealRsk(mealTotals[k].calories, targetCalories) || 0,
-    );
-    const rounded = raw.map(r => Math.round(r));
-    const dayRounded = Math.round(dayRsk);
-    rounded[3] = dayRounded - rounded[0] - rounded[1] - rounded[2];
-    mealRskDisplay = {
-      breakfast: rounded[0],
-      lunch: rounded[1],
-      dinner: rounded[2],
-      snack: Math.max(0, rounded[3]),
-    };
-  }
+  const dayRskDisplay = rsk?.day;
+  const mealRskDisplay: Record<MealType, number | undefined> = rsk
+    ? rsk.byMeal
+    : { breakfast: undefined, lunch: undefined, dinner: undefined, snack: undefined };
 
   const meals = useMemo(
     () =>
@@ -145,7 +135,7 @@ const DietScreen: React.FC = () => {
         />
         <MacronutrientSummary
           caloriesConsumed={dayTotals.calories}
-          caloriesTarget={targetCalories}
+          rskPercent={dayRskDisplay}
           protein={dayTotals.protein}
           fat={dayTotals.fat}
           carbs={dayTotals.carbs}

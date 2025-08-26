@@ -60,3 +60,47 @@ export const computeMealRsk = (
   return (mealCal / targetCal) * 100;
 };
 
+export const computeRskPercents = (
+  mealCal: Record<MealType, number>,
+  targetCal?: number | null,
+): { day: number; byMeal: Record<MealType, number> } | null => {
+  if (!targetCal || targetCal <= 0) return null;
+
+  const keys: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+  const dayCal = keys.reduce((sum, k) => sum + mealCal[k], 0);
+
+  const clamp = (n: number) => Math.max(0, Math.min(100, n));
+
+  const dayPctShown = clamp(Math.round((dayCal / targetCal) * 100));
+
+  let lastNonEmpty: MealType | null = null;
+  keys.forEach(k => {
+    if (mealCal[k] > 0) {
+      lastNonEmpty = k;
+    }
+  });
+
+  const result: Record<MealType, number> = {
+    breakfast: 0,
+    lunch: 0,
+    dinner: 0,
+    snack: 0,
+  };
+
+  if (lastNonEmpty === null) {
+    return { day: dayPctShown, byMeal: result };
+  }
+
+  let sumOthers = 0;
+  keys.forEach(k => {
+    if (mealCal[k] === 0 || k === lastNonEmpty) return;
+    const pct = clamp(Math.round((mealCal[k] / targetCal) * 100));
+    result[k] = pct;
+    sumOthers += pct;
+  });
+
+  result[lastNonEmpty] = clamp(Math.max(0, dayPctShown - sumOthers));
+
+  return { day: dayPctShown, byMeal: result };
+};
+
