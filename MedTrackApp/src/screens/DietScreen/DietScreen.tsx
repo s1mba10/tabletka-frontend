@@ -2,18 +2,25 @@ import React, { useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, Platform, ToastAndroid, Alert } from 'react-native';
 import { format, addDays } from 'date-fns';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../components';
 import AddFoodModal from '../../components/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
+import { RootStackParamList } from '../../navigation';
 import { aggregateMeals, computeRskPercents } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
 import { styles } from './styles';
+
+type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
 
 const DietScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(
     format(new Date(), 'yyyy-MM-dd'),
   );
+
+  const navigation = useNavigation<NavProp>();
 
   const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
     breakfast: [],
@@ -123,6 +130,24 @@ const DietScreen: React.FC = () => {
     setActiveMeal(null);
   };
 
+  const handleSelectEntry = (meal: MealType, id: string) => {
+    const entry = dayEntries[meal].find(e => e.id === id);
+    if (!entry) return;
+    navigation.navigate('FoodEdit', {
+      entry,
+      onSave: updated => {
+        setEntriesByDate(prev => {
+          const day = prev[selectedDate] || createEmptyDay();
+          const mealArr = day[updated.mealType].map(e =>
+            e.id === updated.id ? updated : e,
+          );
+          const updatedDay = { ...day, [updated.mealType]: mealArr };
+          return { ...prev, [selectedDate]: updatedDay };
+        });
+      },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -145,6 +170,7 @@ const DietScreen: React.FC = () => {
             key={meal.mealKey}
             {...meal}
             onAdd={() => setActiveMeal(meal.mealKey)}
+            onSelectEntry={id => handleSelectEntry(meal.mealKey, id)}
           />
         ))}
       </ScrollView>

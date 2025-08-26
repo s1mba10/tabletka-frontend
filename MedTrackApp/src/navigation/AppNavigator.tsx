@@ -14,6 +14,7 @@ import Medications from '../screens/Medications';
 import BodyDiaryScreen from '../screens/BodyDiaryScreen';
 import DietScreen from '../screens/DietScreen';
 import TrainingScreen from '../screens/TrainingScreen';
+import FoodEditScreen from '../screens/FoodEditScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -42,6 +43,13 @@ const ProfileStack = () => (
   </Stack.Navigator>
 );
 
+const DietStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Diet" component={DietScreen} />
+    <Stack.Screen name="FoodEdit" component={FoodEditScreen} />
+  </Stack.Navigator>
+);
+
 const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
@@ -58,7 +66,7 @@ const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="Питание"
-          component={DietScreen}
+          component={DietStack}
           options={{ tabBarIcon: ({ color }) => <Icon name="food-apple" size={30} color={color} /> }}
         />
         <Tab.Screen

@@ -1,4 +1,5 @@
 import { Reminder } from '../types';
+import { NormalizedEntry } from '../nutrition/types';
 
 export type RootStackParamList = {
   MainScreen: undefined;
@@ -23,4 +24,6 @@ export type RootStackParamList = {
   Profile: undefined;
   Medications: undefined;
   BodyDiary: undefined;
+  Diet: undefined;
+  FoodEdit: { entry: NormalizedEntry; onSave: (entry: NormalizedEntry) => void };
 };
