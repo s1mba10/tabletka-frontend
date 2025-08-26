@@ -91,28 +91,36 @@ describe('nutrition aggregates', () => {
     expect(Object.values(res.byMeal).reduce((a, b) => a + b, 0)).toBe(105);
   });
 
-  describe('day percent color thresholds', () => {
-    it('0 of 2000 -> 0% and green', () => {
-      const res = computeRskPercents(
-        { breakfast: 0, lunch: 0, dinner: 0, snack: 0 },
-        2000,
-      )!;
-      expect(res.day).toBe(0);
-      expect(colorForDayPct(0)).toBe('#22C55E');
+  describe('daily summary bar', () => {
+    const calcFill = (dayCal: number, target: number) =>
+      Math.max(0, Math.min(1, dayCal / target));
+
+    it('1200 of 1000 -> 120% and red full bar', () => {
+      const pct = computeDayRsk(1200, 1000)!;
+      expect(Math.round(pct)).toBe(120);
+      expect(colorForDayPct(pct)).toBe('#EF4444');
+      expect(calcFill(1200, 1000)).toBe(1);
     });
 
-    it('2000 of 2000 -> 100% and amber', () => {
-      const mealCal = { breakfast: 1000, lunch: 1000, dinner: 0, snack: 0 };
-      const res = computeRskPercents(mealCal, 2000)!;
-      expect(res.day).toBe(100);
-      expect(colorForDayPct(100)).toBe('#F59E0B');
+    it('1000 of 1000 -> 100% and amber full bar', () => {
+      const pct = computeDayRsk(1000, 1000)!;
+      expect(Math.round(pct)).toBe(100);
+      expect(colorForDayPct(pct)).toBe('#F59E0B');
+      expect(calcFill(1000, 1000)).toBe(1);
     });
 
-    it('2500 of 2000 -> 125% and red', () => {
-      const mealCal = { breakfast: 1000, lunch: 1000, dinner: 500, snack: 0 };
-      const res = computeRskPercents(mealCal, 2000)!;
-      expect(res.day).toBe(125);
-      expect(colorForDayPct(125)).toBe('#EF4444');
+    it('800 of 1000 -> 80% and green with partial fill', () => {
+      const pct = computeDayRsk(800, 1000)!;
+      expect(Math.round(pct)).toBe(80);
+      expect(colorForDayPct(pct)).toBe('#22C55E');
+      expect(calcFill(800, 1000)).toBeCloseTo(0.8);
+    });
+
+    it('very large surplus keeps bar full and red', () => {
+      const pct = computeDayRsk(89890, 1000)!;
+      expect(Math.round(pct)).toBe(8989);
+      expect(colorForDayPct(pct)).toBe('#EF4444');
+      expect(calcFill(89890, 1000)).toBe(1);
     });
   });
 });

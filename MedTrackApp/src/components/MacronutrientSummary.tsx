@@ -30,8 +30,7 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
       : 0;
   const percentLabel =
     rskPercent !== undefined ? `${rskPercent}%` : '—';
-  const barColor =
-    dayPctExact !== null ? colorForDayPct(dayPctExact) : '#22C55E';
+  const barColor = colorForDayPct(dayPctExact);
 
   return (
     <View style={styles.container}>
@@ -81,7 +80,14 @@ const MacronutrientSummary: React.FC<MacronutrientSummaryProps> = ({
             />
           )}
         </View>
-        <Text style={styles.percentage} testID="summary-bar-pct">
+        <Text
+          style={styles.percentage}
+          testID="summary-bar-pct"
+          numberOfLines={1}
+          ellipsizeMode="clip"
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
           {percentLabel}
         </Text>
       </View>
@@ -136,6 +142,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 8,
     fontSize: 12,
+    flexShrink: 1,
+    fontVariant: ['tabular-nums'],
   },
 });
 
