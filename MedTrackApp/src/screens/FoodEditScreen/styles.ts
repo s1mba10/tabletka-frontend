@@ -21,16 +21,33 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
   note: {
-    height: 80,
+    minHeight: 60,
+    maxHeight: 72,
     textAlignVertical: 'top',
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
   favorite: {
     padding: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    marginLeft: 'auto',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  deleteText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   saveButton: {
     backgroundColor: '#22C55E',
@@ -42,5 +59,29 @@ export const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  macroPanel: {
+    marginBottom: 16,
+  },
+  macroRow: {
+    flexDirection: 'row',
+  },
+  macroBox: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+    margin: 4,
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+  },
+  macroLabel: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  macroValue: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

@@ -25,5 +25,8 @@ export type RootStackParamList = {
   Medications: undefined;
   BodyDiary: undefined;
   Diet: undefined;
-  FoodEdit: { entry: NormalizedEntry; onSave: (entry: NormalizedEntry) => void };
+  FoodEdit: {
+    entry: NormalizedEntry;
+    onSave: (entry: NormalizedEntry | null) => void;
+  };
 };

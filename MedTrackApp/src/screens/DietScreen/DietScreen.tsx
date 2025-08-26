@@ -138,6 +138,11 @@ const DietScreen: React.FC = () => {
       onSave: updated => {
         setEntriesByDate(prev => {
           const day = prev[selectedDate] || createEmptyDay();
+          if (!updated) {
+            const mealArr = day[entry.mealType].filter(e => e.id !== entry.id);
+            const updatedDay = { ...day, [entry.mealType]: mealArr };
+            return { ...prev, [selectedDate]: updatedDay };
+          }
           const mealArr = day[updated.mealType].map(e =>
             e.id === updated.id ? updated : e,
           );

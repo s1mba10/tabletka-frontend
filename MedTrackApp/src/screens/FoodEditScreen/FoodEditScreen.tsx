@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RootStackParamList } from '../../navigation';
 import { NormalizedEntry, FavoriteItem } from '../../nutrition/types';
 import { loadFavorites, saveFavorites } from '../../nutrition/storage';
+import { formatNumber } from '../../utils/number';
 import { styles } from './styles';
 
 export type FoodEditRouteProp = RouteProp<RootStackParamList, 'FoodEdit'>;
@@ -83,6 +84,22 @@ const FoodEditScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const handleDelete = () => {
+    onSave(null);
+    navigation.goBack();
+  };
+
+  const portionNum = parseFloat(portion.replace(',', '.'));
+  const factor =
+    entry.portionGrams && !isNaN(portionNum) && portionNum > 0
+      ? portionNum / entry.portionGrams
+      : 1;
+  const currentCalories = entry.calories * factor;
+  const currentFat = entry.fat * factor;
+  const currentCarbs = entry.carbs * factor;
+  const currentProtein = entry.protein * factor;
+  const percent = entry.portionGrams ? Math.round(factor * 100) : 100;
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>{entry.name}</Text>
@@ -100,7 +117,40 @@ const FoodEditScreen: React.FC = () => {
         onChangeText={setNote}
         placeholder="Заметка"
         placeholderTextColor="rgba(255,255,255,0.6)"
+        multiline
+        numberOfLines={3}
+        maxLength={200}
       />
+      <View style={styles.macroPanel}>
+        <View style={styles.macroRow}>
+          <View style={styles.macroBox}>
+            <Text style={styles.macroLabel}>Калории ({percent}%)</Text>
+            <Text style={styles.macroValue}>
+              {formatNumber(currentCalories, 0)}
+            </Text>
+          </View>
+          <View style={styles.macroBox}>
+            <Text style={styles.macroLabel}>Жир</Text>
+            <Text style={styles.macroValue}>
+              {formatNumber(currentFat, 1)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.macroRow}>
+          <View style={styles.macroBox}>
+            <Text style={styles.macroLabel}>Углев</Text>
+            <Text style={styles.macroValue}>
+              {formatNumber(currentCarbs, 1)}
+            </Text>
+          </View>
+          <View style={styles.macroBox}>
+            <Text style={styles.macroLabel}>Белок</Text>
+            <Text style={styles.macroValue}>
+              {formatNumber(currentProtein, 1)}
+            </Text>
+          </View>
+        </View>
+      </View>
       <View style={styles.actions}>
         <TouchableOpacity onPress={toggleFavorite} style={styles.favorite}>
           <Icon
@@ -109,9 +159,14 @@ const FoodEditScreen: React.FC = () => {
             color="#FFD700"
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-          <Text style={styles.saveText}>Сохранить</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+            <Text style={styles.deleteText}>Удалить</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+            <Text style={styles.saveText}>Сохранить</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
