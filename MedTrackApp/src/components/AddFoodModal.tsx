@@ -84,6 +84,26 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [manualCarbs, setManualCarbs] = useState('');
   const [manualNote, setManualNote] = useState('');
   const [manualSaveFav, setManualSaveFav] = useState(false);
+  const [manualMode, setManualMode] = useState<'product' | 'dish'>('product');
+
+  const [dishName, setDishName] = useState('');
+  const [dishWeight, setDishWeight] = useState('');
+  const [dishPortion, setDishPortion] = useState('');
+  const [dishNote, setDishNote] = useState('');
+  const [dishIngredients, setDishIngredients] = useState<
+    {
+      id: string;
+      name: string;
+      grams: number;
+      per100g: { calories: number; protein: number; fat: number; carbs: number };
+    }[]
+  >([]);
+  const [ingredientPickerVisible, setIngredientPickerVisible] = useState(false);
+  const [ingredientSearch, setIngredientSearch] = useState('');
+  const [ingredientResults, setIngredientResults] = useState<SearchItem[]>([]);
+  const [ingredientSelected, setIngredientSelected] = useState<SearchItem | null>(null);
+  const [ingredientMass, setIngredientMass] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadFavorites().then(f => {
@@ -99,6 +119,28 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       setFavView(favorites);
     }
   }, [favorites, tab]);
+
+  useEffect(() => {
+    if (!ingredientPickerVisible) return;
+    const q = ingredientSearch.trim().toLowerCase();
+    const timer = setTimeout(() => {
+      if (!q) {
+        setIngredientResults(allSearchItems.slice(0, 15));
+      } else {
+        setIngredientResults(
+          allSearchItems.filter(it =>
+            it.item.name.toLowerCase().includes(q),
+          ),
+        );
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [ingredientSearch, allSearchItems, ingredientPickerVisible]);
+
+  useEffect(() => {
+    const total = dishIngredients.reduce((s, i) => s + i.grams, 0);
+    if (!dishWeight) setDishWeight(total ? String(total) : '');
+  }, [dishIngredients]);
 
   const favKey = (f: FavoriteItem) => f.sourceId || `fav-${f.id}`;
 
@@ -146,6 +188,53 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const selectedName =
     selectedCatalog?.name || selectedFavorite?.name || selectedRecent?.name || '';
+
+  const dishWeightNum = useMemo(
+    () => parseFloat(dishWeight.replace(',', '.')) || 0,
+    [dishWeight],
+  );
+  const dishPortionNum = useMemo(
+    () => parseFloat(dishPortion.replace(',', '.')) || 0,
+    [dishPortion],
+  );
+
+  const dishTotals = useMemo(
+    () =>
+      dishIngredients.reduce(
+        (acc, ing) => {
+          acc.calories += (ing.per100g.calories * ing.grams) / 100;
+          acc.protein += (ing.per100g.protein * ing.grams) / 100;
+          acc.fat += (ing.per100g.fat * ing.grams) / 100;
+          acc.carbs += (ing.per100g.carbs * ing.grams) / 100;
+          return acc;
+        },
+        { calories: 0, protein: 0, fat: 0, carbs: 0 },
+      ),
+    [dishIngredients],
+  );
+
+  const dishPer100 = useMemo(() => {
+    if (!dishWeightNum)
+      return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    const factor = 100 / dishWeightNum;
+    return {
+      calories: dishTotals.calories * factor,
+      protein: dishTotals.protein * factor,
+      fat: dishTotals.fat * factor,
+      carbs: dishTotals.carbs * factor,
+    };
+  }, [dishTotals, dishWeightNum]);
+
+  const dishPerPortion = useMemo(() => {
+    if (!dishPortionNum || !dishWeightNum) return null;
+    const factor = dishPortionNum / dishWeightNum;
+    return {
+      calories: dishTotals.calories * factor,
+      protein: dishTotals.protein * factor,
+      fat: dishTotals.fat * factor,
+      carbs: dishTotals.carbs * factor,
+    };
+  }, [dishTotals, dishPortionNum, dishWeightNum]);
 
   const computed = useMemo(() => {
     if (selectedCatalog) {
@@ -228,7 +317,27 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         createdAt: Date.now(),
       };
     }
-    if (tab === 'manual') {
+    if (tab === 'manual' && manualMode === 'dish') {
+      const weight = parseFloat(dishWeight.replace(',', '.'));
+      const portion = parseFloat(dishPortion.replace(',', '.')) || weight;
+      if (dishName && weight > 0 && dishIngredients.length > 0) {
+        const factor = portion / weight;
+        return {
+          id: Math.random().toString(),
+          mealType,
+          name: dishName,
+          portionGrams: portion,
+          calories: dishTotals.calories * factor,
+          protein: dishTotals.protein * factor,
+          fat: dishTotals.fat * factor,
+          carbs: dishTotals.carbs * factor,
+          note: dishNote || undefined,
+          source: 'manual',
+          createdAt: Date.now(),
+        };
+      }
+    }
+    if (tab === 'manual' && manualMode === 'product') {
       const mass = parseFloat(manualMass.replace(',', '.'));
       const cal = parseFloat(manualCalories.replace(',', '.'));
       const prot = parseFloat(manualProtein.replace(',', '.'));
@@ -277,6 +386,56 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     setNote('');
   };
 
+  const handleAddIngredient = () => {
+    setIngredientPickerVisible(true);
+    setIngredientSelected(null);
+    setIngredientMass('');
+    setIngredientSearch('');
+    setEditingIndex(null);
+  };
+
+  const handleEditIngredient = (index: number) => {
+    const ing = dishIngredients[index];
+    setIngredientSelected({
+      type: 'user',
+      item: { id: ing.id, name: ing.name, per100g: ing.per100g } as UserCatalogItem,
+    });
+    setIngredientMass(String(ing.grams));
+    setIngredientPickerVisible(true);
+    setEditingIndex(index);
+  };
+
+  const handleRemoveIngredient = (index: number) => {
+    setDishIngredients(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveIngredient = () => {
+    if (!ingredientSelected) return;
+    const base: any = ingredientSelected.item;
+    const grams = parseFloat(ingredientMass.replace(',', '.'));
+    if (!base.per100g || grams <= 0) return;
+    setDishIngredients(prev => {
+      const list = [...prev];
+      const newIng = {
+        id: itemKey(base, ingredientSelected.type),
+        name: base.name,
+        grams,
+        per100g: base.per100g,
+      };
+      if (editingIndex !== null) {
+        list[editingIndex] = newIng;
+      } else {
+        list.push(newIng);
+      }
+      return list;
+    });
+    setIngredientPickerVisible(false);
+    setIngredientSelected(null);
+    setIngredientMass('');
+    setIngredientSearch('');
+    setEditingIndex(null);
+  };
+
   const handleConfirm = async () => {
     if (!pendingEntry) return;
     onConfirm(pendingEntry);
@@ -291,43 +450,63 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       createdAt: Date.now(),
     });
     if (pendingEntry.source === 'manual') {
-      const mass = parseFloat(manualMass.replace(',', '.'));
-      const per100 = {
-        calories: parseFloat(manualCalories.replace(',', '.')),
-        protein: parseFloat(manualProtein.replace(',', '.')),
-        fat: parseFloat(manualFat.replace(',', '.')),
-        carbs: parseFloat(manualCarbs.replace(',', '.')),
-      };
-      if (manualName) {
-        const existing = userCatalog.find(
-          u => u.name.toLowerCase() === manualName.toLowerCase(),
-        );
+      if (manualMode === 'dish') {
+        const weight = parseFloat(dishWeight.replace(',', '.'));
+        const portionW = parseFloat(dishPortion.replace(',', '.'));
         const userItem: UserCatalogItem = {
-          id: existing ? existing.id : Math.random().toString(),
-          name: manualName,
-          per100g: per100,
+          id: Math.random().toString(),
+          name: dishName,
+          per100g: dishPer100,
           createdAt: Date.now(),
+          type: 'composite',
+          ingredients: dishIngredients,
+          dishWeight: weight,
+          portionWeight: portionW || undefined,
+          note: dishNote || undefined,
         };
-        const others = userCatalog.filter(u => u.id !== userItem.id);
-        const newCat = [userItem, ...others];
+        const newCat = [userItem, ...userCatalog];
         setUserCatalog(newCat);
         await saveUserCatalog(newCat);
-        if (manualSaveFav) {
-          const fav: FavoriteItem = {
-            id: Math.random().toString(),
-            sourceId: userItem.id,
+        showToast('Блюдо сохранено');
+      } else {
+        const mass = parseFloat(manualMass.replace(',', '.'));
+        const per100 = {
+          calories: parseFloat(manualCalories.replace(',', '.')),
+          protein: parseFloat(manualProtein.replace(',', '.')),
+          fat: parseFloat(manualFat.replace(',', '.')),
+          carbs: parseFloat(manualCarbs.replace(',', '.')),
+        };
+        if (manualName) {
+          const existing = userCatalog.find(
+            u => u.name.toLowerCase() === manualName.toLowerCase(),
+          );
+          const userItem: UserCatalogItem = {
+            id: existing ? existing.id : Math.random().toString(),
             name: manualName,
-            defaultPortionGrams: mass,
             per100g: per100,
             createdAt: Date.now(),
           };
-          const prev = favorites;
-          const newList = [fav, ...favorites];
-          setFavorites(newList);
-          const ok = await saveFavorites(newList);
-          if (!ok) {
-            setFavorites(prev);
-            showToast('Не удалось сохранить изменения');
+          const others = userCatalog.filter(u => u.id !== userItem.id);
+          const newCat = [userItem, ...others];
+          setUserCatalog(newCat);
+          await saveUserCatalog(newCat);
+          if (manualSaveFav) {
+            const fav: FavoriteItem = {
+              id: Math.random().toString(),
+              sourceId: userItem.id,
+              name: manualName,
+              defaultPortionGrams: mass,
+              per100g: per100,
+              createdAt: Date.now(),
+            };
+            const prev = favorites;
+            const newList = [fav, ...favorites];
+            setFavorites(newList);
+            const ok = await saveFavorites(newList);
+            if (!ok) {
+              setFavorites(prev);
+              showToast('Не удалось сохранить изменения');
+            }
           }
         }
       }
@@ -631,7 +810,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     );
   };
 
-  const renderManual = () => (
+  const renderManualProduct = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom }}>
       <Text style={styles.helper}>КБЖУ указываются на 100 г. Для добавления укажите массу порции.</Text>
       <Text style={styles.label}>Название</Text>
@@ -686,6 +865,168 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         <Text style={{ color: manualSaveFav ? '#22C55E' : '#fff' }}>★ Сохранить в избранное</Text>
       </TouchableOpacity>
     </ScrollView>
+  );
+
+  const renderManualDish = () => (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom }}>
+      <Text style={styles.label}>Название блюда</Text>
+      <TextInput style={styles.input} value={dishName} onChangeText={setDishName} />
+      <Text style={styles.label}>Масса готового блюда, г</Text>
+      <TextInput
+        style={styles.input}
+        value={dishWeight}
+        keyboardType="numeric"
+        onChangeText={setDishWeight}
+      />
+      <Text style={styles.label}>Порция, г</Text>
+      <TextInput
+        style={styles.input}
+        value={dishPortion}
+        keyboardType="numeric"
+        onChangeText={setDishPortion}
+      />
+      <Text style={styles.label}>Заметка</Text>
+      <TextInput style={styles.input} value={dishNote} onChangeText={setDishNote} />
+      <Text style={styles.label}>Ингредиенты</Text>
+      {dishIngredients.map((ing, idx) => (
+        <View key={idx} style={styles.ingredientRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.ingredientName}>{ing.name}</Text>
+            <Text style={styles.ingredientInfo}>
+              {formatNumber(ing.grams)} г — {formatNumber(ing.per100g.calories)} ккал, {formatNumber(ing.per100g.protein)} Б, {formatNumber(ing.per100g.fat)} Ж, {formatNumber(ing.per100g.carbs)} У
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => handleEditIngredient(idx)} style={styles.smallBtn}>
+            <Text style={styles.smallBtnText}>Изменить массу</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleRemoveIngredient(idx)} style={styles.smallBtn}>
+            <Text style={styles.smallBtnText}>Удалить</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity onPress={handleAddIngredient} style={styles.addIngredientBtn}>
+        <Text style={{ color: '#22C55E' }}>Добавить ингредиент</Text>
+      </TouchableOpacity>
+      <View style={styles.totalsBlock}>
+        <Text style={styles.totalsLine}>
+          Итог за блюдо — {formatNumber(dishTotals.calories)} Ккал, {formatNumber(dishTotals.protein)} Белки, {formatNumber(dishTotals.fat)} Жиры, {formatNumber(dishTotals.carbs)} Углеводы
+        </Text>
+        <Text style={styles.totalsLine}>
+          За 100 г — {formatNumber(dishPer100.calories)} Ккал, {formatNumber(dishPer100.protein)} Белки, {formatNumber(dishPer100.fat)} Жиры, {formatNumber(dishPer100.carbs)} Углеводы
+        </Text>
+        {dishPerPortion && (
+          <Text style={styles.totalsLine}>
+            За порцию — {formatNumber(dishPerPortion.calories)} Ккал, {formatNumber(dishPerPortion.protein)} Белки, {formatNumber(dishPerPortion.fat)} Жиры, {formatNumber(dishPerPortion.carbs)} Углеводы
+          </Text>
+        )}
+      </View>
+      <View style={styles.dishButtons}>
+        <TouchableOpacity
+          style={[styles.saveDishButton, !pendingEntry && { opacity: 0.5 }]}
+          disabled={!pendingEntry}
+          onPress={handleConfirm}
+        >
+          <Text style={styles.saveDishText}>Сохранить блюдо</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelDishButton} onPress={onCancel}>
+          <Text style={styles.cancelDishText}>Отмена</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+
+  const renderManual = () => (
+    <View style={{ flex: 1 }}>
+      <View style={styles.segment}>
+        <TouchableOpacity
+          style={[styles.segmentBtn, manualMode === 'product' && styles.segmentBtnActive]}
+          onPress={() => setManualMode('product')}
+        >
+          <Text style={styles.segmentText}>Продукт</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.segmentBtn, manualMode === 'dish' && styles.segmentBtnActive]}
+          onPress={() => setManualMode('dish')}
+        >
+          <Text style={styles.segmentText}>Блюдо из ингредиентов</Text>
+        </TouchableOpacity>
+      </View>
+      {manualMode === 'product' ? renderManualProduct() : renderManualDish()}
+    </View>
+  );
+
+  const renderIngredientModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={ingredientPickerVisible}
+      onRequestClose={() => setIngredientPickerVisible(false)}
+    >
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
+        ]}
+      >
+        {!ingredientSelected ? (
+          <>
+            <TextInput
+              placeholder="Поиск"
+              placeholderTextColor="#999"
+              style={styles.input}
+              value={ingredientSearch}
+              onChangeText={setIngredientSearch}
+            />
+            <FlatList
+              data={ingredientResults}
+              keyExtractor={i => itemKey(i.item as any, i.type)}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.listItem}
+                  onPress={() => setIngredientSelected(item)}
+                >
+                  <Text style={styles.itemName}>{item.item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              onPress={() => setIngredientPickerVisible(false)}
+              style={styles.favToggle}
+            >
+              <Text style={styles.headerButton}>Отмена</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Масса, г</Text>
+            <TextInput
+              style={styles.input}
+              value={ingredientMass}
+              keyboardType="numeric"
+              onChangeText={setIngredientMass}
+            />
+            <View style={styles.dishButtons}>
+              <TouchableOpacity
+                style={styles.saveDishButton}
+                onPress={handleSaveIngredient}
+              >
+                <Text style={styles.saveDishText}>Сохранить</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelDishButton}
+                onPress={() => {
+                  setIngredientSelected(null);
+                  setIngredientMass('');
+                  if (editingIndex === null) setIngredientPickerVisible(false);
+                }}
+              >
+                <Text style={styles.cancelDishText}>Отмена</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+    </Modal>
   );
 
   const renderTab = () => {
@@ -771,17 +1112,19 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             <Text style={styles.headerTitle}>Добавить еду</Text>
             <Text style={styles.headerSubtitle}>{mealTitles[mealType]}</Text>
           </View>
-          <TouchableOpacity
-            onPress={handleConfirm}
-            disabled={!pendingEntry}
-            accessibilityLabel="Готово"
-          >
-            <Text
-              style={[styles.headerButton, { color: pendingEntry ? '#22C55E' : '#777' }]}
+          {!(tab === 'manual' && manualMode === 'dish') && (
+            <TouchableOpacity
+              onPress={handleConfirm}
+              disabled={!pendingEntry}
+              accessibilityLabel="Готово"
             >
-              Готово
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[styles.headerButton, { color: pendingEntry ? '#22C55E' : '#777' }]}
+              >
+                Готово
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.tabs}>
           <TouchableOpacity
@@ -832,6 +1175,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           </Text>
         )}
       </View>
+      {renderIngredientModal()}
     </Modal>
   );
 };
@@ -891,6 +1235,59 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#333',
   },
+  segment: {
+    flexDirection: 'row',
+    margin: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  segmentBtn: { flex: 1, padding: 8, alignItems: 'center' },
+  segmentBtnActive: { backgroundColor: '#333' },
+  segmentText: { color: '#fff', fontSize: 14 },
+  ingredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  ingredientName: { color: '#fff', fontSize: 16 },
+  ingredientInfo: { color: '#aaa', fontSize: 12 },
+  smallBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+  smallBtnText: { color: '#22C55E', fontSize: 12 },
+  addIngredientBtn: {
+    margin: 8,
+    padding: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#22C55E',
+    borderRadius: 8,
+  },
+  totalsBlock: { margin: 8 },
+  totalsLine: { color: '#fff', fontSize: 12, marginVertical: 2 },
+  dishButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    margin: 16,
+  },
+  saveDishButton: {
+    backgroundColor: '#22C55E',
+    padding: 12,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  saveDishText: { color: '#000', fontWeight: 'bold' },
+  cancelDishButton: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#777',
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  cancelDishText: { color: '#fff' },
 });
 
 export default AddFoodModal;

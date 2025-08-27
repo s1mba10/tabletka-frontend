@@ -36,6 +36,22 @@ export type UserCatalogItem = {
     carbs: number;
   };
   createdAt: number;
+  type?: 'product' | 'composite';
+  ingredients?: {
+    id: string;
+    name: string;
+    grams: number;
+    per100g: {
+      calories: number;
+      protein: number;
+      fat: number;
+      carbs: number;
+    };
+  }[];
+  dishWeight?: number;
+  portionWeight?: number;
+  note?: string;
+  photoUri?: string;
 };
 
 export type RecentItem = {
