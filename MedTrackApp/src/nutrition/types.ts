@@ -49,7 +49,6 @@ export type UserCatalogItem = {
     };
   }[];
   dishWeight?: number;
-  portionWeight?: number;
   note?: string;
   photoUri?: string;
 };

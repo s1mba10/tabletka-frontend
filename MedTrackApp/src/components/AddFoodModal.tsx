@@ -88,7 +88,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const [dishName, setDishName] = useState('');
   const [dishWeight, setDishWeight] = useState('');
-  const [dishPortion, setDishPortion] = useState('');
   const [dishNote, setDishNote] = useState('');
   const [dishIngredients, setDishIngredients] = useState<
     {
@@ -137,10 +136,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     return () => clearTimeout(timer);
   }, [ingredientSearch, allSearchItems, ingredientPickerVisible]);
 
-  useEffect(() => {
-    const total = dishIngredients.reduce((s, i) => s + i.grams, 0);
-    if (!dishWeight) setDishWeight(total ? String(total) : '');
-  }, [dishIngredients]);
 
   const favKey = (f: FavoriteItem) => f.sourceId || `fav-${f.id}`;
 
@@ -190,12 +185,10 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     selectedCatalog?.name || selectedFavorite?.name || selectedRecent?.name || '';
 
   const dishWeightNum = useMemo(
-    () => parseFloat(dishWeight.replace(',', '.')) || 0,
-    [dishWeight],
-  );
-  const dishPortionNum = useMemo(
-    () => parseFloat(dishPortion.replace(',', '.')) || 0,
-    [dishPortion],
+    () =>
+      parseFloat(dishWeight.replace(',', '.')) ||
+      dishIngredients.reduce((s, i) => s + i.grams, 0),
+    [dishWeight, dishIngredients],
   );
 
   const dishTotals = useMemo(
@@ -225,16 +218,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     };
   }, [dishTotals, dishWeightNum]);
 
-  const dishPerPortion = useMemo(() => {
-    if (!dishPortionNum || !dishWeightNum) return null;
-    const factor = dishPortionNum / dishWeightNum;
-    return {
-      calories: dishTotals.calories * factor,
-      protein: dishTotals.protein * factor,
-      fat: dishTotals.fat * factor,
-      carbs: dishTotals.carbs * factor,
-    };
-  }, [dishTotals, dishPortionNum, dishWeightNum]);
 
   const computed = useMemo(() => {
     if (selectedCatalog) {
@@ -318,19 +301,18 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       };
     }
     if (tab === 'manual' && manualMode === 'dish') {
-      const weight = parseFloat(dishWeight.replace(',', '.'));
-      const portion = parseFloat(dishPortion.replace(',', '.')) || weight;
-      if (dishName && weight > 0 && dishIngredients.length > 0) {
-        const factor = portion / weight;
+      const totalWeight = dishIngredients.reduce((s, i) => s + i.grams, 0);
+      const weight = parseFloat(dishWeight.replace(',', '.')) || totalWeight;
+      if (dishName.trim() && weight > 0 && dishIngredients.length > 0) {
         return {
           id: Math.random().toString(),
           mealType,
-          name: dishName,
-          portionGrams: portion,
-          calories: dishTotals.calories * factor,
-          protein: dishTotals.protein * factor,
-          fat: dishTotals.fat * factor,
-          carbs: dishTotals.carbs * factor,
+          name: dishName.trim(),
+          portionGrams: weight,
+          calories: dishTotals.calories,
+          protein: dishTotals.protein,
+          fat: dishTotals.fat,
+          carbs: dishTotals.carbs,
           note: dishNote || undefined,
           source: 'manual',
           createdAt: Date.now(),
@@ -375,6 +357,11 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     manualName,
     manualMass,
     manualNote,
+    dishName,
+    dishWeight,
+    dishIngredients,
+    dishNote,
+    dishTotals,
   ]);
 
   const resetSelection = () => {
@@ -451,17 +438,17 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     });
     if (pendingEntry.source === 'manual') {
       if (manualMode === 'dish') {
-        const weight = parseFloat(dishWeight.replace(',', '.'));
-        const portionW = parseFloat(dishPortion.replace(',', '.'));
+        const weight =
+          parseFloat(dishWeight.replace(',', '.')) ||
+          dishIngredients.reduce((s, i) => s + i.grams, 0);
         const userItem: UserCatalogItem = {
           id: Math.random().toString(),
-          name: dishName,
+          name: dishName.trim(),
           per100g: dishPer100,
           createdAt: Date.now(),
           type: 'composite',
           ingredients: dishIngredients,
           dishWeight: weight,
-          portionWeight: portionW || undefined,
           note: dishNote || undefined,
         };
         const newCat = [userItem, ...userCatalog];
@@ -870,7 +857,13 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const renderManualDish = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom }}>
       <Text style={styles.label}>Название блюда</Text>
-      <TextInput style={styles.input} value={dishName} onChangeText={setDishName} />
+      <TextInput
+        style={styles.input}
+        value={dishName}
+        placeholder="Без названия"
+        placeholderTextColor="#777"
+        onChangeText={setDishName}
+      />
       <Text style={styles.label}>Масса готового блюда, г</Text>
       <TextInput
         style={styles.input}
@@ -878,15 +871,17 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         keyboardType="numeric"
         onChangeText={setDishWeight}
       />
-      <Text style={styles.label}>Порция, г</Text>
-      <TextInput
-        style={styles.input}
-        value={dishPortion}
-        keyboardType="numeric"
-        onChangeText={setDishPortion}
-      />
+      <Text style={styles.helper}>
+        Если оставить пустым, масса будет рассчитана как сумма ингредиентов
+      </Text>
       <Text style={styles.label}>Заметка</Text>
-      <TextInput style={styles.input} value={dishNote} onChangeText={setDishNote} />
+      <TextInput
+        style={[styles.input, { height: 72, textAlignVertical: 'top' }]}
+        value={dishNote}
+        onChangeText={setDishNote}
+        multiline
+        numberOfLines={3}
+      />
       <Text style={styles.label}>Ингредиенты</Text>
       {dishIngredients.map((ing, idx) => (
         <View key={idx} style={styles.ingredientRow}>
@@ -909,28 +904,11 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       </TouchableOpacity>
       <View style={styles.totalsBlock}>
         <Text style={styles.totalsLine}>
-          Итог за блюдо — {formatNumber(dishTotals.calories)} Ккал, {formatNumber(dishTotals.protein)} Белки, {formatNumber(dishTotals.fat)} Жиры, {formatNumber(dishTotals.carbs)} Углеводы
+          Итог за блюдо — {formatNumber(dishTotals.calories)} Ккал, {formatNumber(dishTotals.protein)} Б, {formatNumber(dishTotals.fat)} Ж, {formatNumber(dishTotals.carbs)} У
         </Text>
         <Text style={styles.totalsLine}>
-          За 100 г — {formatNumber(dishPer100.calories)} Ккал, {formatNumber(dishPer100.protein)} Белки, {formatNumber(dishPer100.fat)} Жиры, {formatNumber(dishPer100.carbs)} Углеводы
+          За 100 г — {formatNumber(dishPer100.calories)} Ккал, {formatNumber(dishPer100.protein)} Б, {formatNumber(dishPer100.fat)} Ж, {formatNumber(dishPer100.carbs)} У
         </Text>
-        {dishPerPortion && (
-          <Text style={styles.totalsLine}>
-            За порцию — {formatNumber(dishPerPortion.calories)} Ккал, {formatNumber(dishPerPortion.protein)} Белки, {formatNumber(dishPerPortion.fat)} Жиры, {formatNumber(dishPerPortion.carbs)} Углеводы
-          </Text>
-        )}
-      </View>
-      <View style={styles.dishButtons}>
-        <TouchableOpacity
-          style={[styles.saveDishButton, !pendingEntry && { opacity: 0.5 }]}
-          disabled={!pendingEntry}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.saveDishText}>Сохранить блюдо</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelDishButton} onPress={onCancel}>
-          <Text style={styles.cancelDishText}>Отмена</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -1112,19 +1090,17 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             <Text style={styles.headerTitle}>Добавить еду</Text>
             <Text style={styles.headerSubtitle}>{mealTitles[mealType]}</Text>
           </View>
-          {!(tab === 'manual' && manualMode === 'dish') && (
-            <TouchableOpacity
-              onPress={handleConfirm}
-              disabled={!pendingEntry}
-              accessibilityLabel="Готово"
+          <TouchableOpacity
+            onPress={handleConfirm}
+            disabled={!pendingEntry}
+            accessibilityLabel="Готово"
+          >
+            <Text
+              style={[styles.headerButton, { color: pendingEntry ? '#22C55E' : '#777' }]}
             >
-              <Text
-                style={[styles.headerButton, { color: pendingEntry ? '#22C55E' : '#777' }]}
-              >
-                Готово
-              </Text>
-            </TouchableOpacity>
-          )}
+              Готово
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.tabs}>
           <TouchableOpacity
