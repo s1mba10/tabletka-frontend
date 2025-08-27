@@ -344,7 +344,8 @@ const FoodEditScreen: React.FC = () => {
           <>
             <TouchableOpacity style={{ flex: 1 }} onPress={() => setViewerVisible(true)}>
               <Image
-                source={{ uri: `${photoUri}?v=${photoVersion}` }}
+                key={photoVersion}
+                source={{ uri: photoUri }}
                 style={styles.photoImage}
               />
             </TouchableOpacity>
@@ -430,7 +431,8 @@ const FoodEditScreen: React.FC = () => {
           <TouchableOpacity onPress={() => setViewerVisible(false)} style={{ flex: 1 }}>
             {photoUri && (
               <Image
-                source={{ uri: `${photoUri}?v=${photoVersion}` }}
+                key={photoVersion}
+                source={{ uri: photoUri }}
                 style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
               />
             )}
