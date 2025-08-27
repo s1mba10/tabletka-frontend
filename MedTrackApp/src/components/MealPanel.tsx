@@ -28,7 +28,6 @@ export type MealPanelProps = {
   onSelectEntry?: (id: string) => void;
   onCopyFromYesterday?: () => void;
   onSaveMeal?: () => void;
-  onCamera?: () => void;
 };
 
 const MealPanel: React.FC<MealPanelProps> = ({
@@ -45,7 +44,6 @@ const MealPanel: React.FC<MealPanelProps> = ({
   onSelectEntry,
   onCopyFromYesterday,
   onSaveMeal,
-  onCamera,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const toggle = () => setExpanded(prev => !prev);
@@ -138,10 +136,6 @@ const MealPanel: React.FC<MealPanelProps> = ({
             <TouchableOpacity style={styles.action} onPress={onSaveMeal}>
               <Icon name="bookmark-plus-outline" size={16} color="#22C55E" />
               <Text style={styles.actionText}>Сохранить Еду</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.action} onPress={onCamera}>
-              <Icon name="camera" size={16} color="#22C55E" />
-              <Text style={styles.actionText}>Камера</Text>
             </TouchableOpacity>
           </View>
         </>

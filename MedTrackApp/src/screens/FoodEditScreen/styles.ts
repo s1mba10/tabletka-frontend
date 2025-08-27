@@ -25,6 +25,46 @@ export const styles = StyleSheet.create({
     maxHeight: 72,
     textAlignVertical: 'top',
   },
+  photoBox: {
+    height: 140,
+    borderRadius: 8,
+    backgroundColor: '#1E1E1E',
+    marginBottom: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  photoPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  photoText: {
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 8,
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoActions: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    flexDirection: 'row',
+  },
+  photoActionButton: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 4,
+    borderRadius: 12,
+    marginLeft: 4,
+  },
+  photoCaption: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
