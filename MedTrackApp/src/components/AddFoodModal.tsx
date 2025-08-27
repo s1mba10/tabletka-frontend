@@ -454,7 +454,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         const newCat = [userItem, ...userCatalog];
         setUserCatalog(newCat);
         await saveUserCatalog(newCat);
-        showToast('Блюдо сохранено');
       } else {
         const mass = parseFloat(manualMass.replace(',', '.'));
         const per100 = {
