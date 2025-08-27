@@ -1,5 +1,6 @@
 # Here is plans for app
 
+
 - скачать самые популярные календари и посмотреть юзабилити. 
 - Add dynamic island with timer progress bar when it is time to take reminder. 
 - Checking that field medication name is not empty
