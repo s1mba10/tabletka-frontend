@@ -50,7 +50,8 @@ const FoodEditScreen: React.FC = () => {
   const [entry, setEntry] = useState<NormalizedEntry | null>(null);
   const [portion, setPortion] = useState('');
   const [note, setNote] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
@@ -69,7 +70,8 @@ const FoodEditScreen: React.FC = () => {
           setEntry(found);
           setPortion(found.portionGrams ? String(found.portionGrams) : '');
           setNote(found.note || '');
-          setPhotoUri(found.photoUri);
+          setPhotoUri(found.photoUri ?? null);
+          setPhotoVersion(v => v + 1);
         } else {
           navigation.goBack();
         }
@@ -168,7 +170,11 @@ const FoodEditScreen: React.FC = () => {
       const uri = res.assets?.[0]?.uri;
       if (uri) {
         const dest = await saveToStorage(uri);
-        if (dest) setPhotoUri(dest);
+        if (dest) {
+          setPhotoUri(dest);
+          setPhotoVersion(v => v + 1);
+          setEntry(prev => (prev ? { ...prev, photoUri: dest } : prev));
+        }
       }
     };
     const doLibrary = async () => {
@@ -188,7 +194,11 @@ const FoodEditScreen: React.FC = () => {
       const uri = res.assets?.[0]?.uri;
       if (uri) {
         const dest = await saveToStorage(uri);
-        if (dest) setPhotoUri(dest);
+        if (dest) {
+          setPhotoUri(dest);
+          setPhotoVersion(v => v + 1);
+          setEntry(prev => (prev ? { ...prev, photoUri: dest } : prev));
+        }
       }
     };
     if (Platform.OS === 'ios') {
@@ -225,7 +235,9 @@ const FoodEditScreen: React.FC = () => {
               showToast('Не удалось удалить фото');
             }
           }
-          setPhotoUri(undefined);
+          setPhotoUri(null);
+          setPhotoVersion(v => v + 1);
+          setEntry(prev => (prev ? { ...prev, photoUri: undefined } : prev));
         },
       },
     ]);
@@ -247,7 +259,7 @@ const FoodEditScreen: React.FC = () => {
       fat: entry.fat * factor,
       carbs: entry.carbs * factor,
       note: note || undefined,
-      photoUri: photoUri,
+      photoUri: photoUri || undefined,
     };
     const diary = await loadDiary();
     const day = diary[date];
@@ -331,7 +343,10 @@ const FoodEditScreen: React.FC = () => {
         {photoUri ? (
           <>
             <TouchableOpacity style={{ flex: 1 }} onPress={() => setViewerVisible(true)}>
-              <Image source={{ uri: photoUri }} style={styles.photoImage} />
+              <Image
+                source={{ uri: `${photoUri}?v=${photoVersion}` }}
+                style={styles.photoImage}
+              />
             </TouchableOpacity>
             <View style={styles.photoActions}>
               <TouchableOpacity style={styles.photoActionButton} onPress={handlePick}>
@@ -415,7 +430,7 @@ const FoodEditScreen: React.FC = () => {
           <TouchableOpacity onPress={() => setViewerVisible(false)} style={{ flex: 1 }}>
             {photoUri && (
               <Image
-                source={{ uri: photoUri }}
+                source={{ uri: `${photoUri}?v=${photoVersion}` }}
                 style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
               />
             )}
