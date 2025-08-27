@@ -123,16 +123,39 @@ const DietScreen: React.FC = () => {
 
   const handleCopyMealFromYesterday = (meal: MealType) => {
     const yDate = format(addDays(new Date(selectedDate), -1), 'yyyy-MM-dd');
-    setEntriesByDate(prev => {
-      const day = prev[selectedDate] || createEmptyDay();
-      const prevMeal = prev[yDate]?.[meal] || [];
-      const updated = {
-        ...day,
-        [meal]: prevMeal.map(e => ({ ...e })),
-      };
-      return { ...prev, [selectedDate]: updated };
-    });
-    showToast('Записи скопированы');
+    const prevMeal = entriesByDate[yDate]?.[meal] || [];
+    const mealName = mealMeta[meal].title;
+
+    if (prevMeal.length === 0) {
+      Alert.alert(
+        'Нет записей за вчера',
+        `Во вчерашнем ${mealName} нет продуктов для копирования.`,
+        [{ text: 'Понятно' }],
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Скопировать из вчера?',
+      `Перенести все продукты из вчерашнего ${mealName} в сегодняшний ${mealName}? Текущие продукты будут заменены.`,
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Скопировать',
+          onPress: () => {
+            setEntriesByDate(prev => {
+              const day = prev[selectedDate] || createEmptyDay();
+              const updated = {
+                ...day,
+                [meal]: prevMeal.map(e => ({ ...e, id: Math.random().toString() })),
+              };
+              return { ...prev, [selectedDate]: updated };
+            });
+            showToast('Скопировано');
+          },
+        },
+      ],
+    );
   };
 
   const handleClearDay = (date: string) => {
