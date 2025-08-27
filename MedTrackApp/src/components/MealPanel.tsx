@@ -131,8 +131,8 @@ const MealPanel: React.FC<MealPanelProps> = ({
               <Text style={styles.actionText}>Копировать из вчера</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.action} onPress={onClearMeal}>
-              <Icon name="delete-outline" size={16} color="#EF4444" />
-              <Text style={[styles.actionText, styles.destructiveText]}>Очистить приём пищи</Text>
+              <Icon name="delete-outline" size={16} color="#22C55E" />
+              <Text style={[styles.actionText, styles.actionText]}>Очистить приём пищи</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -261,9 +261,6 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontSize: 12,
     marginLeft: 4,
-  },
-  destructiveText: {
-    color: '#EF4444',
   },
 });
 
