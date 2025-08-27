@@ -59,6 +59,7 @@ export type NormalizedEntry = {
   protein: number;
   fat: number;
   carbs: number;
+  photoUri?: string;
   source: 'search-catalog' | 'search-saved' | 'favorite' | 'recent' | 'manual';
   sourceRefId?: string;
   createdAt: number;
