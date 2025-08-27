@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -24,6 +24,7 @@ import {
 } from '../nutrition/types';
 import { localCatalog } from '../nutrition/catalog';
 import { formatNumber } from '../utils/number';
+import { sanitizeText, sanitizeNumber } from '../utils/sanitize';
 import {
   loadFavorites,
   loadRecents,
@@ -102,10 +103,13 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const favKey = (f: FavoriteItem) => f.sourceId || `fav-${f.id}`;
 
-  const itemKey = (
-    item: CatalogItem | UserCatalogItem | FavoriteItem,
-    type: 'catalog' | 'user' | 'favorite',
-  ) => (type === 'favorite' ? favKey(item as FavoriteItem) : item.id);
+  const itemKey = useCallback(
+    (
+      item: CatalogItem | UserCatalogItem | FavoriteItem,
+      type: 'catalog' | 'user' | 'favorite',
+    ) => (type === 'favorite' ? favKey(item as FavoriteItem) : item.id),
+    [],
+  );
 
   const allSearchItems = useMemo<SearchItem[]>(() => {
     const map = new Map<string, SearchItem>();
@@ -117,7 +121,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     return Array.from(map.values()).sort((a, b) =>
       a.item.name.localeCompare(b.item.name, 'ru'),
     );
-  }, [userCatalog, favorites]);
+  }, [userCatalog, favorites, itemKey]);
 
   useEffect(() => {
     const q = query.trim().toLowerCase();
@@ -266,6 +270,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     manualName,
     manualMass,
     manualNote,
+    mealType,
+    selectedSource,
   ]);
 
   const resetSelection = () => {
@@ -603,7 +609,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           style={styles.input}
           value={portion}
           keyboardType="numeric"
-          onChangeText={setPortion}
+          maxLength={6}
+          onChangeText={t => setPortion(sanitizeNumber(t, 6))}
         />
         {computed && portionNum > 0 && (
           <Text style={styles.itemDetails}>
@@ -611,22 +618,28 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
           </Text>
         )}
         <Text style={styles.label}>Заметка (опционально)</Text>
-        <TextInput style={styles.input} value={note} onChangeText={setNote} />
-        <View testID="details-fav-row" style={styles.favRow}>
-          <TouchableOpacity
-            testID="details-fav-star"
-            accessibilityLabel={
-              isFav
-                ? 'В избранном. Нажмите, чтобы убрать'
-                : 'Не в избранном. Нажмите, чтобы добавить'
-            }
-            onPress={handleToggle}
-            style={styles.starButton}
-          >
-            <Text style={[styles.star, isFav && { color: '#22C55E' }]}>★</Text>
-          </TouchableOpacity>
-          <Text style={[styles.favLabel, isFav && { color: '#22C55E' }]}>В избранное</Text>
-        </View>
+        <TextInput
+          style={styles.input}
+          value={note}
+          multiline
+          maxLength={300}
+          onChangeText={t => setNote(sanitizeText(t, 300))}
+        />
+        <TouchableOpacity
+          testID="details-fav-row"
+          style={styles.favRow}
+          onPress={handleToggle}
+          accessibilityLabel={
+            isFav
+              ? 'В избранном. Нажмите, чтобы убрать'
+              : 'Не в избранном. Нажмите, чтобы добавить'
+          }
+        >
+          <Text style={[styles.favLabel, isFav && { color: '#22C55E' }]}> 
+            <Text style={[styles.star, isFav && { color: '#22C55E' }]}>★ </Text>
+            В избранное
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -639,14 +652,16 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         placeholder="Без названия"
         style={styles.input}
         value={manualName}
-        onChangeText={setManualName}
+        maxLength={80}
+        onChangeText={t => setManualName(sanitizeText(t, 80))}
       />
       <Text style={styles.label}>Масса, г</Text>
       <TextInput
         style={styles.input}
         value={manualMass}
         keyboardType="numeric"
-        onChangeText={setManualMass}
+        maxLength={6}
+        onChangeText={t => setManualMass(sanitizeNumber(t, 6))}
       />
       <Text style={styles.label}>Калории (на 100 г)</Text>
       <TextInput
@@ -654,7 +669,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         style={styles.input}
         value={manualCalories}
         keyboardType="numeric"
-        onChangeText={setManualCalories}
+        maxLength={6}
+        onChangeText={t => setManualCalories(sanitizeNumber(t, 6))}
       />
       <Text style={styles.label}>Белки (на 100 г)</Text>
       <TextInput
@@ -662,7 +678,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         style={styles.input}
         value={manualProtein}
         keyboardType="numeric"
-        onChangeText={setManualProtein}
+        maxLength={6}
+        onChangeText={t => setManualProtein(sanitizeNumber(t, 6))}
       />
       <Text style={styles.label}>Жиры (на 100 г)</Text>
       <TextInput
@@ -670,7 +687,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         style={styles.input}
         value={manualFat}
         keyboardType="numeric"
-        onChangeText={setManualFat}
+        maxLength={6}
+        onChangeText={t => setManualFat(sanitizeNumber(t, 6))}
       />
       <Text style={styles.label}>Углеводы (на 100 г)</Text>
       <TextInput
@@ -678,12 +696,19 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         style={styles.input}
         value={manualCarbs}
         keyboardType="numeric"
-        onChangeText={setManualCarbs}
+        maxLength={6}
+        onChangeText={t => setManualCarbs(sanitizeNumber(t, 6))}
       />
-      <Text style={styles.label}>Заметка</Text>
-      <TextInput style={styles.input} value={manualNote} onChangeText={setManualNote} />
+      <Text style={styles.label}>Заметка (опционально)</Text>
+      <TextInput
+        style={styles.input}
+        value={manualNote}
+        multiline
+        maxLength={300}
+        onChangeText={t => setManualNote(sanitizeText(t, 300))}
+      />
       <TouchableOpacity onPress={() => setManualSaveFav(!manualSaveFav)} style={styles.favToggle}>
-        <Text style={{ color: manualSaveFav ? '#22C55E' : '#fff' }}>★ Сохранить в избранное</Text>
+        <Text style={{ color: manualSaveFav ? '#22C55E' : '#fff' }}>★ В избранное</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -699,7 +724,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
               placeholderTextColor="#999"
               style={styles.input}
               value={query}
-              onChangeText={setQuery}
+              maxLength={100}
+              onChangeText={t => setQuery(sanitizeText(t, 100))}
             />
             {searchResults.length === 0 && query.length > 0 ? (
               <Text style={styles.empty}>Ничего не найдено. Попробуйте вкладку “Вручную”.</Text>
