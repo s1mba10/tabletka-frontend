@@ -108,8 +108,29 @@ const DietScreen: React.FC = () => {
   const handleCopyFromYesterday = (date: string) => {
     const yDate = format(addDays(new Date(date), -1), 'yyyy-MM-dd');
     setEntriesByDate(prev => {
-      const copy = prev[yDate] ? { ...prev[yDate] } : createEmptyDay();
+      const copy = prev[yDate]
+        ? {
+            breakfast: [...prev[yDate].breakfast],
+            lunch: [...prev[yDate].lunch],
+            dinner: [...prev[yDate].dinner],
+            snack: [...prev[yDate].snack],
+          }
+        : createEmptyDay();
       return { ...prev, [date]: copy };
+    });
+    showToast('Записи скопированы');
+  };
+
+  const handleCopyMealFromYesterday = (meal: MealType) => {
+    const yDate = format(addDays(new Date(selectedDate), -1), 'yyyy-MM-dd');
+    setEntriesByDate(prev => {
+      const day = prev[selectedDate] || createEmptyDay();
+      const prevMeal = prev[yDate]?.[meal] || [];
+      const updated = {
+        ...day,
+        [meal]: prevMeal.map(e => ({ ...e })),
+      };
+      return { ...prev, [selectedDate]: updated };
     });
     showToast('Записи скопированы');
   };
@@ -191,6 +212,7 @@ const DietScreen: React.FC = () => {
             {...meal}
             onAdd={() => setActiveMeal(meal.mealKey)}
             onSelectEntry={id => handleSelectEntry(meal.mealKey, id)}
+            onCopyFromYesterday={() => handleCopyMealFromYesterday(meal.mealKey)}
           />
         ))}
       </ScrollView>

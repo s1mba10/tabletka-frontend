@@ -59,7 +59,7 @@ const NutritionCalendar: React.FC<NutritionCalendarProps> = ({
     }
 
     const confirmCopy = () => {
-      Alert.alert('Скопировать из вчера?', '', [
+      Alert.alert('Скопировать из вчера?', 'Текущие записи будут заменены данными из вчера', [
         { text: 'Отмена', style: 'cancel' },
         { text: 'Скопировать', onPress: () => onCopyFromYesterday?.(date) },
       ]);
