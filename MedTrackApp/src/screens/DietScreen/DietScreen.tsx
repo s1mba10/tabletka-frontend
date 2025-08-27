@@ -210,8 +210,6 @@ const DietScreen: React.FC = () => {
       };
       return { ...prev, [selectedDate]: updated };
     });
-    showToast(`Добавлено в ${mealMeta[entry.mealType].title}`);
-    setActiveMeal(null);
   };
 
   const handleSelectEntry = (meal: MealType, id: string) => {
