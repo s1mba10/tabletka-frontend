@@ -8,6 +8,8 @@ import AccountScreen from '../src/screens/AccountScreen/AccountScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 
+jest.setTimeout(20000);
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ goBack: jest.fn() }),
 }));

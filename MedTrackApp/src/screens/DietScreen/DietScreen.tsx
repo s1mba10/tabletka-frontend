@@ -137,11 +137,11 @@ const DietScreen: React.FC = () => {
 
     Alert.alert(
       'Скопировать из вчера?',
-      `Добавить все продукты из вчерашнего приема пищи? Текущие продукты сохранятся.`,
+      `Продукты из вчерашнего ${mealName} будут ДОБАВЛЕНЫ к сегодняшнему ${mealName}. Текущие записи сохранятся.`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
-          text: 'Скопировать',
+          text: 'Добавить',
           onPress: () => {
             setEntriesByDate(prev => {
               const day = prev[selectedDate] || createEmptyDay();
@@ -149,12 +149,47 @@ const DietScreen: React.FC = () => {
                 ...day,
                 [meal]: [
                   ...day[meal],
-                  ...prevMeal.map(e => ({ ...e, id: Math.random().toString() })),
+                  ...prevMeal.map(e => ({
+                    ...e,
+                    id: Math.random().toString(),
+                    createdAt: Date.now(),
+                    mealType: meal,
+                  })),
                 ],
               };
               return { ...prev, [selectedDate]: updated };
             });
             showToast('Скопировано');
+          },
+        },
+      ],
+    );
+  };
+
+  const handleClearMeal = (meal: MealType) => {
+    const mealName = mealMeta[meal].title;
+    const day = entriesByDate[selectedDate] || createEmptyDay();
+
+    if (day[meal].length === 0) {
+      showToast('Записей нет');
+      return;
+    }
+
+    Alert.alert(
+      'Очистить приём пищи?',
+      `Все продукты из ${mealName} будут удалены.`,
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Очистить',
+          style: 'destructive',
+          onPress: () => {
+            setEntriesByDate(prev => {
+              const day = prev[selectedDate] || createEmptyDay();
+              const updated = { ...day, [meal]: [] };
+              return { ...prev, [selectedDate]: updated };
+            });
+            showToast('Очищено');
           },
         },
       ],
@@ -239,6 +274,7 @@ const DietScreen: React.FC = () => {
             onAdd={() => setActiveMeal(meal.mealKey)}
             onSelectEntry={id => handleSelectEntry(meal.mealKey, id)}
             onCopyFromYesterday={() => handleCopyMealFromYesterday(meal.mealKey)}
+            onClearMeal={() => handleClearMeal(meal.mealKey)}
           />
         ))}
       </ScrollView>

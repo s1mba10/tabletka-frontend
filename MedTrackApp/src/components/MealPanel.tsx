@@ -27,8 +27,7 @@ export type MealPanelProps = {
   onAdd?: () => void;
   onSelectEntry?: (id: string) => void;
   onCopyFromYesterday?: () => void;
-  onSaveMeal?: () => void;
-  onCamera?: () => void;
+  onClearMeal?: () => void;
 };
 
 const MealPanel: React.FC<MealPanelProps> = ({
@@ -44,8 +43,7 @@ const MealPanel: React.FC<MealPanelProps> = ({
   onAdd,
   onSelectEntry,
   onCopyFromYesterday,
-  onSaveMeal,
-  onCamera,
+  onClearMeal,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const toggle = () => setExpanded(prev => !prev);
@@ -128,20 +126,13 @@ const MealPanel: React.FC<MealPanelProps> = ({
             )}
           </View>
           <View style={styles.actionBar}>
-            <TouchableOpacity
-              style={styles.action}
-              onPress={onCopyFromYesterday}
-            >
+            <TouchableOpacity style={styles.action} onPress={onCopyFromYesterday}>
               <Icon name="content-copy" size={16} color="#22C55E" />
               <Text style={styles.actionText}>Копировать из вчера</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.action} onPress={onSaveMeal}>
-              <Icon name="bookmark-plus-outline" size={16} color="#22C55E" />
-              <Text style={styles.actionText}>Сохранить Еду</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.action} onPress={onCamera}>
-              <Icon name="camera" size={16} color="#22C55E" />
-              <Text style={styles.actionText}>Камера</Text>
+            <TouchableOpacity style={styles.action} onPress={onClearMeal}>
+              <Icon name="delete-outline" size={16} color="#EF4444" />
+              <Text style={[styles.actionText, styles.destructiveText]}>Очистить приём пищи</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -257,7 +248,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: '#323232',
@@ -270,6 +261,9 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontSize: 12,
     marginLeft: 4,
+  },
+  destructiveText: {
+    color: '#EF4444',
   },
 });
 
