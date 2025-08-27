@@ -26,8 +26,8 @@ export type FavoriteItem = {
   createdAt: number;
 };
 
-export type UserCatalogItem = {
-  id: string;
+export type CompositeIngredient = {
+  ref: { kind: 'catalog' | 'userCatalog'; id: string };
   name: string;
   per100g: {
     calories: number;
@@ -35,6 +35,23 @@ export type UserCatalogItem = {
     fat: number;
     carbs: number;
   };
+  grams: number;
+};
+
+export type UserCatalogItem = {
+  id: string;
+  type?: 'single' | 'composite';
+  name: string;
+  per100g: {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+  };
+  photoUri?: string;
+  dishWeight?: number;
+  portionWeight?: number;
+  ingredients?: CompositeIngredient[];
   createdAt: number;
 };
 
