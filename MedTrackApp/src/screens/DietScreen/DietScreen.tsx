@@ -137,7 +137,7 @@ const DietScreen: React.FC = () => {
 
     Alert.alert(
       'Скопировать из вчера?',
-      `Перенести все продукты из вчерашнего ${mealName} в сегодняшний ${mealName}? Текущие продукты будут заменены.`,
+      `Добавить все продукты из вчерашнего ${mealName} в сегодняшний ${mealName}? Текущие продукты сохранятся.`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -147,7 +147,10 @@ const DietScreen: React.FC = () => {
               const day = prev[selectedDate] || createEmptyDay();
               const updated = {
                 ...day,
-                [meal]: prevMeal.map(e => ({ ...e, id: Math.random().toString() })),
+                [meal]: [
+                  ...day[meal],
+                  ...prevMeal.map(e => ({ ...e, id: Math.random().toString() })),
+                ],
               };
               return { ...prev, [selectedDate]: updated };
             });
