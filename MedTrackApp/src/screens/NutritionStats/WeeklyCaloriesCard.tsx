@@ -43,15 +43,6 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
   const weekTotal = days.reduce((s, d) => s + d.calories, 0);
   const weekAvg = weekTotal / days.length;
 
-  const today = days[6];
-  const yesterday = days[5];
-  let deltaLabel = '—';
-  let deltaColor = '#fff';
-  if (today && yesterday && yesterday.calories > 0) {
-    const diff = ((today.calories - yesterday.calories) / yesterday.calories) * 100;
-    deltaLabel = `${diff >= 0 ? '+' : ''}${Math.round(diff)}%`;
-    deltaColor = diff >= 0 ? '#22C55E' : '#EF4444';
-  }
 
   const allZero = days.every(d => d.calories === 0);
   let minDay: DayData | null = null;
@@ -79,6 +70,10 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
   const normCount = days.filter(d => d.target && d.calories >= d.target && d.calories <= (d.target * 1.2)).length;
   const surplusCount = days.filter(d => d.target && d.calories > (d.target * 1.2)).length;
 
+  const deficitStyle = { flex: deficitCount };
+  const normStyle = { flex: normCount };
+  const surplusStyle = { flex: surplusCount };
+
   if (weekTotal === 0) {
     return (
       <View style={styles.card}>
@@ -96,15 +91,19 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
     <View style={styles.card}>
       <Text style={styles.title}>Неделя по калориям</Text>
       <View style={styles.kpiRow}>
-        <View style={styles.kpiItem}>
-          <Text style={styles.kpiLabel}>К изменению со вчера</Text>
-          <Text style={[styles.kpiValue, { color: deltaColor }]}>{deltaLabel}</Text>
-        </View>
-        <View style={styles.kpiItem}>
+        <View
+          style={styles.kpiItem}
+          accessible
+          accessibilityLabel={`Всего: ${formatNumber(weekTotal, 0)} килокалорий за неделю`}
+        >
           <Text style={styles.kpiLabel}>Всего</Text>
           <Text style={styles.kpiValue}>{`${formatNumber(weekTotal, 0)} ккал`}</Text>
         </View>
-        <View style={styles.kpiItem}>
+        <View
+          style={styles.kpiItem}
+          accessible
+          accessibilityLabel={`В среднем: ${formatNumber(weekAvg, 0)} килокалорий в день`}
+        >
           <Text style={styles.kpiLabel}>В среднем</Text>
           <Text style={styles.kpiValue}>{`${formatNumber(weekAvg, 0)} ккал/день`}</Text>
         </View>
@@ -165,9 +164,9 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
 
       {hasTargets && (
         <View style={styles.segmentBar}>
-          <View style={[styles.segment, { flex: deficitCount, backgroundColor: '#22C55E' }]} />
-          <View style={[styles.segment, { flex: normCount, backgroundColor: '#FFC107' }]} />
-          <View style={[styles.segment, { flex: surplusCount, backgroundColor: '#EF4444' }]} />
+          <View style={[styles.segment, styles.segmentDeficit, deficitStyle]} />
+          <View style={[styles.segment, styles.segmentNorm, normStyle]} />
+          <View style={[styles.segment, styles.segmentSurplus, surplusStyle]} />
         </View>
       )}
       <View style={styles.chipsRow}>
@@ -181,7 +180,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
               : 'Минимум за неделю: данных нет'}
         >
           <Text style={styles.chipTitle}>Минимум за неделю</Text>
-          <Text style={[styles.chipValue, { color: '#22C55E' }]}>
+          <Text style={[styles.chipValue, styles.chipValueMin]}>
             {/* @ts-ignore */}
             {minDay ? `${minDay.label} · ${formatNumber(minDay.calories, 0)} ккал` : '—'}
           </Text>
@@ -196,7 +195,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
               : 'Максимум за неделю: данных нет'}
         >
           <Text style={styles.chipTitle}>Максимум за неделю</Text>
-          <Text style={[styles.chipValue, { color: '#EF4444' }]}>
+          <Text style={[styles.chipValue, styles.chipValueMax]}>
             {/* @ts-ignore */}
             {maxDay ? `${maxDay.label} · ${formatNumber(maxDay.calories, 0)} ккал` : '—'}
           </Text>
@@ -289,6 +288,15 @@ const styles = StyleSheet.create({
   segment: {
     height: '100%',
   },
+  segmentDeficit: {
+    backgroundColor: '#22C55E',
+  },
+  segmentNorm: {
+    backgroundColor: '#FFC107',
+  },
+  segmentSurplus: {
+    backgroundColor: '#EF4444',
+  },
   chipsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -319,6 +327,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     marginTop: 2,
+  },
+  chipValueMin: {
+    color: '#22C55E',
+  },
+  chipValueMax: {
+    color: '#EF4444',
   },
   emptyText: {
     color: '#fff',
