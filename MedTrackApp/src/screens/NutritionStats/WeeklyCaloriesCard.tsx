@@ -293,9 +293,11 @@ const styles = StyleSheet.create({
   },
   chip: {
     flex: 1,
+    marginHorizontal: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 14,
+    alignItems: 'center',
     marginBottom: 8,
   },
   chipMin: {
