@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, { Circle } from 'react-native-svg';
-// Chart component
-import { DietChart, ChartData } from '../../components';
 import { addDays, format, parseISO } from 'date-fns';
 
 import { RootStackParamList } from '../../navigation';
 import { loadDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
+import WeeklyCaloriesCard from './WeeklyCaloriesCard';
 
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 
@@ -138,41 +137,12 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
     },
   ];
 
-  const barColors = dailyTotals.map(d =>
-    d.calories >= targetCalories ? '#FFC107' : d.calories > 0 ? '#22C55E' : '#333'
-  );
-
   const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const chartData: ChartData = {
-    labels,
-    datasets: [
-      {
-        data: dailyTotals.map(d => d.calories),
-        colors: barColors.map(c => () => c),
-      },
-    ],
-  };
-
-  const totalCalories = weekTotals.calories;
-  const avgCalories = totalCalories / 7;
-  const bestIndex = dailyTotals.reduce((maxI, d, i) =>
-    d.calories > dailyTotals[maxI].calories ? i : maxI,
-  0);
-  const worstIndex = dailyTotals.reduce((minI, d, i) =>
-    d.calories < dailyTotals[minI].calories ? i : minI,
-  0);
-  const daysAboveTarget = dailyTotals.filter(d => d.calories >= targetCalories).length;
-
-  if (totalCalories === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Данных за эту неделю пока нет</Text>
-        <TouchableOpacity style={styles.emptyButton} onPress={() => {}}>
-          <Text style={styles.emptyButtonText}>Добавить еду</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const dailyData = labels.map((label, i) => ({
+    label,
+    calories: dailyTotals[i].calories,
+    target: targetCalories,
+  }));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -189,27 +159,7 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
         ))}
       </View>
 
-      <View style={[styles.chartCard, { shadowColor: '#FFC107' }]}> 
-        <Text style={styles.chartTitle}>Неделя по калориям</Text>
-        <View style={styles.metricsRow}>
-          <Text style={styles.metricText}>Всего: {formatNumber(totalCalories)} ккал</Text>
-          <Text style={styles.metricText}>В среднем: {formatNumber(avgCalories)} ккал/день</Text>
-        </View>
-        <DietChart
-          data={chartData}
-          width={Dimensions.get('window').width - 48}
-          height={180}
-        />
-        <View style={styles.legendRow}>
-          <Text style={styles.legendText}>
-            Лучш. день: {labels[bestIndex]} {formatNumber(dailyTotals[bestIndex].calories)}
-          </Text>
-          <Text style={styles.legendText}>
-            Худш. день: {labels[worstIndex]} {formatNumber(dailyTotals[worstIndex].calories)}
-          </Text>
-          <Text style={styles.legendText}>Дней ≥ цели: {daysAboveTarget}</Text>
-        </View>
-      </View>
+      <WeeklyCaloriesCard days={dailyData} />
 
       <View style={styles.summaryCard}>
         <View style={styles.summaryRow}>
@@ -282,38 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  chartCard: {
-    backgroundColor: '#1E1E1E',
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 16,
-    shadowOpacity: 0.7,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  chartTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  metricText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  legendText: {
-    color: '#fff',
-    fontSize: 12,
-  },
   summaryCard: {
     backgroundColor: '#1E1E1E',
     padding: 16,
@@ -336,27 +254,6 @@ const styles = StyleSheet.create({
   summaryValue: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: 'bold',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#000',
-  },
-  emptyText: {
-    color: '#fff',
-    marginBottom: 12,
-  },
-  emptyButton: {
-    backgroundColor: '#22C55E',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  emptyButtonText: {
-    color: '#000',
     fontWeight: 'bold',
   },
 });
