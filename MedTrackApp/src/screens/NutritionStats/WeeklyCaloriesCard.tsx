@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import Svg, { Rect, Defs, Filter, FeGaussianBlur } from 'react-native-svg';
 import { formatNumber } from '../../utils/number';
 
 interface DayData {
@@ -138,15 +139,25 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
                     style={[styles.targetLine, { bottom: (day.target / maxValue) * maxBarHeight }]}
                   />
                 )}
-                <Animated.View
-                  style={[
-                    styles.bar,
-                    {
-                      height: barHeight,
-                      backgroundColor: color,
-                    },
-                  ]}
-                />
+                <Animated.View style={[styles.bar, { height: barHeight }]}>
+                  <Svg width={16} height="100%">
+                    <Defs>
+                      <Filter id={`glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
+                        <FeGaussianBlur stdDeviation={6} />
+                      </Filter>
+                    </Defs>
+                    <Rect
+                      width={16}
+                      height="100%"
+                      rx={8}
+                      ry={8}
+                      fill={color}
+                      opacity={0.5}
+                      filter={`url(#glow-${i})`}
+                    />
+                    <Rect width={16} height="100%" rx={8} ry={8} fill={color} />
+                  </Svg>
+                </Animated.View>
               </View>
               <Text style={styles.dayLabel}>{day.label}</Text>
             </View>
@@ -233,7 +244,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: 16,
-    borderRadius: 8,
   },
   targetLine: {
     position: 'absolute',
