@@ -157,7 +157,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
       {hasTargets && (
         <View style={styles.segmentBar}>
           <View style={[styles.segment, { flex: deficitCount, backgroundColor: '#22C55E' }]} />
-          <View style={[styles.segment, { flex: normCount, backgroundColor: 'rgba(255,255,255,0.2)' }]} />
+          <View style={[styles.segment, { flex: normCount, backgroundColor: '#FFC107' }]} />
           <View style={[styles.segment, { flex: surplusCount, backgroundColor: '#EF4444' }]} />
         </View>
       )}
