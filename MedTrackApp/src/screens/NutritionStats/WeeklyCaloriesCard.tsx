@@ -59,13 +59,10 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
   const bestDay = withData.reduce((best, cur) => (cur.calories > best.calories ? cur : best), withData[0] || { label: '', calories: 0 });
   const worstDay = withData.reduce((worst, cur) => (cur.calories < worst.calories ? cur : worst), withData[0] || { label: '', calories: 0 });
 
-  const maxValue = Math.max(
-    ...days.map(d => d.calories),
-    ...days.map(d => (d.target ?? 0) * 1.2),
-    1,
-  );
-
   const hasTargets = days.some(d => d.target != null);
+  const maxValue = hasTargets
+    ? Math.max(...days.map(d => (d.target ?? 0) * 1.2), 1)
+    : Math.max(...days.map(d => d.calories), 1);
 
   const deficitCount = days.filter(d => d.target && d.calories < d.target).length;
   const normCount = days.filter(d => d.target && d.calories >= d.target && d.calories <= (d.target * 1.2)).length;
@@ -104,7 +101,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
 
       <View style={styles.barsRow}>
         {days.map((day, i) => {
-          const pctOfMax = day.calories / maxValue;
+          const pctOfMax = Math.min(day.calories / maxValue, 1);
           const barHeight = animations[i].interpolate({
             inputRange: [0, 1],
             outputRange: [0, maxBarHeight * pctOfMax],
