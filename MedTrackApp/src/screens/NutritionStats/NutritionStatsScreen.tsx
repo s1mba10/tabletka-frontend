@@ -67,8 +67,6 @@ const RingDefs = React.memo(() => (
   </Svg>
 ));
 
-const clampDisplay = (n: number) => Math.min(300, Math.max(0, Math.round(n)));
-
 const ProgressRing: React.FC<{
   value: number;
   target?: number | null;
@@ -81,10 +79,10 @@ const ProgressRing: React.FC<{
   const strokeWidth = 12;
   const circumference = 2 * Math.PI * radius;
 
-  const pct = target && target > 0 ? (value / target) * 100 : null;
-  const clamped = pct === null ? 0 : Math.min(Math.max(pct, 0), 300);
-  const displayPct = pct === null ? '—%' : `${clampDisplay(pct)}%`;
-  const finalOffset = circumference - (circumference * clamped) / 100;
+  const rawPct = target && target > 0 ? (value / target) * 100 : null;
+  const displayPct = rawPct == null ? '—%' : `${Math.round(rawPct)}%`;
+  const p = rawPct == null ? 0 : Math.max(0, Math.min(rawPct, 100)) / 100;
+  const finalOffset = circumference * (1 - p);
 
   const offsetAnim = useRef(new Animated.Value(circumference)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
@@ -103,7 +101,7 @@ const ProgressRing: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (pct === null) {
+    if (rawPct === null) {
       offsetAnim.setValue(circumference);
       glowOpacity.setValue(0);
       return;
@@ -127,12 +125,12 @@ const ProgressRing: React.FC<{
         }),
       ]).start();
     }
-  }, [finalOffset, pct, reduceMotion, offsetAnim, glowOpacity, circumference]);
+  }, [finalOffset, rawPct, reduceMotion, offsetAnim, glowOpacity, circumference]);
 
   const accessibilityLabel =
-    pct === null
+    rawPct === null
       ? `${label}: цель не задана`
-      : `${label}: ${clampDisplay(pct)} процента от цели за выбранный день`;
+      : `${label}: ${Math.round(rawPct)} процента от цели за выбранный день`;
 
   return (
     <View style={styles.tile} accessibilityLabel={accessibilityLabel}>
@@ -146,7 +144,7 @@ const ProgressRing: React.FC<{
             strokeWidth={strokeWidth}
             fill="none"
           />
-          {pct !== null && (
+          {rawPct !== null && (
             <>
               <AnimatedCircle
                 cx={size / 2}
@@ -154,9 +152,9 @@ const ProgressRing: React.FC<{
                 r={radius}
                 stroke={glow}
                 strokeWidth={strokeWidth}
-                strokeLinecap="round"
+                strokeLinecap={p === 1 ? 'butt' : 'round'}
                 fill="none"
-                strokeDasharray={`${circumference} ${circumference}`}
+                strokeDasharray={circumference}
                 strokeDashoffset={offsetAnim}
                 opacity={glowOpacity}
                 filter="url(#ringGlow)"
@@ -168,9 +166,9 @@ const ProgressRing: React.FC<{
                 r={radius}
                 stroke={`url(#${gradient})`}
                 strokeWidth={strokeWidth}
-                strokeLinecap="round"
+                strokeLinecap={p === 1 ? 'butt' : 'round'}
                 fill="none"
-                strokeDasharray={`${circumference} ${circumference}`}
+                strokeDasharray={circumference}
                 strokeDashoffset={offsetAnim}
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
