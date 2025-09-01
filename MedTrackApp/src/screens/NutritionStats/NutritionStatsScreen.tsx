@@ -23,8 +23,8 @@ import { addDays, format, parseISO } from 'date-fns';
 import { RootStackParamList } from '../../navigation';
 import { loadDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
-import { formatNumber } from '../../utils/number';
 import WeeklyCaloriesCard from './WeeklyCaloriesCard';
+import WeeklyMacrosRow from './WeeklyMacrosRow';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -293,28 +293,7 @@ const NutritionStatsScreen: React.FC<{
 
       <WeeklyCaloriesCard days={dailyData} />
 
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>За неделю</Text>
-          <Text style={styles.summaryValue}>
-            {formatNumber(weekTotals.calories)} ккал, {formatNumber(weekTotals.protein)} Б, {formatNumber(weekTotals.fat)} Ж, {formatNumber(weekTotals.carbs)} У
-          </Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Отклонение от цели</Text>
-          <Text
-            style={[
-              styles.summaryValue,
-              {
-                color:
-                  weekTotals.calories - kcalTarget * 7 >= 0 ? '#EF4444' : '#22C55E',
-              },
-            ]}
-          >
-            {formatNumber(weekTotals.calories - kcalTarget * 7)} ккал
-          </Text>
-        </View>
-      </View>
+      <WeeklyMacrosRow totals={weekTotals} kcalTarget={kcalTarget} />
     </ScrollView>
   );
 };
@@ -363,26 +342,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     marginTop: 4,
-  },
-  summaryCard: {
-    backgroundColor: '#1E1E1E',
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 32,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 14,
-  },
-  summaryValue: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });
 
