@@ -1,6 +1,15 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, Platform, ToastAndroid, Alert, TouchableOpacity } from 'react-native';
+import {
+  ScrollView,
+  Platform,
+  ToastAndroid,
+  Alert,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, addDays } from 'date-fns';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -23,6 +32,7 @@ const DietScreen: React.FC = () => {
 
   const navigation = useNavigation<NavProp>();
   const [weekOffset, setWeekOffset] = useState(0);
+  const lastNavTime = useRef(0);
 
   const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
     breakfast: [],
@@ -248,6 +258,19 @@ const DietScreen: React.FC = () => {
     });
   }, [entriesByDate]);
 
+  const handleSummaryPress = useCallback(() => {
+    const now = Date.now();
+    if (now - lastNavTime.current < 500) {
+      return;
+    }
+    lastNavTime.current = now;
+    const start = addDays(new Date(), weekOffset * 7);
+    const monday = addDays(start, -((start.getDay() + 6) % 7));
+    navigation.navigate('NutritionStats', {
+      weekStart: format(monday, 'yyyy-MM-dd'),
+    });
+  }, [navigation, weekOffset]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -260,24 +283,34 @@ const DietScreen: React.FC = () => {
           onPrevWeek={() => setWeekOffset(w => w - 1)}
           onNextWeek={() => setWeekOffset(w => w + 1)}
         />
-        <TouchableOpacity
-          onPress={() => {
-            const start = addDays(new Date(), weekOffset * 7);
-            const monday = addDays(start, -((start.getDay() + 6) % 7));
-            navigation.navigate('NutritionStats', {
-              weekStart: format(monday, 'yyyy-MM-dd'),
-            });
-          }}
+        <Pressable
+          onPress={handleSummaryPress}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Открыть статистику питания"
+          accessibilityHint="Нажмите, чтобы открыть расширенную статистику питания за неделю."
+          android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+          pointerEvents="auto"
+          testID="diet-summary-pressable"
         >
-          <MacronutrientSummary
-            caloriesConsumed={dayTotals.calories}
-            targetCalories={targetCalories}
-            rskPercent={dayRskDisplay}
-            protein={dayTotals.protein}
-            fat={dayTotals.fat}
-            carbs={dayTotals.carbs}
-          />
-        </TouchableOpacity>
+          <View>
+            <MacronutrientSummary
+              caloriesConsumed={dayTotals.calories}
+              targetCalories={targetCalories}
+              rskPercent={dayRskDisplay}
+              protein={dayTotals.protein}
+              fat={dayTotals.fat}
+              carbs={dayTotals.carbs}
+            />
+            <Icon
+              name="chevron-right"
+              size={16}
+              color="rgba(255,255,255,0.6)"
+              style={summaryStyles.chevron}
+            />
+          </View>
+        </Pressable>
         {meals.map(meal => (
           <MealPanel
             key={meal.mealKey}
@@ -303,4 +336,14 @@ const DietScreen: React.FC = () => {
 };
 
 export default DietScreen;
+
+const summaryStyles = StyleSheet.create({
+  chevron: {
+    position: 'absolute',
+    right: 4,
+    top: '50%',
+    marginTop: -8,
+    pointerEvents: 'none',
+  },
+});
 
