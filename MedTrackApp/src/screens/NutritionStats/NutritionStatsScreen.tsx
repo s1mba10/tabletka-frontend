@@ -1,13 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  AccessibilityInfo,
-  Animated,
-  Easing,
-} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, {
@@ -17,6 +9,8 @@ import Svg, {
   Stop,
   Filter,
   FeGaussianBlur,
+  RadialGradient,
+  G,
 } from 'react-native-svg';
 import { addDays, format, parseISO } from 'date-fns';
 
@@ -26,8 +20,6 @@ import { aggregateMeals } from '../../nutrition/aggregate';
 import WeeklyCaloriesCard from './WeeklyCaloriesCard';
 import WeeklyMacrosRow from './WeeklyMacrosRow';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const kcalTarget = 3300;
 const proteinTarget = 120;
@@ -44,24 +36,48 @@ const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
 const RingDefs = React.memo(() => (
   <Svg width="0" height="0">
     <Defs>
-      <LinearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#34D399" />
-        <Stop offset="100%" stopColor="#22C55E" />
+      <LinearGradient id="gradCalGreen" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#8FFF6A" />
+        <Stop offset="100%" stopColor="#39FF14" />
       </LinearGradient>
-      <LinearGradient id="gradAmber" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#FFD54F" />
+      <LinearGradient id="gradCalAmber" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#FFE082" />
         <Stop offset="100%" stopColor="#FFC107" />
       </LinearGradient>
-      <LinearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#FF6B6B" />
-        <Stop offset="100%" stopColor="#EF4444" />
+      <LinearGradient id="gradCalRed" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#FF8A80" />
+        <Stop offset="100%" stopColor="#FF1744" />
       </LinearGradient>
-      <LinearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#60A5FA" />
-        <Stop offset="100%" stopColor="#3B82F6" />
+      <LinearGradient id="gradProtein" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#7CFFE9" />
+        <Stop offset="100%" stopColor="#00F5D4" />
       </LinearGradient>
-      <Filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
-        <FeGaussianBlur stdDeviation="6" />
+      <LinearGradient id="gradFat" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#FF80FF" />
+        <Stop offset="100%" stopColor="#FF00FF" />
+      </LinearGradient>
+      <LinearGradient id="gradCarbs" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#7EB3FF" />
+        <Stop offset="100%" stopColor="#3D5AFE" />
+      </LinearGradient>
+      <RadialGradient id="radCal" cx="50%" cy="50%" r="50%">
+        <Stop offset="0%" stopColor="rgba(57,255,20,0.10)" />
+        <Stop offset="100%" stopColor="rgba(57,255,20,0)" />
+      </RadialGradient>
+      <RadialGradient id="radProtein" cx="50%" cy="50%" r="50%">
+        <Stop offset="0%" stopColor="rgba(0,245,212,0.10)" />
+        <Stop offset="100%" stopColor="rgba(0,245,212,0)" />
+      </RadialGradient>
+      <RadialGradient id="radFat" cx="50%" cy="50%" r="50%">
+        <Stop offset="0%" stopColor="rgba(255,0,255,0.10)" />
+        <Stop offset="100%" stopColor="rgba(255,0,255,0)" />
+      </RadialGradient>
+      <RadialGradient id="radCarbs" cx="50%" cy="50%" r="50%">
+        <Stop offset="0%" stopColor="rgba(0,194,255,0.10)" />
+        <Stop offset="100%" stopColor="rgba(0,194,255,0)" />
+      </RadialGradient>
+      <Filter id="ringBlur" x="-50%" y="-50%" width="200%" height="200%">
+        <FeGaussianBlur stdDeviation="8" />
       </Filter>
     </Defs>
   </Svg>
@@ -73,59 +89,19 @@ const ProgressRing: React.FC<{
   label: string;
   gradient: string;
   glow: string;
-}> = React.memo(({ value, target, label, gradient, glow }) => {
+  ambient: string;
+}> = React.memo(({ value, target, label, gradient, glow, ambient }) => {
   const size = 120;
   const radius = 48;
   const strokeWidth = 12;
+  const glowWidth = strokeWidth + 8;
   const circumference = 2 * Math.PI * radius;
 
   const rawPct = target && target > 0 ? (value / target) * 100 : null;
   const displayPct = rawPct == null ? '—%' : `${Math.round(rawPct)}%`;
   const p = rawPct == null ? 0 : Math.max(0, Math.min(rawPct, 100)) / 100;
-  const finalOffset = circumference * (1 - p);
-
-  const offsetAnim = useRef(new Animated.Value(circumference)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
-    const sub = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      setReduceMotion,
-    );
-    return () => {
-      // @ts-ignore types mismatch across RN versions
-      if (sub && typeof sub.remove === 'function') sub.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (rawPct === null) {
-      offsetAnim.setValue(circumference);
-      glowOpacity.setValue(0);
-      return;
-    }
-    if (reduceMotion) {
-      offsetAnim.setValue(finalOffset);
-      glowOpacity.setValue(0.45);
-    } else {
-      Animated.parallel([
-        Animated.timing(offsetAnim, {
-          toValue: finalOffset,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowOpacity, {
-          toValue: 0.45,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-      ]).start();
-    }
-  }, [finalOffset, rawPct, reduceMotion, offsetAnim, glowOpacity, circumference]);
+  const offset = circumference * (1 - p);
+  const cap = p === 1 ? 'butt' : 'round';
 
   const accessibilityLabel =
     rawPct === null
@@ -135,45 +111,68 @@ const ProgressRing: React.FC<{
   return (
     <View style={styles.tile} accessibilityLabel={accessibilityLabel}>
       <View style={styles.ringWrap}>
-        <Svg width={size} height={size}>
+        <Svg
+          width={size + 32}
+          height={size + 32}
+          style={styles.ambientSvg}
+        >
           <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="rgba(255,255,255,0.12)"
-            strokeWidth={strokeWidth}
-            fill="none"
+            cx={(size + 32) / 2}
+            cy={(size + 32) / 2}
+            r={(size + 32) / 2}
+            fill={`url(#${ambient})`}
           />
-          {rawPct !== null && (
-            <>
-              <AnimatedCircle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke={glow}
-                strokeWidth={strokeWidth}
-                strokeLinecap={p === 1 ? 'butt' : 'round'}
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={offsetAnim}
-                opacity={glowOpacity}
-                filter="url(#ringGlow)"
-                transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              />
-              <AnimatedCircle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke={`url(#${gradient})`}
-                strokeWidth={strokeWidth}
-                strokeLinecap={p === 1 ? 'butt' : 'round'}
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={offsetAnim}
-                transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              />
-            </>
-          )}
+        </Svg>
+        <Svg width={size} height={size}>
+          <G transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+            <Circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth={strokeWidth}
+              fill="none"
+            />
+            {rawPct !== null && (
+              <>
+                <Circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke={glow}
+                  strokeWidth={glowWidth}
+                  strokeLinecap={cap}
+                  fill="none"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                  opacity={0.45}
+                  filter="url(#ringBlur)"
+                />
+                <Circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke={`url(#${gradient})`}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap={cap}
+                  fill="none"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                />
+                <Circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke="rgba(255,255,255,0.18)"
+                  strokeWidth={2}
+                  strokeLinecap={cap}
+                  fill="none"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                />
+              </>
+            )}
+          </G>
         </Svg>
         <View style={styles.labelCenter} pointerEvents="none">
           <Text style={styles.percent}>{displayPct}</Text>
@@ -227,10 +226,11 @@ const NutritionStatsScreen: React.FC<{
   );
 
   const caloriePct = kcalTarget > 0 ? (dayTotals.calories / kcalTarget) * 100 : null;
-  let calColors = { gradient: 'gradGreen', glow: '#22C55E' };
+  let calColors = { gradient: 'gradCalGreen', glow: '#39FF14' };
   if (caloriePct != null) {
-    if (caloriePct > 110) calColors = { gradient: 'gradRed', glow: '#EF4444' };
-    else if (caloriePct > 100) calColors = { gradient: 'gradAmber', glow: '#FFC107' };
+    if (caloriePct > 110) calColors = { gradient: 'gradCalRed', glow: '#FF1744' };
+    else if (caloriePct > 100)
+      calColors = { gradient: 'gradCalAmber', glow: '#FFC107' };
   }
 
   const cards = [
@@ -241,30 +241,34 @@ const NutritionStatsScreen: React.FC<{
       target: kcalTarget,
       gradient: calColors.gradient,
       glow: calColors.glow,
+      ambient: 'radCal',
     },
     {
       key: 'protein',
       label: 'Белки',
       value: dayTotals.protein,
       target: proteinTarget,
-      gradient: 'gradGreen',
-      glow: '#00FFFF',
+      gradient: 'gradProtein',
+      glow: '#00F5D4',
+      ambient: 'radProtein',
     },
     {
       key: 'fat',
       label: 'Жиры',
       value: dayTotals.fat,
       target: fatTarget,
-      gradient: 'gradRed',
+      gradient: 'gradFat',
       glow: '#FF00FF',
+      ambient: 'radFat',
     },
     {
       key: 'carbs',
       label: 'Углеводы',
       value: dayTotals.carbs,
       target: carbsTarget,
-      gradient: 'gradBlue',
-      glow: '#FF8000',
+      gradient: 'gradCarbs',
+      glow: '#00C2FF',
+      ambient: 'radCarbs',
     },
   ];
 
@@ -287,6 +291,7 @@ const NutritionStatsScreen: React.FC<{
             label={c.label}
             gradient={c.gradient}
             glow={c.glow}
+            ambient={c.ambient}
           />
         ))}
       </View>
@@ -324,6 +329,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  ambientSvg: {
+    position: 'absolute',
+    left: -16,
+    top: -16,
+    overflow: 'visible',
+  },
   labelCenter: {
     position: 'absolute',
     top: 0,
@@ -335,11 +346,11 @@ const styles = StyleSheet.create({
   },
   percent: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
   },
   label: {
-    color: '#fff',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 14,
     marginTop: 4,
   },
