@@ -284,7 +284,7 @@ const NutritionStatsScreen: React.FC<{
       headerLargeTitle: false,
       headerTransparent: false,
       headerShadowVisible: false,
-      headerStyle: { backgroundColor: '#000' },
+      headerStyle: { backgroundColor: '#000', height: 44 },
       headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
       headerTintColor: '#fff',
     });

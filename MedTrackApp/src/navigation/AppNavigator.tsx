@@ -59,7 +59,7 @@ const DietStack = () => (
         headerLargeTitle: false,
         headerTransparent: false,
         headerTintColor: '#fff',
-        headerStyle: { backgroundColor: '#000' },
+        headerStyle: { backgroundColor: '#000', height: 44 },
         headerShadowVisible: false,
         headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
       }}
