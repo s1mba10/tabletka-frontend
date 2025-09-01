@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Pressable, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { formatNumber } from '../../utils/number';
 
 interface DayData {
@@ -26,7 +26,6 @@ const fullDayMap: Record<string, string> = {
 };
 
 const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
-  const [selected, setSelected] = useState<number | null>(null);
   const animations = useRef(days.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
@@ -73,7 +72,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
 
   if (weekTotal === 0) {
     return (
-      <View style={[styles.card, { shadowColor: '#F59E0B' }]}>
+      <View style={styles.card}>
         <Text style={styles.emptyText}>Данных за эту неделю пока нет</Text>
         {onAddFood && (
           <TouchableOpacity style={styles.emptyButton} onPress={onAddFood}>
@@ -85,7 +84,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
   }
 
   return (
-    <View style={[styles.card, { shadowColor: '#F59E0B' }]}>
+    <View style={styles.card}>
       <Text style={styles.title}>Неделя по калориям</Text>
       <View style={styles.kpiRow}>
         <View style={styles.kpiItem}>
@@ -111,22 +110,17 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
           });
 
           let color = 'transparent';
-          let glow = 'transparent';
           if (day.calories > 0) {
             if (!day.target) {
               color = 'rgba(34,197,94,0.8)';
-              glow = '#22C55E';
             } else {
               const pct = (day.calories / day.target) * 100;
               if (pct <= 100) {
                 color = '#22C55E';
-                glow = '#22C55E';
               } else if (pct <= 120) {
-                color = '#F59E0B';
-                glow = '#F59E0B';
+                color = '#FFC107';
               } else {
                 color = '#EF4444';
-                glow = '#EF4444';
               }
             }
           }
@@ -136,11 +130,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
             : `${fullDayMap[day.label]}: ${formatNumber(day.calories, 0)} килокалорий`;
 
           return (
-            <Pressable
-              key={day.label}
-              onPress={() => setSelected(selected === i ? null : i)}
-              accessibilityLabel={accessibilityLabel}
-            >
+            <View key={day.label} accessible accessibilityLabel={accessibilityLabel}>
               <View style={styles.barWrapper}>
                 <View style={styles.track} />
                 {hasTargets && day.target && (
@@ -154,20 +144,12 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
                     {
                       height: barHeight,
                       backgroundColor: color,
-                      shadowColor: glow,
                     },
                   ]}
                 />
-                {selected === i && (
-                  <View style={styles.tooltip}>
-                    <Text style={styles.tooltipText}>
-                      {`${day.label} — ${formatNumber(day.calories, 0)} ккал${day.target ? ` (${Math.round((day.calories / day.target) * 100)}%)` : ''}`}
-                    </Text>
-                  </View>
-                )}
               </View>
               <Text style={styles.dayLabel}>{day.label}</Text>
-            </Pressable>
+            </View>
           );
         })}
       </View>
@@ -199,10 +181,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
   },
   title: {
     color: '#fff',
@@ -256,9 +234,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 16,
     borderRadius: 8,
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-    elevation: 3,
   },
   targetLine: {
     position: 'absolute',
@@ -289,18 +264,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-  },
-  tooltip: {
-    position: 'absolute',
-    bottom: maxBarHeight + 8,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    backgroundColor: '#333',
-    borderRadius: 4,
-  },
-  tooltipText: {
-    color: '#fff',
     fontSize: 12,
   },
   emptyText: {

@@ -44,7 +44,7 @@ const NeonCircle: React.FC<{
   const pctLabel = `${Math.round(percent)}%`;
 
   return (
-    <View style={[styles.card, { shadowColor: color }]}> 
+    <View style={styles.card}> 
       <Svg width={radius * 2} height={radius * 2}>
         <Circle
           cx={radius}
@@ -204,9 +204,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     alignItems: 'center',
-    shadowOpacity: 0.7,
-    shadowRadius: 10,
-    elevation: 5,
   },
   circleContent: {
     position: 'absolute',
@@ -237,10 +234,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     marginBottom: 32,
-    shadowColor: '#555',
-    shadowOpacity: 0.7,
-    shadowRadius: 10,
-    elevation: 5,
   },
   summaryRow: {
     flexDirection: 'row',

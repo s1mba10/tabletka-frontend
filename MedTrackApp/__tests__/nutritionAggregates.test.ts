@@ -105,7 +105,7 @@ describe('nutrition aggregates', () => {
     it('1000 of 1000 -> 100% and amber full bar', () => {
       const pct = computeDayRsk(1000, 1000)!;
       expect(Math.round(pct)).toBe(100);
-      expect(colorForDayPct(pct)).toBe('#F59E0B');
+      expect(colorForDayPct(pct)).toBe('#FFC107');
       expect(calcFill(1000, 1000)).toBe(1);
     });
 
