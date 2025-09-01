@@ -188,7 +188,7 @@ const ProgressRing: React.FC<{
 const NutritionStatsScreen: React.FC<{
   route: RouteProp<RootStackParamList, 'NutritionStats'>;
   navigation: StackNavigationProp<RootStackParamList, 'NutritionStats'>;
-}> = ({ route }) => {
+}> = ({ route, navigation }) => {
   const { selectedDate } = route.params;
   const [entries, setEntries] = useState<
     Record<string, Record<MealType, NormalizedEntry[]>>
