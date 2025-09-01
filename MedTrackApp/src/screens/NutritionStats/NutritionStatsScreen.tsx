@@ -1,20 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import Svg, { Circle } from 'react-native-svg';
-import { addDays, format, parseISO } from 'date-fns';
+import { addDays, format, parseISO, startOfWeek } from 'date-fns';
 
 import { RootStackParamList } from '../../navigation';
 import { loadDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
 import WeeklyCaloriesCard from './WeeklyCaloriesCard';
+import MacroRing from './MacroRing';
 
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 
 type RouteProps = RouteProp<RootStackParamList, 'NutritionStats'>;
-type NavProps = StackNavigationProp<RootStackParamList, 'NutritionStats'>;
 
 const targetCalories = 3300;
 const targetProtein = 120;
@@ -28,55 +26,8 @@ const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
   snack: [],
 });
 
-const NeonCircle: React.FC<{
-  percent: number;
-  label: string;
-  consumed: number;
-  target: number;
-  color: string;
-}> = ({ percent, label, consumed, target, color }) => {
-  const radius = 40;
-  const strokeWidth = 8;
-  const normalizedPercent = Math.min(percent, 100);
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset =
-    circumference - (normalizedPercent / 100) * circumference;
-  const pctLabel = `${Math.round(percent)}%`;
-
-  return (
-    <View style={styles.card}> 
-      <Svg width={radius * 2} height={radius * 2}>
-        <Circle
-          cx={radius}
-          cy={radius}
-          r={radius}
-          stroke="#333"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx={radius}
-          cy={radius}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-        />
-      </Svg>
-      <View style={styles.circleContent}>
-        <Text style={styles.circlePercent}>{pctLabel}</Text>
-        <Text style={styles.circleLabel}>{label}</Text>
-        <Text style={styles.circleSub}>{`${formatNumber(consumed)}/${formatNumber(target)}${label === 'Калории' ? ' ккал' : ' г'}`}</Text>
-      </View>
-    </View>
-  );
-};
-
-const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }> = ({ route }) => {
-  const { weekStart } = route.params;
+const NutritionStatsScreen: React.FC<{ route: RouteProps }> = ({ route }) => {
+  const { selectedDate } = route.params;
   const [entries, setEntries] = useState<Record<string, Record<MealType, NormalizedEntry[]>>>({});
 
   useEffect(() => {
@@ -84,17 +35,22 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
   }, []);
 
   const weekDates = useMemo(() => {
-    const start = parseISO(weekStart);
+    const start = startOfWeek(parseISO(selectedDate), { weekStartsOn: 1 });
     return Array.from({ length: 7 }).map((_, i) => {
       const d = addDays(start, i);
       return format(d, 'yyyy-MM-dd');
     });
-  }, [weekStart]);
+  }, [selectedDate]);
 
   const dailyTotals = weekDates.map(date => {
     const dayEntries = entries[date] || createEmptyDay();
     return aggregateMeals(dayEntries).dayTotals;
   });
+
+  const selectedDayTotals = useMemo(() => {
+    const dayEntries = entries[selectedDate] || createEmptyDay();
+    return aggregateMeals(dayEntries).dayTotals;
+  }, [entries, selectedDate]);
 
   const weekTotals = dailyTotals.reduce(
     (sum, d) => ({
@@ -109,38 +65,34 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
   const cards = [
     {
       label: 'Калории',
-      color: '#FFC107',
-      consumed: weekTotals.calories,
-      target: targetCalories * 7,
-      percent: (weekTotals.calories / (targetCalories * 7)) * 100,
+      type: 'calories' as const,
+      consumed: selectedDayTotals.calories,
+      target: targetCalories,
     },
     {
       label: 'Белки',
-      color: '#22C55E',
-      consumed: weekTotals.protein,
-      target: targetProtein * 7,
-      percent: (weekTotals.protein / (targetProtein * 7)) * 100,
+      type: 'protein' as const,
+      consumed: selectedDayTotals.protein,
+      target: targetProtein,
     },
     {
       label: 'Жиры',
-      color: '#EF4444',
-      consumed: weekTotals.fat,
-      target: targetFat * 7,
-      percent: (weekTotals.fat / (targetFat * 7)) * 100,
+      type: 'fat' as const,
+      consumed: selectedDayTotals.fat,
+      target: targetFat,
     },
     {
       label: 'Углеводы',
-      color: '#3B82F6',
-      consumed: weekTotals.carbs,
-      target: targetCarbs * 7,
-      percent: (weekTotals.carbs / (targetCarbs * 7)) * 100,
+      type: 'carbs' as const,
+      consumed: selectedDayTotals.carbs,
+      target: targetCarbs,
     },
   ];
 
   const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   const dailyData = labels.map((label, i) => ({
     label,
-    calories: dailyTotals[i].calories,
+    calories: dailyTotals[i]?.calories ?? 0,
     target: targetCalories,
   }));
 
@@ -148,13 +100,12 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.cardRow}>
         {cards.map(c => (
-          <NeonCircle
+          <MacroRing
             key={c.label}
-            percent={c.percent}
             label={c.label}
             consumed={c.consumed}
             target={c.target}
-            color={c.color}
+            type={c.type}
           />
         ))}
       </View>
@@ -196,38 +147,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-  },
-  card: {
-    width: '48%',
-    backgroundColor: '#1E1E1E',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  circleContent: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    top: 16,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  circlePercent: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  circleLabel: {
-    color: '#fff',
-    marginTop: 4,
-    fontSize: 14,
-  },
-  circleSub: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-    marginTop: 2,
   },
   summaryCard: {
     backgroundColor: '#1E1E1E',

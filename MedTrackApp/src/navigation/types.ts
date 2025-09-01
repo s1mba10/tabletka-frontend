@@ -31,6 +31,6 @@ export type RootStackParamList = {
     entryId: string;
   };
   NutritionStats: {
-    weekStart: string;
+    selectedDate: string;
   };
 };

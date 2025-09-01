@@ -264,12 +264,10 @@ const DietScreen: React.FC = () => {
       return;
     }
     lastNavTime.current = now;
-    const start = addDays(new Date(), weekOffset * 7);
-    const monday = addDays(start, -((start.getDay() + 6) % 7));
     navigation.navigate('NutritionStats', {
-      weekStart: format(monday, 'yyyy-MM-dd'),
+      selectedDate,
     });
-  }, [navigation, weekOffset]);
+  }, [navigation, selectedDate]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -288,7 +286,7 @@ const DietScreen: React.FC = () => {
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Открыть статистику питания"
-          accessibilityHint="Нажмите, чтобы открыть расширенную статистику питания за неделю."
+          accessibilityHint="Нажмите, чтобы открыть расширенную статистику питания за выбранный день."
           android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
           style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
           pointerEvents="auto"
