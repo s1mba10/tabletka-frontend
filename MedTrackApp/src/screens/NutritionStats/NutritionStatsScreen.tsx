@@ -7,6 +7,7 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
+  Platform,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -14,6 +15,7 @@ import Svg, {
   Circle,
   Defs,
   LinearGradient,
+  RadialGradient,
   Stop,
   Filter,
   FeGaussianBlur,
@@ -44,24 +46,56 @@ const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
 const RingDefs = React.memo(() => (
   <Svg width="0" height="0">
     <Defs>
-      <LinearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#34D399" />
-        <Stop offset="100%" stopColor="#22C55E" />
+      <LinearGradient id="gradLime" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#8FFF6A" />
+        <Stop offset="100%" stopColor="#39FF14" />
       </LinearGradient>
       <LinearGradient id="gradAmber" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#FFD54F" />
+        <Stop offset="0%" stopColor="#FFE082" />
         <Stop offset="100%" stopColor="#FFC107" />
       </LinearGradient>
       <LinearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#FF6B6B" />
-        <Stop offset="100%" stopColor="#EF4444" />
+        <Stop offset="0%" stopColor="#FF8A80" />
+        <Stop offset="100%" stopColor="#FF1744" />
+      </LinearGradient>
+      <LinearGradient id="gradTeal" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#7CFFE9" />
+        <Stop offset="100%" stopColor="#00F5D4" />
+      </LinearGradient>
+      <LinearGradient id="gradMagenta" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#FF80FF" />
+        <Stop offset="100%" stopColor="#FF00FF" />
       </LinearGradient>
       <LinearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#60A5FA" />
-        <Stop offset="100%" stopColor="#3B82F6" />
+        <Stop offset="0%" stopColor="#7EB3FF" />
+        <Stop offset="100%" stopColor="#3D5AFE" />
       </LinearGradient>
+      <RadialGradient id="ambientLime" cx="0.5" cy="0.5" r="0.5">
+        <Stop offset="0%" stopColor="rgba(57,255,20,0.10)" />
+        <Stop offset="100%" stopColor="rgba(57,255,20,0)" />
+      </RadialGradient>
+      <RadialGradient id="ambientAmber" cx="0.5" cy="0.5" r="0.5">
+        <Stop offset="0%" stopColor="rgba(255,193,7,0.10)" />
+        <Stop offset="100%" stopColor="rgba(255,193,7,0)" />
+      </RadialGradient>
+      <RadialGradient id="ambientRed" cx="0.5" cy="0.5" r="0.5">
+        <Stop offset="0%" stopColor="rgba(255,23,68,0.10)" />
+        <Stop offset="100%" stopColor="rgba(255,23,68,0)" />
+      </RadialGradient>
+      <RadialGradient id="ambientTeal" cx="0.5" cy="0.5" r="0.5">
+        <Stop offset="0%" stopColor="rgba(0,245,212,0.10)" />
+        <Stop offset="100%" stopColor="rgba(0,245,212,0)" />
+      </RadialGradient>
+      <RadialGradient id="ambientMagenta" cx="0.5" cy="0.5" r="0.5">
+        <Stop offset="0%" stopColor="rgba(255,0,255,0.10)" />
+        <Stop offset="100%" stopColor="rgba(255,0,255,0)" />
+      </RadialGradient>
+      <RadialGradient id="ambientBlue" cx="0.5" cy="0.5" r="0.5">
+        <Stop offset="0%" stopColor="rgba(0,194,255,0.10)" />
+        <Stop offset="100%" stopColor="rgba(0,194,255,0)" />
+      </RadialGradient>
       <Filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
-        <FeGaussianBlur stdDeviation="6" />
+        <FeGaussianBlur stdDeviation="8" />
       </Filter>
     </Defs>
   </Svg>
@@ -73,10 +107,13 @@ const ProgressRing: React.FC<{
   label: string;
   gradient: string;
   glow: string;
-}> = React.memo(({ value, target, label, gradient, glow }) => {
+  ambient: string;
+}> = React.memo(({ value, target, label, gradient, glow, ambient }) => {
   const size = 120;
   const radius = 48;
   const strokeWidth = 12;
+  const glowWidth = strokeWidth + 8;
+  const ambientSize = size + 32;
   const circumference = 2 * Math.PI * radius;
 
   const rawPct = target && target > 0 ? (value / target) * 100 : null;
@@ -86,6 +123,7 @@ const ProgressRing: React.FC<{
 
   const offsetAnim = useRef(new Animated.Value(circumference)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
+  const glowScale = Animated.divide(glowOpacity, 0.45);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -123,7 +161,24 @@ const ProgressRing: React.FC<{
           easing: Easing.out(Easing.cubic),
           useNativeDriver: false,
         }),
-      ]).start();
+      ]).start(({ finished }) => {
+        if (finished) {
+          Animated.sequence([
+            Animated.timing(glowOpacity, {
+              toValue: 0.6,
+              duration: 500,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: false,
+            }),
+            Animated.timing(glowOpacity, {
+              toValue: 0.45,
+              duration: 500,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: false,
+            }),
+          ]).start();
+        }
+      });
     }
   }, [finalOffset, rawPct, reduceMotion, offsetAnim, glowOpacity, circumference]);
 
@@ -135,6 +190,18 @@ const ProgressRing: React.FC<{
   return (
     <View style={styles.tile} accessibilityLabel={accessibilityLabel}>
       <View style={styles.ringWrap}>
+        <Svg
+          width={ambientSize}
+          height={ambientSize}
+          style={{ position: 'absolute', left: (size - ambientSize) / 2, top: (size - ambientSize) / 2 }}
+        >
+          <Circle
+            cx={ambientSize / 2}
+            cy={ambientSize / 2}
+            r={ambientSize / 2}
+            fill={`url(#${ambient})`}
+          />
+        </Svg>
         <Svg width={size} height={size}>
           <Circle
             cx={size / 2}
@@ -146,20 +213,64 @@ const ProgressRing: React.FC<{
           />
           {rawPct !== null && (
             <>
-              <AnimatedCircle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke={glow}
-                strokeWidth={strokeWidth}
-                strokeLinecap={p === 1 ? 'butt' : 'round'}
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={offsetAnim}
-                opacity={glowOpacity}
-                filter="url(#ringGlow)"
-                transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              />
+              {Platform.OS === 'android' ? (
+                <>
+                  <AnimatedCircle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke={glow}
+                    strokeWidth={strokeWidth + 6}
+                    strokeLinecap={p === 1 ? 'butt' : 'round'}
+                    fill="none"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offsetAnim}
+                    opacity={Animated.multiply(glowScale, 0.28)}
+                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                  />
+                  <AnimatedCircle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke={glow}
+                    strokeWidth={strokeWidth + 10}
+                    strokeLinecap={p === 1 ? 'butt' : 'round'}
+                    fill="none"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offsetAnim}
+                    opacity={Animated.multiply(glowScale, 0.18)}
+                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                  />
+                  <AnimatedCircle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke={glow}
+                    strokeWidth={strokeWidth + 14}
+                    strokeLinecap={p === 1 ? 'butt' : 'round'}
+                    fill="none"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offsetAnim}
+                    opacity={Animated.multiply(glowScale, 0.1)}
+                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                  />
+                </>
+              ) : (
+                <AnimatedCircle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke={glow}
+                  strokeWidth={glowWidth}
+                  strokeLinecap={p === 1 ? 'butt' : 'round'}
+                  fill="none"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offsetAnim}
+                  opacity={glowOpacity}
+                  filter="url(#ringGlow)"
+                  transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                />
+              )}
               <AnimatedCircle
                 cx={size / 2}
                 cy={size / 2}
@@ -171,6 +282,18 @@ const ProgressRing: React.FC<{
                 strokeDasharray={circumference}
                 strokeDashoffset={offsetAnim}
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
+              <AnimatedCircle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth={1.5}
+                strokeLinecap={p === 1 ? 'butt' : 'round'}
+                fill="none"
+                strokeDasharray={circumference}
+                strokeDashoffset={offsetAnim}
+                transform={`translate(0 -0.5) rotate(-90 ${size / 2} ${size / 2})`}
               />
             </>
           )}
@@ -227,10 +350,12 @@ const NutritionStatsScreen: React.FC<{
   );
 
   const caloriePct = kcalTarget > 0 ? (dayTotals.calories / kcalTarget) * 100 : null;
-  let calColors = { gradient: 'gradGreen', glow: '#22C55E' };
+  let calColors = { gradient: 'gradLime', glow: '#39FF14', ambient: 'ambientLime' };
   if (caloriePct != null) {
-    if (caloriePct > 110) calColors = { gradient: 'gradRed', glow: '#EF4444' };
-    else if (caloriePct > 100) calColors = { gradient: 'gradAmber', glow: '#FFC107' };
+    if (caloriePct > 110)
+      calColors = { gradient: 'gradRed', glow: '#FF1744', ambient: 'ambientRed' };
+    else if (caloriePct > 100)
+      calColors = { gradient: 'gradAmber', glow: '#FFC107', ambient: 'ambientAmber' };
   }
 
   const cards = [
@@ -241,22 +366,25 @@ const NutritionStatsScreen: React.FC<{
       target: kcalTarget,
       gradient: calColors.gradient,
       glow: calColors.glow,
+      ambient: calColors.ambient,
     },
     {
       key: 'protein',
       label: 'Белки',
       value: dayTotals.protein,
       target: proteinTarget,
-      gradient: 'gradGreen',
-      glow: '#00FFFF',
+      gradient: 'gradTeal',
+      glow: '#00F5D4',
+      ambient: 'ambientTeal',
     },
     {
       key: 'fat',
       label: 'Жиры',
       value: dayTotals.fat,
       target: fatTarget,
-      gradient: 'gradRed',
+      gradient: 'gradMagenta',
       glow: '#FF00FF',
+      ambient: 'ambientMagenta',
     },
     {
       key: 'carbs',
@@ -264,7 +392,8 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.carbs,
       target: carbsTarget,
       gradient: 'gradBlue',
-      glow: '#FF8000',
+      glow: '#00C2FF',
+      ambient: 'ambientBlue',
     },
   ];
 
@@ -287,6 +416,7 @@ const NutritionStatsScreen: React.FC<{
             label={c.label}
             gradient={c.gradient}
             glow={c.glow}
+            ambient={c.ambient}
           />
         ))}
       </View>
@@ -335,11 +465,11 @@ const styles = StyleSheet.create({
   },
   percent: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
   },
   label: {
-    color: '#fff',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 14,
     marginTop: 4,
   },
