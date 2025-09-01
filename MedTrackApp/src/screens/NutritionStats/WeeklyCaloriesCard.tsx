@@ -186,7 +186,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
           accessibilityLabel={bestAccLabel}
         >
           <Text style={styles.badgeLabel}>Лучший день</Text>
-          <Text style={[styles.badgeValue, styles.bestValue]}>{hasData ? `🥇 ${bestValue}` : '—'}</Text>
+          <Text style={[styles.badgeValue, styles.bestValue]}>{hasData ? `${bestValue}` : '—'}</Text>
         </View>
         <View
           style={[styles.badge, styles.worstBadge]}
@@ -194,7 +194,7 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
           accessibilityLabel={worstAccLabel}
         >
           <Text style={styles.badgeLabel}>Худший день</Text>
-          <Text style={[styles.badgeValue, styles.worstValue]}>{hasData ? `⚠️ ${worstValue}` : '—'}</Text>
+          <Text style={[styles.badgeValue, styles.worstValue]}>{hasData ? `${worstValue}` : '—'}</Text>
         </View>
       </View>
     </View>
