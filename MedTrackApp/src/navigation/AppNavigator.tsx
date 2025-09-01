@@ -56,10 +56,12 @@ const DietStack = () => (
         headerShown: true,
         headerBackTitle: 'Назад',
         headerBackTitleVisible: true,
+        headerLargeTitle: false,
+        headerTransparent: false,
         headerTintColor: '#fff',
         headerStyle: { backgroundColor: '#000' },
         headerShadowVisible: false,
-        headerTitleStyle: { color: '#fff' },
+        headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
       }}
     />
   </Stack.Navigator>

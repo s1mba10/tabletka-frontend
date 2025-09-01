@@ -278,9 +278,14 @@ const NutritionStatsScreen: React.FC<{
 
   useEffect(() => {
     navigation.setOptions({
-      headerStyle: { backgroundColor: '#000' },
+      title: 'Статистика питания',
+      headerBackTitle: 'Назад',
+      headerBackTitleVisible: true,
+      headerLargeTitle: false,
+      headerTransparent: false,
       headerShadowVisible: false,
-      headerTitleStyle: { color: '#fff' },
+      headerStyle: { backgroundColor: '#000' },
+      headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
       headerTintColor: '#fff',
     });
   }, [navigation]);
@@ -292,9 +297,12 @@ const NutritionStatsScreen: React.FC<{
           style={styles.scroll}
           contentContainerStyle={styles.container}
           contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustsScrollIndicatorInsets={false}
           overScrollMode="never"
           bounces
         >
+          <View style={{ height: 8 }} />
           <RingDefs />
           <View style={styles.cardRow}>
             {cards.map(c => (
@@ -332,7 +340,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   container: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
     backgroundColor: '#000',
   },
   cardRow: {
