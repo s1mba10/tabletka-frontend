@@ -4,3 +4,5 @@ export { default as NutritionCalendar } from './NutritionCalendar';
 export { default as MacronutrientSummary } from './MacronutrientSummary';
 export { default as MealPanel } from './MealPanel';
 export { default as AddFoodModal } from './AddFoodModal';
+export { default as DietChart } from './DietChart';
+export type { ChartData } from './DietChart';

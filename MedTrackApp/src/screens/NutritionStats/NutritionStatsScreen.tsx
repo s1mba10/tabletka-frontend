@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, { Circle } from 'react-native-svg';
-import { BarChart } from 'react-native-chart-kit';
+// Chart component
+import { DietChart, ChartData } from '../../components';
 import { addDays, format, parseISO } from 'date-fns';
 
 import { RootStackParamList } from '../../navigation';
@@ -142,7 +143,7 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
   );
 
   const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const chartData = {
+  const chartData: ChartData = {
     labels,
     datasets: [
       {
@@ -150,7 +151,7 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
         colors: barColors.map(c => () => c),
       },
     ],
-  } as any;
+  };
 
   const totalCalories = weekTotals.calories;
   const avgCalories = totalCalories / 7;
@@ -194,23 +195,10 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
           <Text style={styles.metricText}>Всего: {formatNumber(totalCalories)} ккал</Text>
           <Text style={styles.metricText}>В среднем: {formatNumber(avgCalories)} ккал/день</Text>
         </View>
-        <BarChart
+        <DietChart
           data={chartData}
           width={Dimensions.get('window').width - 48}
           height={180}
-          fromZero
-          withInnerLines={false}
-          showValuesOnTopOfBars
-          chartConfig={{
-            backgroundGradientFrom: '#1E1E1E',
-            backgroundGradientTo: '#1E1E1E',
-            decimalPlaces: 0,
-            color: () => '#FFC107',
-            labelColor: () => '#fff',
-            propsForBackgroundLines: { stroke: '#333' },
-            useShadowColorFromDataset: true,
-          }}
-          style={{ marginVertical: 8 }}
         />
         <View style={styles.legendRow}>
           <Text style={styles.legendText}>
