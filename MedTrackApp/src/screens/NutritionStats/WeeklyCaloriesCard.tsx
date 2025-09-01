@@ -52,11 +52,28 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
     deltaLabel = `${diff >= 0 ? '+' : ''}${Math.round(diff)}%`;
     deltaColor = diff >= 0 ? '#22C55E' : '#EF4444';
   }
-
-  const daysAtOrAboveTarget = days.filter(d => d.target && d.calories >= d.target).length;
   const withData = days.filter(d => d.calories > 0);
-  const bestDay = withData.reduce((best, cur) => (cur.calories > best.calories ? cur : best), withData[0] || { label: '', calories: 0 });
-  const worstDay = withData.reduce((worst, cur) => (cur.calories < worst.calories ? cur : worst), withData[0] || { label: '', calories: 0 });
+  const bestDay = withData.reduce(
+    (best, cur) => (cur.calories > best.calories ? cur : best),
+    withData[0] || { label: '', calories: 0 },
+  );
+  const worstDay = withData.reduce(
+    (worst, cur) => (cur.calories < worst.calories ? cur : worst),
+    withData[0] || { label: '', calories: 0 },
+  );
+  const hasData = withData.length > 0;
+  const bestValue = hasData
+    ? `${bestDay.label} · ${formatNumber(bestDay.calories, 0)} ккал`
+    : '—';
+  const worstValue = hasData
+    ? `${worstDay.label} · ${formatNumber(worstDay.calories, 0)} ккал`
+    : '—';
+  const bestAccLabel = hasData
+    ? `Лучший день: ${fullDayMap[bestDay.label]} — ${formatNumber(bestDay.calories, 0)} килокалорий`
+    : 'Лучший день: данных нет';
+  const worstAccLabel = hasData
+    ? `Худший день: ${fullDayMap[worstDay.label]} — ${formatNumber(worstDay.calories, 0)} килокалорий`
+    : 'Худший день: данных нет';
 
   const maxValue = Math.max(
     ...days.map(d => d.calories),
@@ -162,14 +179,23 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
         </View>
       )}
 
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>
-          Лучш. день: {bestDay.label || '—'} {bestDay.calories ? formatNumber(bestDay.calories, 0) : ''}
-        </Text>
-        <Text style={styles.footerText}>
-          Худш. день: {worstDay.label || '—'} {worstDay.calories ? formatNumber(worstDay.calories, 0) : ''}
-        </Text>
-        <Text style={styles.footerText}>Дней ≥ цели: {daysAtOrAboveTarget}</Text>
+      <View style={styles.footerBadgesRow}>
+        <View
+          style={[styles.badge, styles.bestBadge]}
+          accessible
+          accessibilityLabel={bestAccLabel}
+        >
+          <Text style={styles.badgeLabel}>Лучший день</Text>
+          <Text style={[styles.badgeValue, styles.bestValue]}>{hasData ? `${bestValue}` : '—'}</Text>
+        </View>
+        <View
+          style={[styles.badge, styles.worstBadge]}
+          accessible
+          accessibilityLabel={worstAccLabel}
+        >
+          <Text style={styles.badgeLabel}>Худший день</Text>
+          <Text style={[styles.badgeValue, styles.worstValue]}>{hasData ? `${worstValue}` : '—'}</Text>
+        </View>
       </View>
     </View>
   );
@@ -258,13 +284,40 @@ const styles = StyleSheet.create({
   segment: {
     height: '100%',
   },
-  footerRow: {
+  footerBadgesRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 8,
+    flexWrap: 'wrap',
   },
-  footerText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
+  badge: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bestBadge: {
+    backgroundColor: 'rgba(34,197,94,0.15)',
+  },
+  worstBadge: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
+  },
+  badgeLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  badgeValue: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  bestValue: {
+    color: '#22C55E',
+  },
+  worstValue: {
+    color: '#EF4444',
   },
   emptyText: {
     color: '#fff',
