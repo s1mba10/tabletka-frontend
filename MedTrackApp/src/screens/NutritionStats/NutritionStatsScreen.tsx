@@ -1,8 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  AccessibilityInfo,
+  Animated,
+  Easing,
+} from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient,
+  Stop,
+  Filter,
+  FeGaussianBlur,
+} from 'react-native-svg';
 import { addDays, format, parseISO } from 'date-fns';
 
 import { RootStackParamList } from '../../navigation';
@@ -10,16 +25,14 @@ import { loadDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
 import WeeklyCaloriesCard from './WeeklyCaloriesCard';
-
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 
-type RouteProps = RouteProp<RootStackParamList, 'NutritionStats'>;
-type NavProps = StackNavigationProp<RootStackParamList, 'NutritionStats'>;
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const targetCalories = 3300;
-const targetProtein = 120;
-const targetFat = 80;
-const targetCarbs = 300;
+const kcalTarget = 3300;
+const proteinTarget = 120;
+const fatTarget = 80;
+const carbsTarget = 300;
 
 const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
   breakfast: [],
@@ -28,68 +41,177 @@ const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
   snack: [],
 });
 
-const NeonCircle: React.FC<{
-  percent: number;
+const RingDefs = React.memo(() => (
+  <Svg width="0" height="0">
+    <Defs>
+      <LinearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#34D399" />
+        <Stop offset="100%" stopColor="#22C55E" />
+      </LinearGradient>
+      <LinearGradient id="gradAmber" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#FFD54F" />
+        <Stop offset="100%" stopColor="#FFC107" />
+      </LinearGradient>
+      <LinearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#FF6B6B" />
+        <Stop offset="100%" stopColor="#EF4444" />
+      </LinearGradient>
+      <LinearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#60A5FA" />
+        <Stop offset="100%" stopColor="#3B82F6" />
+      </LinearGradient>
+      <Filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <FeGaussianBlur stdDeviation="6" />
+      </Filter>
+    </Defs>
+  </Svg>
+));
+
+const clampDisplay = (n: number) => Math.min(300, Math.max(0, Math.round(n)));
+
+const ProgressRing: React.FC<{
+  value: number;
+  target?: number | null;
   label: string;
-  consumed: number;
-  target: number;
-  color: string;
-}> = ({ percent, label, consumed, target, color }) => {
-  const radius = 40;
-  const strokeWidth = 8;
-  const normalizedPercent = Math.min(percent, 100);
+  gradient: string;
+  glow: string;
+}> = React.memo(({ value, target, label, gradient, glow }) => {
+  const size = 120;
+  const radius = 48;
+  const strokeWidth = 12;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset =
-    circumference - (normalizedPercent / 100) * circumference;
-  const pctLabel = `${Math.round(percent)}%`;
+
+  const pct = target && target > 0 ? (value / target) * 100 : null;
+  const clamped = pct === null ? 0 : Math.min(Math.max(pct, 0), 300);
+  const displayPct = pct === null ? '—%' : `${clampDisplay(pct)}%`;
+  const finalOffset = circumference - (circumference * clamped) / 100;
+
+  const offsetAnim = useRef(new Animated.Value(circumference)).current;
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => {
+      // @ts-ignore types mismatch across RN versions
+      if (sub && typeof sub.remove === 'function') sub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pct === null) {
+      offsetAnim.setValue(circumference);
+      glowOpacity.setValue(0);
+      return;
+    }
+    if (reduceMotion) {
+      offsetAnim.setValue(finalOffset);
+      glowOpacity.setValue(0.45);
+    } else {
+      Animated.parallel([
+        Animated.timing(offsetAnim, {
+          toValue: finalOffset,
+          duration: 700,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowOpacity, {
+          toValue: 0.45,
+          duration: 700,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }
+  }, [finalOffset, pct, reduceMotion, offsetAnim, glowOpacity, circumference]);
+
+  const accessibilityLabel =
+    pct === null
+      ? `${label}: цель не задана`
+      : `${label}: ${clampDisplay(pct)} процента от цели за выбранный день`;
 
   return (
-    <View style={styles.card}> 
-      <Svg width={radius * 2} height={radius * 2}>
-        <Circle
-          cx={radius}
-          cy={radius}
-          r={radius}
-          stroke="#333"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx={radius}
-          cy={radius}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-        />
-      </Svg>
-      <View style={styles.circleContent}>
-        <Text style={styles.circlePercent}>{pctLabel}</Text>
-        <Text style={styles.circleLabel}>{label}</Text>
-        <Text style={styles.circleSub}>{`${formatNumber(consumed)}/${formatNumber(target)}${label === 'Калории' ? ' ккал' : ' г'}`}</Text>
+    <View style={styles.tile} accessibilityLabel={accessibilityLabel}>
+      <View style={styles.ringWrap}>
+        <Svg width={size} height={size}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          {pct !== null && (
+            <>
+              <AnimatedCircle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke={glow}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                fill="none"
+                strokeDasharray={`${circumference} ${circumference}`}
+                strokeDashoffset={offsetAnim}
+                opacity={glowOpacity}
+                filter="url(#ringGlow)"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
+              <AnimatedCircle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke={`url(#${gradient})`}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                fill="none"
+                strokeDasharray={`${circumference} ${circumference}`}
+                strokeDashoffset={offsetAnim}
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
+            </>
+          )}
+        </Svg>
+        <View style={styles.labelCenter} pointerEvents="none">
+          <Text style={styles.percent}>{displayPct}</Text>
+          <Text style={styles.label}>{label}</Text>
+        </View>
       </View>
     </View>
   );
-};
+});
 
-const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }> = ({ route }) => {
-  const { weekStart } = route.params;
-  const [entries, setEntries] = useState<Record<string, Record<MealType, NormalizedEntry[]>>>({});
+const NutritionStatsScreen: React.FC<{
+  route: RouteProp<RootStackParamList, 'NutritionStats'>;
+  navigation: StackNavigationProp<RootStackParamList, 'NutritionStats'>;
+}> = ({ route }) => {
+  const { selectedDate } = route.params;
+  const [entries, setEntries] = useState<
+    Record<string, Record<MealType, NormalizedEntry[]>>
+  >({});
 
   useEffect(() => {
     loadDiary().then(data => setEntries(data));
   }, []);
 
+  const dayTotals = useMemo(() => {
+    const dayEntries = entries[selectedDate] || createEmptyDay();
+    return aggregateMeals(dayEntries).dayTotals;
+  }, [entries, selectedDate]);
+
   const weekDates = useMemo(() => {
-    const start = parseISO(weekStart);
+    const start = parseISO(selectedDate);
+    const monday = addDays(start, -((start.getDay() + 6) % 7));
     return Array.from({ length: 7 }).map((_, i) => {
-      const d = addDays(start, i);
+      const d = addDays(monday, i);
       return format(d, 'yyyy-MM-dd');
     });
-  }, [weekStart]);
+  }, [selectedDate]);
 
   const dailyTotals = weekDates.map(date => {
     const dayEntries = entries[date] || createEmptyDay();
@@ -106,34 +228,45 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
     { calories: 0, protein: 0, fat: 0, carbs: 0 },
   );
 
+  const caloriePct = kcalTarget > 0 ? (dayTotals.calories / kcalTarget) * 100 : null;
+  let calColors = { gradient: 'gradGreen', glow: '#22C55E' };
+  if (caloriePct != null) {
+    if (caloriePct > 110) calColors = { gradient: 'gradRed', glow: '#EF4444' };
+    else if (caloriePct > 100) calColors = { gradient: 'gradAmber', glow: '#FFC107' };
+  }
+
   const cards = [
     {
+      key: 'calories',
       label: 'Калории',
-      color: '#FFC107',
-      consumed: weekTotals.calories,
-      target: targetCalories * 7,
-      percent: (weekTotals.calories / (targetCalories * 7)) * 100,
+      value: dayTotals.calories,
+      target: kcalTarget,
+      gradient: calColors.gradient,
+      glow: calColors.glow,
     },
     {
+      key: 'protein',
       label: 'Белки',
-      color: '#22C55E',
-      consumed: weekTotals.protein,
-      target: targetProtein * 7,
-      percent: (weekTotals.protein / (targetProtein * 7)) * 100,
+      value: dayTotals.protein,
+      target: proteinTarget,
+      gradient: 'gradGreen',
+      glow: '#22C55E',
     },
     {
+      key: 'fat',
       label: 'Жиры',
-      color: '#EF4444',
-      consumed: weekTotals.fat,
-      target: targetFat * 7,
-      percent: (weekTotals.fat / (targetFat * 7)) * 100,
+      value: dayTotals.fat,
+      target: fatTarget,
+      gradient: 'gradRed',
+      glow: '#EF4444',
     },
     {
+      key: 'carbs',
       label: 'Углеводы',
-      color: '#3B82F6',
-      consumed: weekTotals.carbs,
-      target: targetCarbs * 7,
-      percent: (weekTotals.carbs / (targetCarbs * 7)) * 100,
+      value: dayTotals.carbs,
+      target: carbsTarget,
+      gradient: 'gradBlue',
+      glow: '#3B82F6',
     },
   ];
 
@@ -141,20 +274,21 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
   const dailyData = labels.map((label, i) => ({
     label,
     calories: dailyTotals[i].calories,
-    target: targetCalories,
+    target: kcalTarget,
   }));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <RingDefs />
       <View style={styles.cardRow}>
         {cards.map(c => (
-          <NeonCircle
-            key={c.label}
-            percent={c.percent}
-            label={c.label}
-            consumed={c.consumed}
+          <ProgressRing
+            key={c.key}
+            value={c.value}
             target={c.target}
-            color={c.color}
+            label={c.label}
+            gradient={c.gradient}
+            glow={c.glow}
           />
         ))}
       </View>
@@ -175,11 +309,11 @@ const NutritionStatsScreen: React.FC<{ route: RouteProps; navigation: NavProps }
               styles.summaryValue,
               {
                 color:
-                  weekTotals.calories - targetCalories * 7 >= 0 ? '#EF4444' : '#22C55E',
+                  weekTotals.calories - kcalTarget * 7 >= 0 ? '#EF4444' : '#22C55E',
               },
             ]}
           >
-            {formatNumber(weekTotals.calories - targetCalories * 7)} ккал
+            {formatNumber(weekTotals.calories - kcalTarget * 7)} ккал
           </Text>
         </View>
       </View>
@@ -197,37 +331,40 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  card: {
+  tile: {
     width: '48%',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#1C1C1E',
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     alignItems: 'center',
+    overflow: 'visible',
   },
-  circleContent: {
-    position: 'absolute',
+  ringWrap: {
+    width: 120,
+    height: 120,
+    overflow: 'visible',
     alignItems: 'center',
     justifyContent: 'center',
-    top: 16,
+  },
+  labelCenter: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  circlePercent: {
+  percent: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
   },
-  circleLabel: {
+  label: {
     color: '#fff',
-    marginTop: 4,
     fontSize: 14,
-  },
-  circleSub: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-    marginTop: 2,
+    marginTop: 4,
   },
   summaryCard: {
     backgroundColor: '#1E1E1E',
@@ -252,3 +389,4 @@ const styles = StyleSheet.create({
 });
 
 export default NutritionStatsScreen;
+

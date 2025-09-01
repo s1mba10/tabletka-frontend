@@ -264,12 +264,10 @@ const DietScreen: React.FC = () => {
       return;
     }
     lastNavTime.current = now;
-    const start = addDays(new Date(), weekOffset * 7);
-    const monday = addDays(start, -((start.getDay() + 6) % 7));
     navigation.navigate('NutritionStats', {
-      weekStart: format(monday, 'yyyy-MM-dd'),
+      selectedDate,
     });
-  }, [navigation, weekOffset]);
+  }, [navigation, selectedDate]);
 
   return (
     <SafeAreaView style={styles.container}>
