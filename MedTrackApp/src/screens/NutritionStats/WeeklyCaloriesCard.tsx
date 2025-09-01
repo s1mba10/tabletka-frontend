@@ -53,10 +53,19 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
     deltaColor = diff >= 0 ? '#22C55E' : '#EF4444';
   }
 
-  const daysAtOrAboveTarget = days.filter(d => d.target && d.calories >= d.target).length;
-  const withData = days.filter(d => d.calories > 0);
-  const bestDay = withData.reduce((best, cur) => (cur.calories > best.calories ? cur : best), withData[0] || { label: '', calories: 0 });
-  const worstDay = withData.reduce((worst, cur) => (cur.calories < worst.calories ? cur : worst), withData[0] || { label: '', calories: 0 });
+  const allZero = days.every(d => d.calories === 0);
+  let minDay: DayData | null = null;
+  let maxDay: DayData | null = null;
+  if (!allZero) {
+    days.forEach(day => {
+      if (day.calories > 0 && (!minDay || day.calories < minDay.calories)) {
+        minDay = day;
+      }
+      if (!maxDay || day.calories > maxDay.calories) {
+        maxDay = day;
+      }
+    });
+  }
 
   const maxValue = Math.max(
     ...days.map(d => d.calories),
@@ -161,15 +170,33 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
           <View style={[styles.segment, { flex: surplusCount, backgroundColor: '#EF4444' }]} />
         </View>
       )}
-
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>
-          Лучш. день: {bestDay.label || '—'} {bestDay.calories ? formatNumber(bestDay.calories, 0) : ''}
-        </Text>
-        <Text style={styles.footerText}>
-          Худш. день: {worstDay.label || '—'} {worstDay.calories ? formatNumber(worstDay.calories, 0) : ''}
-        </Text>
-        <Text style={styles.footerText}>Дней ≥ цели: {daysAtOrAboveTarget}</Text>
+      <View style={styles.chipsRow}>
+        <View
+          style={[styles.chip, styles.chipMin]}
+          accessible
+          accessibilityLabel=
+            {minDay
+              ? `Минимум за неделю: ${fullDayMap[minDay.label]}, ${formatNumber(minDay.calories, 0)} килокалорий`
+              : 'Минимум за неделю: данных нет'}
+        >
+          <Text style={styles.chipTitle}>Минимум за неделю</Text>
+          <Text style={[styles.chipValue, { color: '#22C55E' }]}>
+            {minDay ? `${minDay.label} · ${formatNumber(minDay.calories, 0)} ккал` : '—'}
+          </Text>
+        </View>
+        <View
+          style={[styles.chip, styles.chipMax]}
+          accessible
+          accessibilityLabel=
+            {maxDay
+              ? `Максимум за неделю: ${fullDayMap[maxDay.label]}, ${formatNumber(maxDay.calories, 0)} килокалорий`
+              : 'Максимум за неделю: данных нет'}
+        >
+          <Text style={styles.chipTitle}>Максимум за неделю</Text>
+          <Text style={[styles.chipValue, { color: '#EF4444' }]}>
+            {maxDay ? `${maxDay.label} · ${formatNumber(maxDay.calories, 0)} ккал` : '—'}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -258,13 +285,34 @@ const styles = StyleSheet.create({
   segment: {
     height: '100%',
   },
-  footerRow: {
+  chipsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  footerText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
+  chip: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  chipMin: {
+    backgroundColor: 'rgba(34,197,94,0.12)',
+  },
+  chipMax: {
+    backgroundColor: 'rgba(239,68,68,0.12)',
+  },
+  chipTitle: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  chipValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 2,
   },
   emptyText: {
     color: '#fff',
