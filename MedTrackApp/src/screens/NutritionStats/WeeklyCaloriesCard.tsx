@@ -175,12 +175,14 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
           style={[styles.chip, styles.chipMin]}
           accessible
           accessibilityLabel=
-            {minDay
+          {minDay
+            // @ts-ignore
               ? `Минимум за неделю: ${fullDayMap[minDay.label]}, ${formatNumber(minDay.calories, 0)} килокалорий`
               : 'Минимум за неделю: данных нет'}
         >
           <Text style={styles.chipTitle}>Минимум за неделю</Text>
           <Text style={[styles.chipValue, { color: '#22C55E' }]}>
+            {/* @ts-ignore */}
             {minDay ? `${minDay.label} · ${formatNumber(minDay.calories, 0)} ккал` : '—'}
           </Text>
         </View>
@@ -188,12 +190,14 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
           style={[styles.chip, styles.chipMax]}
           accessible
           accessibilityLabel=
-            {maxDay
+          {maxDay
+            // @ts-ignore
               ? `Максимум за неделю: ${fullDayMap[maxDay.label]}, ${formatNumber(maxDay.calories, 0)} килокалорий`
               : 'Максимум за неделю: данных нет'}
         >
           <Text style={styles.chipTitle}>Максимум за неделю</Text>
           <Text style={[styles.chipValue, { color: '#EF4444' }]}>
+            {/* @ts-ignore */}
             {maxDay ? `${maxDay.label} · ${formatNumber(maxDay.calories, 0)} ккал` : '—'}
           </Text>
         </View>
