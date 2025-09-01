@@ -1,14 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  Platform,
-} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, {
@@ -28,8 +19,6 @@ import { aggregateMeals } from '../../nutrition/aggregate';
 import WeeklyCaloriesCard from './WeeklyCaloriesCard';
 import WeeklyMacrosRow from './WeeklyMacrosRow';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const kcalTarget = 3300;
 const proteinTarget = 120;
@@ -121,67 +110,6 @@ const ProgressRing: React.FC<{
   const p = rawPct == null ? 0 : Math.max(0, Math.min(rawPct, 100)) / 100;
   const finalOffset = circumference * (1 - p);
 
-  const offsetAnim = useRef(new Animated.Value(circumference)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
-  const glowScale = Animated.divide(glowOpacity, 0.45);
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
-    const sub = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      setReduceMotion,
-    );
-    return () => {
-      // @ts-ignore types mismatch across RN versions
-      if (sub && typeof sub.remove === 'function') sub.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (rawPct === null) {
-      offsetAnim.setValue(circumference);
-      glowOpacity.setValue(0);
-      return;
-    }
-    if (reduceMotion) {
-      offsetAnim.setValue(finalOffset);
-      glowOpacity.setValue(0.45);
-    } else {
-      Animated.parallel([
-        Animated.timing(offsetAnim, {
-          toValue: finalOffset,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowOpacity, {
-          toValue: 0.45,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-      ]).start(({ finished }) => {
-        if (finished) {
-          Animated.sequence([
-            Animated.timing(glowOpacity, {
-              toValue: 0.6,
-              duration: 500,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: false,
-            }),
-            Animated.timing(glowOpacity, {
-              toValue: 0.45,
-              duration: 500,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: false,
-            }),
-          ]).start();
-        }
-      });
-    }
-  }, [finalOffset, rawPct, reduceMotion, offsetAnim, glowOpacity, circumference]);
-
   const accessibilityLabel =
     rawPct === null
       ? `${label}: цель не задана`
@@ -215,7 +143,7 @@ const ProgressRing: React.FC<{
             <>
               {Platform.OS === 'android' ? (
                 <>
-                  <AnimatedCircle
+                  <Circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
@@ -224,11 +152,11 @@ const ProgressRing: React.FC<{
                     strokeLinecap={p === 1 ? 'butt' : 'round'}
                     fill="none"
                     strokeDasharray={circumference}
-                    strokeDashoffset={offsetAnim}
-                    opacity={Animated.multiply(glowScale, 0.28)}
+                    strokeDashoffset={finalOffset}
+                    opacity={0.28}
                     transform={`rotate(-90 ${size / 2} ${size / 2})`}
                   />
-                  <AnimatedCircle
+                  <Circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
@@ -237,11 +165,11 @@ const ProgressRing: React.FC<{
                     strokeLinecap={p === 1 ? 'butt' : 'round'}
                     fill="none"
                     strokeDasharray={circumference}
-                    strokeDashoffset={offsetAnim}
-                    opacity={Animated.multiply(glowScale, 0.18)}
+                    strokeDashoffset={finalOffset}
+                    opacity={0.18}
                     transform={`rotate(-90 ${size / 2} ${size / 2})`}
                   />
-                  <AnimatedCircle
+                  <Circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
@@ -250,13 +178,13 @@ const ProgressRing: React.FC<{
                     strokeLinecap={p === 1 ? 'butt' : 'round'}
                     fill="none"
                     strokeDasharray={circumference}
-                    strokeDashoffset={offsetAnim}
-                    opacity={Animated.multiply(glowScale, 0.1)}
+                    strokeDashoffset={finalOffset}
+                    opacity={0.1}
                     transform={`rotate(-90 ${size / 2} ${size / 2})`}
                   />
                 </>
               ) : (
-                <AnimatedCircle
+                <Circle
                   cx={size / 2}
                   cy={size / 2}
                   r={radius}
@@ -265,13 +193,13 @@ const ProgressRing: React.FC<{
                   strokeLinecap={p === 1 ? 'butt' : 'round'}
                   fill="none"
                   strokeDasharray={circumference}
-                  strokeDashoffset={offsetAnim}
-                  opacity={glowOpacity}
+                  strokeDashoffset={finalOffset}
+                  opacity={0.45}
                   filter="url(#ringGlow)"
                   transform={`rotate(-90 ${size / 2} ${size / 2})`}
                 />
               )}
-              <AnimatedCircle
+              <Circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
@@ -280,10 +208,10 @@ const ProgressRing: React.FC<{
                 strokeLinecap={p === 1 ? 'butt' : 'round'}
                 fill="none"
                 strokeDasharray={circumference}
-                strokeDashoffset={offsetAnim}
+                strokeDashoffset={finalOffset}
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
-              <AnimatedCircle
+              <Circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
@@ -292,7 +220,7 @@ const ProgressRing: React.FC<{
                 strokeLinecap={p === 1 ? 'butt' : 'round'}
                 fill="none"
                 strokeDasharray={circumference}
-                strokeDashoffset={offsetAnim}
+                strokeDashoffset={finalOffset}
                 transform={`translate(0 -0.5) rotate(-90 ${size / 2} ${size / 2})`}
               />
             </>
@@ -352,10 +280,11 @@ const NutritionStatsScreen: React.FC<{
   const caloriePct = kcalTarget > 0 ? (dayTotals.calories / kcalTarget) * 100 : null;
   let calColors = { gradient: 'gradLime', glow: '#39FF14', ambient: 'ambientLime' };
   if (caloriePct != null) {
-    if (caloriePct > 110)
+    if (caloriePct > 110) {
       calColors = { gradient: 'gradRed', glow: '#FF1744', ambient: 'ambientRed' };
-    else if (caloriePct > 100)
+    } else if (caloriePct > 100) {
       calColors = { gradient: 'gradAmber', glow: '#FFC107', ambient: 'ambientAmber' };
+    }
   }
 
   const cards = [
