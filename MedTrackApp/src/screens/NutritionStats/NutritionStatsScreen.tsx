@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Svg, {
   Circle,
   Defs,
@@ -276,9 +278,9 @@ const NutritionStatsScreen: React.FC<{
     target: kcalTarget,
   }));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     navigation.setOptions({
-      title: 'Статистика питания',
+      headerTitle: 'Статистика питания',
       headerBackTitle: 'Назад',
       headerBackTitleVisible: true,
       headerLargeTitle: false,
@@ -287,6 +289,16 @@ const NutritionStatsScreen: React.FC<{
       headerStyle: { backgroundColor: '#000', height: 44 },
       headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
       headerTintColor: '#fff',
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={24} color="#fff" />
+          <Text style={styles.backLabel}>Назад</Text>
+        </TouchableOpacity>
+      ),
     });
   }, [navigation]);
 
@@ -343,6 +355,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 24,
     backgroundColor: '#000',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: -8,
+  },
+  backLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 4,
   },
   cardRow: {
     flexDirection: 'row',
