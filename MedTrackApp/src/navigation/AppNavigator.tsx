@@ -15,6 +15,7 @@ import BodyDiaryScreen from '../screens/BodyDiaryScreen';
 import DietScreen from '../screens/DietScreen';
 import TrainingScreen from '../screens/TrainingScreen';
 import FoodEditScreen from '../screens/FoodEditScreen';
+import NutritionStatsScreen from '../screens/NutritionStats';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -47,6 +48,17 @@ const DietStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Diet" component={DietScreen} />
     <Stack.Screen name="FoodEdit" component={FoodEditScreen} />
+    <Stack.Screen
+      name="NutritionStats"
+      component={NutritionStatsScreen}
+      options={{
+        title: 'Статистика питания',
+        headerShown: true,
+        headerTintColor: '#fff',
+        headerStyle: { backgroundColor: '#000' },
+        headerTitleStyle: { color: '#fff' },
+      }}
+    />
   </Stack.Navigator>
 );
 

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, Platform, ToastAndroid, Alert } from 'react-native';
+import { ScrollView, Platform, ToastAndroid, Alert, TouchableOpacity } from 'react-native';
 import { format, addDays } from 'date-fns';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -22,6 +22,7 @@ const DietScreen: React.FC = () => {
   );
 
   const navigation = useNavigation<NavProp>();
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
     breakfast: [],
@@ -256,15 +257,27 @@ const DietScreen: React.FC = () => {
           getHasFoodByDate={getHasFoodByDate}
           onCopyFromYesterday={handleCopyFromYesterday}
           onClearDay={handleClearDay}
+          onPrevWeek={() => setWeekOffset(w => w - 1)}
+          onNextWeek={() => setWeekOffset(w => w + 1)}
         />
-        <MacronutrientSummary
-          caloriesConsumed={dayTotals.calories}
-          targetCalories={targetCalories}
-          rskPercent={dayRskDisplay}
-          protein={dayTotals.protein}
-          fat={dayTotals.fat}
-          carbs={dayTotals.carbs}
-        />
+        <TouchableOpacity
+          onPress={() => {
+            const start = addDays(new Date(), weekOffset * 7);
+            const monday = addDays(start, -((start.getDay() + 6) % 7));
+            navigation.navigate('NutritionStats', {
+              weekStart: format(monday, 'yyyy-MM-dd'),
+            });
+          }}
+        >
+          <MacronutrientSummary
+            caloriesConsumed={dayTotals.calories}
+            targetCalories={targetCalories}
+            rskPercent={dayRskDisplay}
+            protein={dayTotals.protein}
+            fat={dayTotals.fat}
+            carbs={dayTotals.carbs}
+          />
+        </TouchableOpacity>
         {meals.map(meal => (
           <MealPanel
             key={meal.mealKey}

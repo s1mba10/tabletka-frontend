@@ -30,4 +30,7 @@ export type RootStackParamList = {
     meal: MealType;
     entryId: string;
   };
+  NutritionStats: {
+    weekStart: string;
+  };
 };
