@@ -248,7 +248,7 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.protein,
       target: proteinTarget,
       gradient: 'gradGreen',
-      glow: '#22C55E',
+      glow: '#00FFFF',
     },
     {
       key: 'fat',
@@ -256,7 +256,7 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.fat,
       target: fatTarget,
       gradient: 'gradRed',
-      glow: '#EF4444',
+      glow: '#FF00FF',
     },
     {
       key: 'carbs',
@@ -264,7 +264,7 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.carbs,
       target: carbsTarget,
       gradient: 'gradBlue',
-      glow: '#3B82F6',
+      glow: '#FF8000',
     },
   ];
 
