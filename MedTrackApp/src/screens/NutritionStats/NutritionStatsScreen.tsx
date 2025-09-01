@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, {
@@ -275,30 +276,61 @@ const NutritionStatsScreen: React.FC<{
     target: kcalTarget,
   }));
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerStyle: { backgroundColor: '#000' },
+      headerShadowVisible: false,
+      headerTitleStyle: { color: '#fff' },
+      headerTintColor: '#fff',
+    });
+  }, [navigation]);
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <RingDefs />
-      <View style={styles.cardRow}>
-        {cards.map(c => (
-          <ProgressRing
-            key={c.key}
-            value={c.value}
-            target={c.target}
-            label={c.label}
-            gradient={c.gradient}
-            glow={c.glow}
-          />
-        ))}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.wrapper}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          contentInsetAdjustmentBehavior="never"
+          overScrollMode="never"
+          bounces
+        >
+          <RingDefs />
+          <View style={styles.cardRow}>
+            {cards.map(c => (
+              <ProgressRing
+                key={c.key}
+                value={c.value}
+                target={c.target}
+                label={c.label}
+                gradient={c.gradient}
+                glow={c.glow}
+              />
+            ))}
+          </View>
+
+          <WeeklyCaloriesCard days={dailyData} />
+
+          <WeeklyMacrosRow totals={weekTotals} kcalTarget={kcalTarget} />
+        </ScrollView>
       </View>
-
-      <WeeklyCaloriesCard days={dailyData} />
-
-      <WeeklyMacrosRow totals={weekTotals} kcalTarget={kcalTarget} />
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   container: {
     padding: 16,
     backgroundColor: '#000',
