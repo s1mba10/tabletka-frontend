@@ -1,6 +1,6 @@
 # Here is plans for app
 
-
+- на экране NutritionStats убрать снизу сверху белый background, стрелку назад сделать стрелкой назад а не diet
 - скачать самые популярные календари и посмотреть юзабилити. 
 - Add dynamic island with timer progress bar when it is time to take reminder. 
 - Checking that field medication name is not empty
