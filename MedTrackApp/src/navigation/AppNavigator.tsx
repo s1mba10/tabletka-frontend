@@ -54,9 +54,14 @@ const DietStack = () => (
       options={{
         title: 'Статистика питания',
         headerShown: true,
+        headerBackTitle: 'Назад',
+        headerBackTitleVisible: true,
+        headerLargeTitle: false,
+        headerTransparent: false,
         headerTintColor: '#fff',
-        headerStyle: { backgroundColor: '#000' },
-        headerTitleStyle: { color: '#fff' },
+        headerStyle: { backgroundColor: '#000', height: 44 },
+        headerShadowVisible: false,
+        headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
       }}
     />
   </Stack.Navigator>

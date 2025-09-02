@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,12 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
+  TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Svg, {
   Circle,
   Defs,
@@ -187,7 +190,7 @@ const ProgressRing: React.FC<{
 const NutritionStatsScreen: React.FC<{
   route: RouteProp<RootStackParamList, 'NutritionStats'>;
   navigation: StackNavigationProp<RootStackParamList, 'NutritionStats'>;
-}> = ({ route }) => {
+}> = ({ route, navigation }) => {
   const { selectedDate } = route.params;
   const [entries, setEntries] = useState<
     Record<string, Record<MealType, NormalizedEntry[]>>
@@ -275,33 +278,93 @@ const NutritionStatsScreen: React.FC<{
     target: kcalTarget,
   }));
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Статистика питания',
+      headerBackTitle: 'Назад',
+      headerBackTitleVisible: true,
+      headerLargeTitle: false,
+      headerTransparent: false,
+      headerShadowVisible: false,
+      headerStyle: { backgroundColor: '#000', height: 44 },
+      headerTitleStyle: { color: '#fff', fontSize: 16, fontWeight: '600' },
+      headerTintColor: '#fff',
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={24} color="#fff" />
+          <Text style={styles.backLabel}>Назад</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <RingDefs />
-      <View style={styles.cardRow}>
-        {cards.map(c => (
-          <ProgressRing
-            key={c.key}
-            value={c.value}
-            target={c.target}
-            label={c.label}
-            gradient={c.gradient}
-            glow={c.glow}
-          />
-        ))}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.wrapper}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustsScrollIndicatorInsets={false}
+          overScrollMode="never"
+          bounces
+        >
+          <View style={{ height: 8 }} />
+          <RingDefs />
+          <View style={styles.cardRow}>
+            {cards.map(c => (
+              <ProgressRing
+                key={c.key}
+                value={c.value}
+                target={c.target}
+                label={c.label}
+                gradient={c.gradient}
+                glow={c.glow}
+              />
+            ))}
+          </View>
+
+          <WeeklyCaloriesCard days={dailyData} />
+
+          <WeeklyMacrosRow totals={weekTotals} kcalTarget={kcalTarget} />
+        </ScrollView>
       </View>
-
-      <WeeklyCaloriesCard days={dailyData} />
-
-      <WeeklyMacrosRow totals={weekTotals} kcalTarget={kcalTarget} />
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  safeArea: {
+    flex: 1,
     backgroundColor: '#000',
+  },
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  container: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: -8,
+  },
+  backLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 4,
   },
   cardRow: {
     flexDirection: 'row',
