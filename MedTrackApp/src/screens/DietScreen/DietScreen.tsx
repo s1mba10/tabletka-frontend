@@ -301,12 +301,6 @@ const DietScreen: React.FC = () => {
               fat={dayTotals.fat}
               carbs={dayTotals.carbs}
             />
-            <Icon
-              name="chevron-right"
-              size={16}
-              color="rgba(255,255,255,0.6)"
-              style={summaryStyles.chevron}
-            />
           </View>
         </Pressable>
         {meals.map(meal => (
