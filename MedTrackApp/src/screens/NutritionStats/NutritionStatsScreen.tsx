@@ -61,7 +61,7 @@ const RingDefs = React.memo(() => (
         <Stop offset="100%" stopColor="#3B82F6" />
       </LinearGradient>
       <Filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
-        <FeGaussianBlur stdDeviation="6" />
+        <FeGaussianBlur stdDeviation="9" />
       </Filter>
     </Defs>
   </Svg>
@@ -124,7 +124,7 @@ const ProgressRing: React.FC<{
   return (
     <View style={styles.tile} accessibilityLabel={accessibilityLabel}>
       <View style={styles.ringWrap}>
-        <Svg width={size} height={size}>
+        <Svg width={size} height={size} style={{ overflow: 'visible' }}>
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -135,6 +135,20 @@ const ProgressRing: React.FC<{
           />
           {rawPct !== null && (
             <>
+              <AnimatedCircle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke={glow}
+                strokeWidth={strokeWidth + 8}
+                strokeLinecap={p === 1 ? 'butt' : 'round'}
+                fill="none"
+                strokeDasharray={circumference}
+                strokeDashoffset={offsetAnim}
+                opacity={0.25}
+                filter="url(#ringGlow)"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
               <AnimatedCircle
                 cx={size / 2}
                 cy={size / 2}
