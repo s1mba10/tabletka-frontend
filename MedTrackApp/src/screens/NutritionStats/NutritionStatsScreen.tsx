@@ -1,3 +1,4 @@
+// screens/nutrition/NutritionStatsScreen.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -29,6 +30,7 @@ import { MealType, NormalizedEntry } from '../../nutrition/types';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+// targets (mock)
 const kcalTarget = 3300;
 const proteinTarget = 120;
 const fatTarget = 80;
@@ -41,11 +43,16 @@ const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
   snack: [],
 });
 
+/**
+ * Neon gradients + blur filter
+ * (Made a bit brighter vs previous version)
+ */
 const RingDefs = React.memo(() => (
   <Svg width="0" height="0">
     <Defs>
+      {/* Neon-leaning gradients (used only as optional sheen) */}
       <LinearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#34D399" />
+        <Stop offset="0%" stopColor="#39FF14" />
         <Stop offset="100%" stopColor="#22C55E" />
       </LinearGradient>
       <LinearGradient id="gradAmber" x1="0" y1="0" x2="0" y2="1">
@@ -54,12 +61,14 @@ const RingDefs = React.memo(() => (
       </LinearGradient>
       <LinearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
         <Stop offset="0%" stopColor="#FF6B6B" />
-        <Stop offset="100%" stopColor="#EF4444" />
+        <Stop offset="100%" stopColor="#FF2D55" />
       </LinearGradient>
       <LinearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#60A5FA" />
+        <Stop offset="0%" stopColor="#4FC3FF" />
         <Stop offset="100%" stopColor="#3B82F6" />
       </LinearGradient>
+
+      {/* Soft glow */}
       <Filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
         <FeGaussianBlur stdDeviation="9" />
       </Filter>
@@ -67,12 +76,16 @@ const RingDefs = React.memo(() => (
   </Svg>
 ));
 
+/**
+ * Single neon progress ring (now uses a vivid solid “crisp” arc,
+ * plus two glow passes underneath to avoid the “dim” look).
+ */
 const ProgressRing: React.FC<{
   value: number;
   target?: number | null;
   label: string;
-  gradient: string;
-  glow: string;
+  gradient: string; // kept for subtle sheen (optional)
+  glow: string;     // also used as crispColor for non-calorie rings
 }> = React.memo(({ value, target, label, gradient, glow }) => {
   const size = 120;
   const radius = 48;
@@ -94,7 +107,7 @@ const ProgressRing: React.FC<{
       setReduceMotion,
     );
     return () => {
-      // @ts-ignore types mismatch across RN versions
+      // @ts-ignore RN versions differ
       if (sub && typeof sub.remove === 'function') sub.remove();
     };
   }, []);
@@ -116,6 +129,16 @@ const ProgressRing: React.FC<{
     }
   }, [finalOffset, rawPct, reduceMotion, offsetAnim, circumference]);
 
+  // Calories ring color switches by % of target like bars do (green/amber/red).
+  // For other rings we keep the brand neon colors from props.glow.
+  let crispColor = glow;
+  if (label === 'Калории') {
+    const pct = rawPct ?? 0;
+    if (pct > 110) crispColor = '#EF4444';
+    else if (pct > 100) crispColor = '#FFC107';
+    else crispColor = '#22C55E';
+  }
+
   const accessibilityLabel =
     rawPct === null
       ? `${label}: цель не задана`
@@ -125,6 +148,7 @@ const ProgressRing: React.FC<{
     <View style={styles.tile} accessibilityLabel={accessibilityLabel}>
       <View style={styles.ringWrap}>
         <Svg width={size} height={size} style={{ overflow: 'visible' }}>
+          {/* Track */}
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -135,6 +159,7 @@ const ProgressRing: React.FC<{
           />
           {rawPct !== null && (
             <>
+              {/* OUTER glow (wide, faint) */}
               <AnimatedCircle
                 cx={size / 2}
                 cy={size / 2}
@@ -145,10 +170,11 @@ const ProgressRing: React.FC<{
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={offsetAnim}
-                opacity={0.25}
+                opacity={0.15}
                 filter="url(#ringGlow)"
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
+              {/* INNER glow (narrower, stronger) */}
               <AnimatedCircle
                 cx={size / 2}
                 cy={size / 2}
@@ -163,6 +189,20 @@ const ProgressRing: React.FC<{
                 filter="url(#ringGlow)"
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
+              {/* CRISP vivid arc — SOLID, no opacity */}
+              <AnimatedCircle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke={crispColor}
+                strokeWidth={strokeWidth}
+                strokeLinecap={p === 1 ? 'butt' : 'round'}
+                fill="none"
+                strokeDasharray={circumference}
+                strokeDashoffset={offsetAnim}
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
+              {/* Optional subtle sheen — tiny gradient overlay (very low opacity) */}
               <AnimatedCircle
                 cx={size / 2}
                 cy={size / 2}
@@ -173,11 +213,13 @@ const ProgressRing: React.FC<{
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={offsetAnim}
+                opacity={0.25}
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
             </>
           )}
         </Svg>
+
         <View style={styles.labelCenter} pointerEvents="none">
           <Text style={styles.percent}>{displayPct}</Text>
           <Text style={styles.label}>{label}</Text>
@@ -200,11 +242,13 @@ const NutritionStatsScreen: React.FC<{
     loadDiary().then(data => setEntries(data));
   }, []);
 
+  // Selected day totals (rings show per-day, not week sums)
   const dayTotals = useMemo(() => {
     const dayEntries = entries[selectedDate] || createEmptyDay();
     return aggregateMeals(dayEntries).dayTotals;
   }, [entries, selectedDate]);
 
+  // Build current week date list (Mon..Sun)
   const weekDates = useMemo(() => {
     const start = parseISO(selectedDate);
     const monday = addDays(start, -((start.getDay() + 6) % 7));
@@ -229,6 +273,7 @@ const NutritionStatsScreen: React.FC<{
     { calories: 0, protein: 0, fat: 0, carbs: 0 },
   );
 
+  // Calories ring color thresholds (like main progress logic)
   const caloriePct = kcalTarget > 0 ? (dayTotals.calories / kcalTarget) * 100 : null;
   let calColors = { gradient: 'gradGreen', glow: '#22C55E' };
   if (caloriePct != null) {
@@ -251,7 +296,7 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.protein,
       target: proteinTarget,
       gradient: 'gradGreen',
-      glow: '#00FFFF',
+      glow: '#FF40FF',
     },
     {
       key: 'fat',
@@ -259,7 +304,7 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.fat,
       target: fatTarget,
       gradient: 'gradRed',
-      glow: '#FF00FF',
+      glow: '#00E5FF',
     },
     {
       key: 'carbs',
@@ -267,7 +312,7 @@ const NutritionStatsScreen: React.FC<{
       value: dayTotals.carbs,
       target: carbsTarget,
       gradient: 'gradBlue',
-      glow: '#FF8000',
+      glow: '#00FFD5',
     },
   ];
 
@@ -295,7 +340,6 @@ const NutritionStatsScreen: React.FC<{
       </View>
 
       <WeeklyCaloriesCard days={dailyData} />
-
       <WeeklyMacrosRow totals={weekTotals} kcalTarget={kcalTarget} />
     </ScrollView>
   );
@@ -354,4 +398,3 @@ const styles = StyleSheet.create({
 });
 
 export default NutritionStatsScreen;
-
