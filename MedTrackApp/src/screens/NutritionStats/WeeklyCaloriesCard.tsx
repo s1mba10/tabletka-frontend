@@ -152,6 +152,10 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
                     {
                       height: barHeight,
                       backgroundColor: color,
+                      shadowColor: color,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 6,
                     },
                   ]}
                 />
@@ -282,7 +286,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 10,
     borderRadius: 5,
-    overflow: 'hidden',
     marginBottom: 8,
   },
   segment: {
@@ -290,12 +293,28 @@ const styles = StyleSheet.create({
   },
   segmentDeficit: {
     backgroundColor: '#22C55E',
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
   },
   segmentNorm: {
     backgroundColor: '#FFC107',
+    shadowColor: '#FFC107',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   segmentSurplus: {
     backgroundColor: '#EF4444',
+    borderTopRightRadius: 5,
+    borderBottomRightRadius: 5,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
   },
   chipsRow: {
     flexDirection: 'row',
