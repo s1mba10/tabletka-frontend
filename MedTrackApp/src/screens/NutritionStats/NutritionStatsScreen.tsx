@@ -276,7 +276,7 @@ const NutritionStatsScreen: React.FC<{
   }));
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <RingDefs />
       <View style={styles.cardRow}>
         {cards.map(c => (
@@ -299,9 +299,14 @@ const NutritionStatsScreen: React.FC<{
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   container: {
     padding: 16,
     backgroundColor: '#000',
+    flexGrow: 1,
   },
   cardRow: {
     flexDirection: 'row',
