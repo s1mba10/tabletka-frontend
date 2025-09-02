@@ -152,6 +152,11 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
                     {
                       height: barHeight,
                       backgroundColor: color,
+                      shadowColor: color,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: color === 'transparent' ? 0 : 0.8,
+                      shadowRadius: 8,
+                      elevation: color === 'transparent' ? 0 : 6,
                     },
                   ]}
                 />
@@ -243,6 +248,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginBottom: 12,
     paddingHorizontal: 4,
+    overflow: 'visible',
   },
   barWrapper: {
     width: 16,
@@ -250,6 +256,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     marginHorizontal: 6,
+    overflow: 'visible',
   },
   track: {
     position: 'absolute',

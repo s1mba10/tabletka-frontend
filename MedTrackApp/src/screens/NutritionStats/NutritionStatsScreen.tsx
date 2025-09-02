@@ -85,7 +85,6 @@ const ProgressRing: React.FC<{
   const finalOffset = circumference * (1 - p);
 
   const offsetAnim = useRef(new Animated.Value(circumference)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -103,29 +102,19 @@ const ProgressRing: React.FC<{
   useEffect(() => {
     if (rawPct === null) {
       offsetAnim.setValue(circumference);
-      glowOpacity.setValue(0);
       return;
     }
     if (reduceMotion) {
       offsetAnim.setValue(finalOffset);
-      glowOpacity.setValue(0.45);
     } else {
-      Animated.parallel([
-        Animated.timing(offsetAnim, {
-          toValue: finalOffset,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowOpacity, {
-          toValue: 0.45,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-      ]).start();
+      Animated.timing(offsetAnim, {
+        toValue: finalOffset,
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
     }
-  }, [finalOffset, rawPct, reduceMotion, offsetAnim, glowOpacity, circumference]);
+  }, [finalOffset, rawPct, reduceMotion, offsetAnim, circumference]);
 
   const accessibilityLabel =
     rawPct === null
@@ -156,7 +145,7 @@ const ProgressRing: React.FC<{
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={offsetAnim}
-                opacity={glowOpacity}
+                opacity={0.45}
                 filter="url(#ringGlow)"
                 transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
