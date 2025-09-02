@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import Svg, { Rect, Defs, Filter, FeGaussianBlur } from 'react-native-svg';
 import { formatNumber } from '../../utils/number';
 
 interface DayData {
@@ -58,13 +59,10 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
     });
   }
 
-  const maxValue = Math.max(
-    ...days.map(d => d.calories),
-    ...days.map(d => (d.target ?? 0) * 1.2),
-    1,
-  );
-
   const hasTargets = days.some(d => d.target != null);
+  const maxValue = hasTargets
+    ? Math.max(...days.map(d => (d.target ?? 0) * 1.2), 1)
+    : Math.max(...days.map(d => d.calories), 1);
 
   const deficitCount = days.filter(d => d.target && d.calories < d.target).length;
   const normCount = days.filter(d => d.target && d.calories >= d.target && d.calories <= (d.target * 1.2)).length;
@@ -111,31 +109,37 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
 
       <View style={styles.barsRow}>
         {days.map((day, i) => {
-          const pctOfMax = day.calories / maxValue;
+          const hasData = day.calories > 0;
+          const pctOfMax = hasData ? Math.min(day.calories / maxValue, 1) : 0;
           const barHeight = animations[i].interpolate({
             inputRange: [0, 1],
             outputRange: [0, maxBarHeight * pctOfMax],
           });
 
-          let color = 'transparent';
-          if (day.calories > 0) {
+          let barColor: string | null = null;
+          if (hasData) {
             if (!day.target) {
-              color = 'rgba(34,197,94,0.8)';
+              barColor = '#22C55E';
             } else {
-              const pct = (day.calories / day.target) * 100;
-              if (pct <= 100) {
-                color = '#22C55E';
-              } else if (pct <= 120) {
-                color = '#FFC107';
-              } else {
-                color = '#EF4444';
-              }
+              const pct = day.calories / day.target;
+              if (pct <= 1) barColor = '#22C55E';
+              else if (pct <= 1.2) barColor = '#F59E0B';
+              else barColor = '#EF4444';
             }
           }
 
-          const accessibilityLabel = day.target
-            ? `${fullDayMap[day.label]}: ${formatNumber(day.calories, 0)} килокалорий, ${Math.round((day.calories / day.target) * 100)} процентов от цели`
-            : `${fullDayMap[day.label]}: ${formatNumber(day.calories, 0)} килокалорий`;
+          const glowColorMap: Record<string, string> = {
+            '#22C55E': 'rgba(34,197,94,0.5)',
+            '#F59E0B': 'rgba(245,158,11,0.5)',
+            '#EF4444': 'rgba(239,68,68,0.5)',
+          };
+          const glow = barColor ? glowColorMap[barColor] : undefined;
+
+          const accessibilityLabel = hasData
+            ? day.target
+              ? `${fullDayMap[day.label]}: ${formatNumber(day.calories, 0)} килокалорий, ${Math.round((day.calories / day.target) * 100)} процентов от цели`
+              : `${fullDayMap[day.label]}: ${formatNumber(day.calories, 0)} килокалорий`
+            : `${fullDayMap[day.label]}: данных нет`;
 
           return (
             <View key={day.label} accessible accessibilityLabel={accessibilityLabel}>
@@ -146,15 +150,26 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
                     style={[styles.targetLine, { bottom: (day.target / maxValue) * maxBarHeight }]}
                   />
                 )}
-                <Animated.View
-                  style={[
-                    styles.bar,
-                    {
-                      height: barHeight,
-                      backgroundColor: color,
-                    },
-                  ]}
-                />
+                {hasData && barColor && (
+                  <Animated.View style={[styles.bar, { height: barHeight }]}> 
+                    <Svg width={16} height="100%">
+                      <Defs>
+                        <Filter id={`glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
+                          <FeGaussianBlur stdDeviation={6} />
+                        </Filter>
+                      </Defs>
+                      <Rect
+                        width={16}
+                        height="100%"
+                        rx={8}
+                        ry={8}
+                        fill={glow}
+                        filter={`url(#glow-${i})`}
+                      />
+                      <Rect width={16} height="100%" rx={8} ry={8} fill={barColor} />
+                    </Svg>
+                  </Animated.View>
+                )}
               </View>
               <Text style={styles.dayLabel}>{day.label}</Text>
             </View>
@@ -263,7 +278,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: 16,
-    borderRadius: 8,
   },
   targetLine: {
     position: 'absolute',
