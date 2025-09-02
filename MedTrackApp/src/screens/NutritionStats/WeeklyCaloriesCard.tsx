@@ -169,9 +169,43 @@ const WeeklyCaloriesCard: React.FC<Props> = ({ days, onAddFood }) => {
 
       {hasTargets && (
         <View style={styles.segmentBar}>
-          <View style={[styles.segment, styles.segmentDeficit, deficitStyle]} />
-          <View style={[styles.segment, styles.segmentNorm, normStyle]} />
-          <View style={[styles.segment, styles.segmentSurplus, surplusStyle]} />
+          <View style={styles.segmentTrack} />
+          <View
+            style={[
+              styles.segment,
+              styles.segmentDeficit,
+              deficitStyle,
+              styles.segmentGlowBase,
+              {
+                shadowColor: '#22C55E',
+                shadowOpacity: deficitCount > 0 ? 0.5 : 0,
+              },
+            ]}
+          />
+          <View
+            style={[
+              styles.segment,
+              styles.segmentNorm,
+              normStyle,
+              styles.segmentGlowBase,
+              {
+                shadowColor: '#FFC107',
+                shadowOpacity: normCount > 0 ? 0.35 : 0,
+              },
+            ]}
+          />
+          <View
+            style={[
+              styles.segment,
+              styles.segmentSurplus,
+              surplusStyle,
+              styles.segmentGlowBase,
+              {
+                shadowColor: '#EF4444',
+                shadowOpacity: surplusCount > 0 ? 0.6 : 0,
+              },
+            ]}
+          />
         </View>
       )}
       <View style={styles.chipsRow}>
@@ -289,11 +323,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 10,
     borderRadius: 5,
-    overflow: 'hidden',
     marginBottom: 8,
+    overflow: 'visible',
+    position: 'relative',
+  },
+  segmentTrack: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   segment: {
     height: '100%',
+    borderRadius: 5,
+    minWidth: 0,
+  },
+  segmentGlowBase: {
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
+    shadowOpacity: 0.5,
+    elevation: 6,
   },
   segmentDeficit: {
     backgroundColor: '#22C55E',
