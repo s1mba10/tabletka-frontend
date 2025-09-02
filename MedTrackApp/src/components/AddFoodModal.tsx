@@ -40,7 +40,6 @@ const mealTitles: Record<string, string> = {
   snack: 'Перекус/Другое',
 };
 
-
 const showToast = (message: string) => {
   if (Platform.OS === 'android') {
     ToastAndroid.show(message, ToastAndroid.SHORT);
@@ -69,8 +68,11 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [userCatalog, setUserCatalog] = useState<UserCatalogItem[]>([]);
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
-  const [selectedCatalog, setSelectedCatalog] = useState<CatalogItem | null>(null);
+
+  // FIX: хранить выбранное как объединение, а не только CatalogItem
+  const [selectedCatalog, setSelectedCatalog] = useState<CatalogItem | UserCatalogItem | null>(null);
   const [selectedSource, setSelectedSource] = useState<'catalog' | 'user' | null>(null);
+
   const [selectedFavorite, setSelectedFavorite] = useState<FavoriteItem | null>(null);
   const [selectedRecent, setSelectedRecent] = useState<RecentItem | null>(null);
   const [portion, setPortion] = useState('');
@@ -119,6 +121,27 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     }
   }, [favorites, tab]);
 
+  const favKey = (f: FavoriteItem) => f.sourceId || `fav-${f.id}`;
+
+  const itemKey = (
+    item: CatalogItem | UserCatalogItem | FavoriteItem,
+    type: 'catalog' | 'user' | 'favorite',
+  ) => (type === 'favorite' ? favKey(item as FavoriteItem) : (item as CatalogItem | UserCatalogItem).id);
+
+  // FIX: поднял вычисление allSearchItems ВЫШЕ всех useEffect, которые на него ссылаются
+  const allSearchItems = useMemo<SearchItem[]>(() => {
+    const map = new Map<string, SearchItem>();
+    localCatalog.forEach(it => map.set(itemKey(it, 'catalog'), { type: 'catalog', item: it }));
+    userCatalog.forEach(it => map.set(itemKey(it, 'user'), { type: 'user', item: it }));
+    favorites.forEach(it =>
+      map.set(itemKey(it, 'favorite'), { type: 'favorite', item: it }),
+    );
+    return Array.from(map.values()).sort((a, b) =>
+      a.item.name.localeCompare(b.item.name, 'ru'),
+    );
+  }, [userCatalog, favorites]);
+
+  // FIX: этот эффект теперь после объявления allSearchItems
   useEffect(() => {
     if (!ingredientPickerVisible) return;
     const q = ingredientSearch.trim().toLowerCase();
@@ -136,26 +159,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     return () => clearTimeout(timer);
   }, [ingredientSearch, allSearchItems, ingredientPickerVisible]);
 
-
-  const favKey = (f: FavoriteItem) => f.sourceId || `fav-${f.id}`;
-
-  const itemKey = (
-    item: CatalogItem | UserCatalogItem | FavoriteItem,
-    type: 'catalog' | 'user' | 'favorite',
-  ) => (type === 'favorite' ? favKey(item as FavoriteItem) : item.id);
-
-  const allSearchItems = useMemo<SearchItem[]>(() => {
-    const map = new Map<string, SearchItem>();
-    localCatalog.forEach(it => map.set(itemKey(it, 'catalog'), { type: 'catalog', item: it }));
-    userCatalog.forEach(it => map.set(itemKey(it, 'user'), { type: 'user', item: it }));
-    favorites.forEach(it =>
-      map.set(itemKey(it, 'favorite'), { type: 'favorite', item: it }),
-    );
-    return Array.from(map.values()).sort((a, b) =>
-      a.item.name.localeCompare(b.item.name, 'ru'),
-    );
-  }, [userCatalog, favorites]);
-
   useEffect(() => {
     const q = query.trim().toLowerCase();
     const timer = setTimeout(() => {
@@ -169,8 +172,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       }
       const res = allSearchItems.filter(it => {
         const name = it.item.name.toLowerCase();
-        const brand = (it.type === 'catalog' && it.item.brand
-          ? it.item.brand.toLowerCase()
+        const brand = (it.type === 'catalog' && (it.item as CatalogItem).brand
+          ? (it.item as CatalogItem).brand!.toLowerCase()
           : '');
         return name.includes(q) || brand.includes(q);
       });
@@ -217,7 +220,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       carbs: dishTotals.carbs * factor,
     };
   }, [dishTotals, dishWeightNum]);
-
 
   const computed = useMemo(() => {
     if (selectedCatalog) {
@@ -519,7 +521,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       const newFav: FavoriteItem = {
         id: Math.random().toString(),
         sourceId: (base as any).sourceId || (base as any).id,
-        name: base.name,
+        name: (base as any).name,
         per100g: (base as any).per100g,
         defaultPortionGrams: (base as any).defaultPortionGrams,
         createdAt: Date.now(),
@@ -601,7 +603,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                   : '',
               );
             } else {
-              setSelectedCatalog(data as CatalogItem);
+              // FIX: сохраняем как объединённый тип + правильный источник
+              setSelectedCatalog(data as CatalogItem | UserCatalogItem);
               setSelectedSource(item.type === 'catalog' ? 'catalog' : 'user');
             }
           }}
@@ -751,7 +754,12 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const handleToggle = () => {
       if (selectedCatalog) {
         const type = selectedSource === 'user' ? 'user' : 'catalog';
-        toggleFavorite({ type, item: selectedCatalog });
+        // FIX: создаём корректный SearchItem по источнику
+        if (type === 'catalog') {
+          toggleFavorite({ type: 'catalog', item: selectedCatalog as CatalogItem });
+        } else {
+          toggleFavorite({ type: 'user', item: selectedCatalog as UserCatalogItem });
+        }
       } else if (selectedFavorite) {
         toggleFavorite({ type: 'favorite', item: selectedFavorite });
       } else if (selectedRecent) {
@@ -802,6 +810,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       <Text style={styles.label}>Название</Text>
       <TextInput
         placeholder="Без названия"
+        placeholderTextColor="#777"
         style={styles.input}
         value={manualName}
         onChangeText={setManualName}
