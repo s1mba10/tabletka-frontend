@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Нужно для чтения показателей (шаги, пульс, тренировки, вес).</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Нужно для записи данных (например, веса) в «Здоровье».</string>
 	<key>UIAppFonts</key>
 	<array>
 	<string>MaterialCommunityIcons.ttf</string>
