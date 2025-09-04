@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   Animated,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -21,7 +22,7 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -38,9 +39,7 @@ import { useCountdown, useCourses } from '../../hooks';
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
   return items.map((r) => {
-    if (r.status === 'taken' || r.status === 'missed') {
-      return r;
-    }
+    if (r.status === 'taken' || r.status === 'missed') return r;
     const due = new Date(`${r.date}T${r.time}`);
     return now >= due.getTime() + 15 * 60 * 1000
       ? { ...r, status: 'missed' }
@@ -52,7 +51,11 @@ const MedCalendarScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'MedCalendar'>>();
   const { removeCourse } = useCourses();
-  
+
+  const insets = useSafeAreaInsets();
+  // На Android даём ровно высоту статус-бара/выреза; снизу — 0 (без лишней чёрной полосы)
+  const androidTopPad = Platform.OS === 'android' ? Math.max(insets.top, 8) : 0;
+
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -86,180 +89,124 @@ const MedCalendarScreen: React.FC = () => {
     setPickerVisible(false);
   };
 
-  // Load reminders from storage on component mount
   useEffect(() => {
     const loadReminders = async () => {
       try {
         const storedReminders = await AsyncStorage.getItem('reminders');
-        if (storedReminders) {
-          const parsed: Reminder[] = JSON.parse(storedReminders);
-          setReminders(applyStatusRules(parsed));
-        }
+        if (storedReminders) setReminders(applyStatusRules(JSON.parse(storedReminders)));
       } catch (error) {
         console.error('Failed to load reminders:', error);
       }
     };
-
     loadReminders();
 
-    const interval = setInterval(() => {
-      setReminders(prev => applyStatusRules(prev));
-    }, 60 * 1000);
-
+    const interval = setInterval(() => setReminders(prev => applyStatusRules(prev)), 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Save reminders and stats to storage when they change
   useEffect(() => {
     const saveData = async () => {
       try {
         await AsyncStorage.setItem('reminders', JSON.stringify(reminders));
-
         const total_taken = reminders.filter(r => r.status === 'taken').length;
         const total_missed = reminders.filter(r => r.status === 'missed').length;
         const total = total_taken + total_missed;
         const adherence_percentage = total > 0 ? (total_taken / total) * 100 : 0;
         await AsyncStorage.setItem(
           'userStats',
-          JSON.stringify({ total_taken, total_missed, adherence_percentage })
+          JSON.stringify({ total_taken, total_missed, adherence_percentage }),
         );
       } catch (error) {
         console.error('Failed to save reminders:', error);
       }
     };
-
-    if (reminders.length > 0) {
-      saveData();
-    }
+    if (reminders.length > 0) saveData();
   }, [reminders]);
 
-  // Handle navigation focus and route params
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       const params = route.params;
-
       if (params?.forceRefresh) {
         AsyncStorage.getItem('reminders').then(stored => {
-          if (stored) {
-            try {
-              setReminders(applyStatusRules(JSON.parse(stored)));
-            } catch {
-              setReminders([]);
-            }
-          } else {
-            setReminders([]);
-          }
+          if (!stored) return setReminders([]);
+          try { setReminders(applyStatusRules(JSON.parse(stored))); }
+          catch { setReminders([]); }
         });
         navigation.setParams({ forceRefresh: undefined });
       }
 
-      if (params) {
-        if (params.newReminders?.length) {
-          setReminders(prev =>
-            applyStatusRules([...prev, ...params.newReminders!]),
-          );
-          
-          const reminderDates = params.newReminders.map(r => r.date);
-          if (!reminderDates.includes(selectedDate) && reminderDates.length > 0) {
-            setSelectedDate(reminderDates[0]);
-          }
+      if (!params) return;
 
-          navigation.setParams({ newReminders: undefined });
-        } else if (params.newReminder) {
-          if (params.newReminder.date !== selectedDate) {
-            setSelectedDate(params.newReminder.date);
-          }
+      if (params.newReminders?.length) {
+        setReminders(prev => applyStatusRules([...prev, ...params.newReminders!]));
+        const ds = params.newReminders.map(r => r.date);
+        if (!ds.includes(selectedDate) && ds.length > 0) setSelectedDate(ds[0]);
+        navigation.setParams({ newReminders: undefined });
+      } else if (params.newReminder) {
+        if (params.newReminder.date !== selectedDate) setSelectedDate(params.newReminder.date);
+        setReminders(prev => applyStatusRules([...prev, params.newReminder!]));
+        navigation.setParams({ newReminder: undefined });
+      }
 
-          setReminders(prev => applyStatusRules([...prev, params.newReminder!]));
-          navigation.setParams({ newReminder: undefined });
-        }
-
-        if (params.updatedReminder) {
-          setReminders(prev =>
-            applyStatusRules(
-              prev.map(reminder =>
-                reminder.id === params.updatedReminder!.id
-                  ? params.updatedReminder!
-                  : reminder
-              )
-            )
-          );
-          navigation.setParams({ updatedReminder: undefined });
-        }
+      if (params.updatedReminder) {
+        setReminders(prev =>
+          applyStatusRules(
+            prev.map(reminder =>
+              reminder.id === params.updatedReminder!.id ? params.updatedReminder! : reminder,
+            ),
+          ),
+        );
+        navigation.setParams({ updatedReminder: undefined });
       }
     });
-
     return unsubscribe;
   }, [navigation, selectedDate, route.params]);
 
-  // Filter and sort reminders for the selected date
   const filteredReminders = reminders
     .filter(reminder => reminder.date === selectedDate)
     .sort((a, b) => a.time.localeCompare(b.time));
 
-  // Get status dots for each day
-  const getDayStatusDots = (date: string) => {
-    return reminders
+  const getDayStatusDots = (date: string) =>
+    reminders
       .filter(reminder => reminder.date === date)
       .slice(0, 5)
       .map(reminder => ({ color: statusColors[reminder.status] }));
-  };
 
-  // Delete reminder
   const deleteReminder = (id: string) => {
-  Alert.alert('Удалить напоминание', 'Вы уверены, что хотите удалить это напоминание?', [
-    { text: 'Отмена', style: 'cancel' },
-    {
-      text: 'Удалить',
-      onPress: async () => {
-        try {
-          const swipeable = rowRefs.current.get(id);
-          swipeable?.close();
-
-          const reminder = reminders.find(item => item.id === id);
-          const updatedReminders = reminders.filter(item => item.id !== id);
-          setReminders(applyStatusRules(updatedReminders));
-
-          await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));
-
-          if (reminder?.courseId) {
-            const exists = updatedReminders.some(r => r.courseId === reminder.courseId);
-            if (!exists) {
-              await removeCourse(reminder.courseId);
+    Alert.alert('Удалить напоминание', 'Вы уверены, что хотите удалить это напоминание?', [
+      { text: 'Отмена', style: 'cancel' },
+      {
+        text: 'Удалить',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            rowRefs.current.get(id)?.close();
+            const reminder = reminders.find(i => i.id === id);
+            const updated = reminders.filter(i => i.id !== id);
+            setReminders(applyStatusRules(updated));
+            await AsyncStorage.setItem('reminders', JSON.stringify(updated));
+            if (reminder?.courseId) {
+              const exists = updated.some(r => r.courseId === reminder.courseId);
+              if (!exists) await removeCourse(reminder.courseId);
             }
+          } catch (e) {
+            console.error('Failed to delete reminder:', e);
+            Alert.alert('Ошибка', 'Не удалось удалить напоминание');
           }
-        } catch (error) {
-          console.error('Failed to delete reminder:', error);
-          Alert.alert('Ошибка', 'Не удалось удалить напоминание');
-        }
+        },
       },
-      style: 'destructive',
-    },
-  ]);
-};
-
-  const markAsMissed = (id: string) => {
-    setReminders(prev =>
-      prev.map(r => (r.id === id ? { ...r, status: 'missed' } : r)),
-    );
+    ]);
   };
 
-  const markAsTaken = (item: Reminder) => {
-    setReminders(prev =>
-      prev.map(r => (r.id === item.id ? { ...r, status: 'taken' } : r)),
-    );
-  };
+  const markAsMissed = (id: string) =>
+    setReminders(prev => prev.map(r => (r.id === id ? { ...r, status: 'missed' } : r)));
+  const markAsTaken = (item: Reminder) =>
+    setReminders(prev => prev.map(r => (r.id === item.id ? { ...r, status: 'taken' } : r)));
 
-  // Close other open swipeable rows
   const closeOtherRows = (id: string) => {
-    rowRefs.current.forEach((ref, key) => {
-      if (key !== id) {
-        ref.close();
-      }
-    });
+    rowRefs.current.forEach((ref, key) => { if (key !== id) ref.close(); });
   };
 
-  // Render delete action for swipeable
   const renderRightActions = (id: string) => (
     <RectButton style={styles.deleteButton} onPress={() => deleteReminder(id)}>
       <Icon name="delete" size={24} color="white" />
@@ -277,28 +224,16 @@ const MedCalendarScreen: React.FC = () => {
 
     return (
       <Swipeable
-        ref={(ref) => {
-          if (ref) {
-            rowRefs.current.set(item.id, ref);
-          }
-        }}
+        ref={ref => { if (ref) rowRefs.current.set(item.id, ref); }}
         renderRightActions={() => renderRightActions(item.id)}
         onSwipeableOpen={() => closeOtherRows(item.id)}
         friction={2}
         overshootRight={false}
       >
-        <View
-          style={[
-            styles.reminderItem,
-            { borderLeftColor: statusColors[item.status] },
-          ]}
-        >
+        <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
           <TouchableWithoutFeedback
             onPress={() =>
-              navigation.navigate('ReminderEdit', {
-                reminder: item,
-                mainKey: route.key,
-              })
+              navigation.navigate('ReminderEdit', { reminder: item, mainKey: route.key })
             }
           >
             <View style={styles.reminderContent}>
@@ -333,15 +268,8 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableWithoutFeedback>
 
           <TouchableOpacity
-            onPress={() =>
-              item.status === 'taken'
-                ? markAsMissed(item.id)
-                : markAsTaken(item)
-            }
-            style={[
-              styles.takeButton,
-              { backgroundColor: statusColors[item.status] },
-            ]}
+            onPress={() => (item.status === 'taken' ? markAsMissed(item.id) : markAsTaken(item))}
+            style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
           >
             <Text style={styles.buttonText}>
               {item.status === 'taken' ? 'Пропустить' : 'Принять'}
@@ -354,139 +282,151 @@ const MedCalendarScreen: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView edges={['top']} style={styles.container}>
-        <StatusBar barStyle="light-content" />
-        
-        {/* Week Navigation */}
-        <View style={styles.weekHeader}>
-          <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.arrowButton} accessibilityRole="button">
-            <Icon name="chevron-left" size={30} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => setPickerVisible(true)}
-          >
-            <Text style={styles.weekText}>
-              {format(addWeeks(new Date(), weekOffset), 'LLLL yyyy', { locale: ru }).charAt(0).toUpperCase() +
-                format(addWeeks(new Date(), weekOffset), 'LLLL yyyy ', { locale: ru }).slice(1)}
-              • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.arrowButton} accessibilityRole="button">
-            <Icon name="chevron-right" size={30} color="white" />
-          </TouchableOpacity>
-        </View>
+      {/* НЕ translucent — пусть система сама отдаст корректный insets.top */}
+      <StatusBar translucent={false} backgroundColor="#000" barStyle="light-content" />
 
-        {/* Week Dates */}
-        <View style={styles.weekContainer}>
-          <View style={styles.weekdayRow}>
-            {weekDates.map((day, index) => (
-              <Text key={index} style={styles.weekdayText}>
-                {day.dayLabel}
+      {/* iOS: top+bottom; Android: вообще без edges (ни верха, ни низа),
+          чтобы не добавлять «чёрные прослойки». */}
+      <SafeAreaView
+        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []}
+        style={[styles.container, Platform.OS === 'android' && { paddingBottom: 0 }]}
+      >
+        {/* На Android даём только нужный верхний отступ вручную */}
+        <View style={{ flex: 1, paddingTop: androidTopPad }}>
+          {/* Week Navigation */}
+          <View style={styles.weekHeader}>
+            <TouchableOpacity
+              onPress={() => setWeekOffset(weekOffset - 1)}
+              style={styles.arrowButton}
+              accessibilityRole="button"
+            >
+              <Icon name="chevron-left" size={30} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" onPress={() => setPickerVisible(true)}>
+              <Text style={styles.weekText}>
+                {format(addWeeks(new Date(), weekOffset), 'LLLL yyyy', { locale: ru }).charAt(0).toUpperCase() +
+                  format(addWeeks(new Date(), weekOffset), 'LLLL yyyy ', { locale: ru }).slice(1)}
+                • {getISOWeek(addWeeks(new Date(), weekOffset))} неделя
               </Text>
-            ))}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setWeekOffset(weekOffset + 1)}
+              style={styles.arrowButton}
+              accessibilityRole="button"
+            >
+              <Icon name="chevron-right" size={30} color="white" />
+            </TouchableOpacity>
           </View>
-          <View style={styles.datesRow}>
-            {weekDates.map((day) => (
-              <TouchableOpacity
-                key={day.fullDate}
-                onPress={() => setSelectedDate(day.fullDate)}
-                style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
-              >
-                <Text
-                  style={[
-                    styles.dayText,
-                    day.fullDate === selectedDate && styles.selectedDayText,
-                    day.isToday && styles.todayText,
-                  ]}
-                >
-                  {day.dateNumber}
+
+          {/* Week Dates */}
+          <View style={styles.weekContainer}>
+            <View style={styles.weekdayRow}>
+              {getWeekDates(weekOffset).map((day, index) => (
+                <Text key={index} style={styles.weekdayText}>
+                  {day.dayLabel}
                 </Text>
-                <View style={styles.dotContainer}>
-                  {getDayStatusDots(day.fullDate).map((dot, index) => (
-                    <View key={index} style={[styles.dot, { backgroundColor: dot.color }]} />
-                  ))}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Reminders List */}
-        <FlatList
-          data={filteredReminders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ReminderCard item={item} />}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyListContainer}>
-              <Icon name="pill-off" size={60} color="#444" />
-              <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-              <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+              ))}
             </View>
-          )}
-        />
+            <View style={styles.datesRow}>
+              {getWeekDates(weekOffset).map((day) => (
+                <TouchableOpacity
+                  key={day.fullDate}
+                  onPress={() => setSelectedDate(day.fullDate)}
+                  style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      day.fullDate === selectedDate && styles.selectedDayText,
+                      day.isToday && styles.todayText,
+                    ]}
+                  >
+                    {day.dateNumber}
+                  </Text>
+                  <View style={styles.dotContainer}>
+                    {getDayStatusDots(day.fullDate).map((dot, idx) => (
+                      <View key={idx} style={[styles.dot, { backgroundColor: dot.color }]} />
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        {/* Speed Dial FAB */}
-        {fabOpen && (
-          <TouchableWithoutFeedback onPress={() => setFabOpen(false)}>
-            <View style={styles.overlay} />
-          </TouchableWithoutFeedback>
-        )}
-        <Animated.View
-          pointerEvents={fabOpen ? 'auto' : 'none'}
-          style={[
-            styles.speedDialActions,
-            {
-              bottom: actionsBottom,
-              opacity: fabAnim,
-              transform: [
-                {
-                  translateY: fabAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.speedDialAction}
-            onPress={() => {
-              setFabOpen(false);
-              navigation.navigate('Medications');
-            }}
+          {/* Reminders List */}
+          <FlatList
+            data={filteredReminders}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ReminderCard item={item} />}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyListContainer}>
+                <Icon name="pill-off" size={60} color="#444" />
+                <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+                <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+              </View>
+            )}
+            // убираем лишний нижний отступ (TabNavigator сам занимает низ)
+            contentContainerStyle={{ paddingBottom: 0 }}
+          />
+
+          {/* Speed Dial FAB */}
+          {fabOpen && (
+            <TouchableWithoutFeedback onPress={() => setFabOpen(false)}>
+              <View style={styles.overlay} />
+            </TouchableWithoutFeedback>
+          )}
+          <Animated.View
+            pointerEvents={fabOpen ? 'auto' : 'none'}
+            style={[
+              styles.speedDialActions,
+              {
+                bottom: actionsBottom,
+                opacity: fabAnim,
+                transform: [
+                  {
+                    translateY: fabAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
           >
-            <Icon name="medical-bag" size={24} color="white" />
-            <Text style={styles.speedDialLabel}>Препараты</Text>
+            <TouchableOpacity
+              style={styles.speedDialAction}
+              onPress={() => {
+                setFabOpen(false);
+                navigation.navigate('Medications');
+              }}
+            >
+              <Icon name="medical-bag" size={24} color="white" />
+              <Text style={styles.speedDialLabel}>Препараты</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.speedDialAction}
+              onPress={() => {
+                setFabOpen(false);
+                navigation.navigate('ReminderAdd', { selectedDate, mainKey: route.key });
+              }}
+            >
+              <Icon name="bell-plus" size={24} color="white" />
+              <Text style={styles.speedDialLabel}>Добавить напоминание</Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <TouchableOpacity style={[styles.fab, { bottom: fabBottom }]} onPress={() => setFabOpen(prev => !prev)}>
+            <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.speedDialAction}
-            onPress={() => {
-              setFabOpen(false);
-              navigation.navigate('ReminderAdd', {
-                selectedDate,
-                mainKey: route.key,
-              });
-            }}
-          >
-            <Icon name="bell-plus" size={24} color="white" />
-            <Text style={styles.speedDialLabel}>Добавить напоминание</Text>
-          </TouchableOpacity>
-        </Animated.View>
-        <TouchableOpacity
-          style={[styles.fab, { bottom: fabBottom }]}
-          onPress={() => setFabOpen(prev => !prev)}
-        >
-          <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
-        </TouchableOpacity>
-        <WeekPickerModal
-          visible={pickerVisible}
-          onClose={() => setPickerVisible(false)}
-          onSelect={handleWeekSelect}
-          initialYear={Number(format(addWeeks(new Date(), weekOffset), 'yyyy'))}
-          initialWeek={getISOWeek(addWeeks(new Date(), weekOffset))}
-        />
+
+          <WeekPickerModal
+            visible={pickerVisible}
+            onClose={() => setPickerVisible(false)}
+            onSelect={handleWeekSelect}
+            initialYear={Number(format(addWeeks(new Date(), weekOffset), 'yyyy'))}
+            initialWeek={getISOWeek(addWeeks(new Date(), weekOffset))}
+          />
+        </View>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
