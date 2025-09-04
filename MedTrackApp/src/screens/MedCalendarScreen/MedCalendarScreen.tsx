@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -282,14 +283,13 @@ const MedCalendarScreen: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* НЕ translucent — пусть система сама отдаст корректный insets.top */}
-      <StatusBar translucent={false} backgroundColor="#000" barStyle="light-content" />
+      {/* Прозрачный статус-бар + светлый текст */}
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-      {/* iOS: top+bottom; Android: вообще без edges (ни верха, ни низа),
-          чтобы не добавлять «чёрные прослойки». */}
+      {/* iOS: top+bottom, Android: только bottom (верх — вручную по insets.top) */}
       <SafeAreaView
-        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []}
-        style={[styles.container, Platform.OS === 'android' && { paddingBottom: 0 }]}
+        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+        style={[styles.container, fixStyles.noInsets]}
       >
         {/* На Android даём только нужный верхний отступ вручную */}
         <View style={{ flex: 1, paddingTop: androidTopPad }}>
@@ -418,7 +418,6 @@ const MedCalendarScreen: React.FC = () => {
           <TouchableOpacity style={[styles.fab, { bottom: fabBottom }]} onPress={() => setFabOpen(prev => !prev)}>
             <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
           </TouchableOpacity>
-
           <WeekPickerModal
             visible={pickerVisible}
             onClose={() => setPickerVisible(false)}
@@ -426,10 +425,19 @@ const MedCalendarScreen: React.FC = () => {
             initialYear={Number(format(addWeeks(new Date(), weekOffset), 'yyyy'))}
             initialWeek={getISOWeek(addWeeks(new Date(), weekOffset))}
           />
-        </View>
-      </SafeAreaView>
+      </View>
+    </SafeAreaView>
     </GestureHandlerRootView>
   );
 };
 
 export default MedCalendarScreen;
+
+const fixStyles = StyleSheet.create({
+  noInsets: {
+    paddingTop: 0,
+    paddingBottom: 0,
+    marginTop: 0,
+    marginBottom: 0,
+  },
+});
