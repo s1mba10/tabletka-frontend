@@ -282,16 +282,13 @@ const MedCalendarScreen: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* НЕ translucent — пусть система сама отдаст корректный insets.top */}
-      <StatusBar translucent={false} backgroundColor="#000" barStyle="light-content" />
+      <StatusBar
+        translucent={Platform.OS === 'ios'}
+        backgroundColor={Platform.OS === 'android' ? '#000' : 'transparent'}
+        barStyle="light-content"
+      />
 
-      {/* iOS: top+bottom; Android: вообще без edges (ни верха, ни низа),
-          чтобы не добавлять «чёрные прослойки». */}
-      <SafeAreaView
-        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []}
-        style={[styles.container, Platform.OS === 'android' && { paddingBottom: 0 }]}
-      >
-        {/* На Android даём только нужный верхний отступ вручную */}
+      <SafeAreaView edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []} style={styles.container}>
         <View style={{ flex: 1, paddingTop: androidTopPad }}>
           {/* Week Navigation */}
           <View style={styles.weekHeader}>
