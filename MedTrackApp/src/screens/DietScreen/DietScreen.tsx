@@ -1,6 +1,6 @@
 // screens/diet/DietScreen.tsx
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScrollView,
   Platform,
@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  StatusBar,
 } from 'react-native';
 import { format, addDays } from 'date-fns';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -26,6 +27,8 @@ import { loadDiary, saveDiary } from '../../nutrition/storage';
 type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
 
 const DietScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const navigation = useNavigation<NavProp>();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -103,11 +106,8 @@ const DietScreen: React.FC = () => {
   };
 
   const showToast = (message: string) => {
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    } else {
-      Alert.alert(message);
-    }
+    if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
+    else Alert.alert(message);
   };
 
   const handleCopyFromYesterday = (date: string) => {
@@ -132,11 +132,9 @@ const DietScreen: React.FC = () => {
     const mealName = mealMeta[meal].title;
 
     if (prevMeal.length === 0) {
-      Alert.alert(
-        'Нет записей за вчера',
-        `Во вчерашнем ${mealName} нет продуктов для копирования.`,
-        [{ text: 'Понятно' }],
-      );
+      Alert.alert('Нет записей за вчера', `Во вчерашнем ${mealName} нет продуктов для копирования.`, [
+        { text: 'Понятно' },
+      ]);
       return;
     }
 
@@ -248,80 +246,90 @@ const DietScreen: React.FC = () => {
     navigation.navigate('NutritionStats', { selectedDate });
   }, [navigation, selectedDate]);
 
+  // динамический верхний inset только на Android при прозрачном статус-баре
+  const androidTopPad = Platform.OS === 'android' ? Math.max(insets.top, 8) : 0;
+
   return (
-    // ⬇️ ВАЖНО: учитываем только верхнюю «чёлку», без нижнего safe-area,
-    // чтобы TabNavigator сам занял низ без чёрного промежутка
-    <SafeAreaView edges={['top']} style={[styles.container, localStyles.noBottomInset]}>
-      <ScrollView contentContainerStyle={[styles.content, localStyles.contentPad]}>
-        <NutritionCalendar
-          value={selectedDate}
-          onChange={setSelectedDate}
-          getHasFoodByDate={getHasFoodByDate}
-          onCopyFromYesterday={handleCopyFromYesterday}
-          onClearDay={handleClearDay}
-          onPrevWeek={() => setWeekOffset(w => w - 1)}
-          onNextWeek={() => setWeekOffset(w => w + 1)}
-        />
+    <>
+      {/* Прозрачный статус-бар + светлый текст */}
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-        <Pressable
-          onPress={handleSummaryPress}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Открыть статистику питания"
-          accessibilityHint="Нажмите, чтобы открыть расширенную статистику питания за неделю."
-          android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
-          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-          pointerEvents="auto"
-          testID="diet-summary-pressable"
-        >
-          <View>
-            <MacronutrientSummary
-              caloriesConsumed={dayTotals.calories}
-              targetCalories={targetCalories}
-              rskPercent={dayRskDisplay}
-              protein={dayTotals.protein}
-              fat={dayTotals.fat}
-              carbs={dayTotals.carbs}
+      {/* iOS: top+bottom, Android: только bottom (верх — вручную по insets.top) */}
+      <SafeAreaView
+        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+        style={[styles.container, fixStyles.noInsets]}
+      >
+        <View style={{ paddingTop: androidTopPad, flex: 1 }}>
+          <ScrollView contentContainerStyle={[styles.content, fixStyles.contentPad]}>
+            <NutritionCalendar
+              value={selectedDate}
+              onChange={setSelectedDate}
+              getHasFoodByDate={getHasFoodByDate}
+              onCopyFromYesterday={handleCopyFromYesterday}
+              onClearDay={handleClearDay}
+              onPrevWeek={() => setWeekOffset(w => w - 1)}
+              onNextWeek={() => setWeekOffset(w => w + 1)}
             />
-          </View>
-        </Pressable>
 
-        {meals.map(meal => (
-          <MealPanel
-            key={meal.mealKey}
-            {...meal}
-            onAdd={() => setActiveMeal(meal.mealKey)}
-            onSelectEntry={id => handleSelectEntry(meal.mealKey, id)}
-            onCopyFromYesterday={() => handleCopyMealFromYesterday(meal.mealKey)}
-            onClearMeal={() => handleClearMeal(meal.mealKey)}
+            <Pressable
+              onPress={handleSummaryPress}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Открыть статистику питания"
+              accessibilityHint="Нажмите, чтобы открыть расширенную статистику питания за неделю."
+              android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+              pointerEvents="auto"
+              testID="diet-summary-pressable"
+            >
+              <View>
+                <MacronutrientSummary
+                  caloriesConsumed={dayTotals.calories}
+                  targetCalories={targetCalories}
+                  rskPercent={dayRskDisplay}
+                  protein={dayTotals.protein}
+                  fat={dayTotals.fat}
+                  carbs={dayTotals.carbs}
+                />
+              </View>
+            </Pressable>
+
+            {meals.map(meal => (
+              <MealPanel
+                key={meal.mealKey}
+                {...meal}
+                onAdd={() => setActiveMeal(meal.mealKey)}
+                onSelectEntry={id => handleSelectEntry(meal.mealKey, id)}
+                onCopyFromYesterday={() => handleCopyMealFromYesterday(meal.mealKey)}
+                onClearMeal={() => handleClearMeal(meal.mealKey)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {activeMeal && (
+          <AddFoodModal
+            mealType={activeMeal}
+            onCancel={() => setActiveMeal(null)}
+            onConfirm={handleConfirm}
+            dayTotals={dayTotals}
+            dayTargets={{ calories: targetCalories }}
           />
-        ))}
-      </ScrollView>
-
-      {activeMeal && (
-        <AddFoodModal
-          mealType={activeMeal}
-          onCancel={() => setActiveMeal(null)}
-          onConfirm={handleConfirm}
-          dayTotals={dayTotals}
-          dayTargets={{ calories: targetCalories }}
-        />
-      )}
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </>
   );
 };
 
 export default DietScreen;
 
-const localStyles = StyleSheet.create({
-  // Убираем возможные нижние паддинги/маргины контейнера,
-  // чтобы не было «плашки» над таббаром
-  noBottomInset: {
+const fixStyles = StyleSheet.create({
+  noInsets: {
+    paddingTop: 0,
     paddingBottom: 0,
+    marginTop: 0,
     marginBottom: 0,
   },
-  // Лёгкий отступ снизу для скролла, чтобы контент не упирался в таббар,
-  // но и без лишней тёмной зоны
   contentPad: {
     paddingBottom: 16,
   },
