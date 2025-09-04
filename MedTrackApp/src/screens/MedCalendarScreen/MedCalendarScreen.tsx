@@ -35,6 +35,7 @@ import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { statusColors, typeIcons } from './constants';
 import { useCountdown, useCourses } from '../../hooks';
+import { MedicationDayStatsButton } from '../../components';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -348,6 +349,15 @@ const MedCalendarScreen: React.FC = () => {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          <View style={{ marginHorizontal: 16, marginBottom: 16, overflow: 'visible' }}>
+            <MedicationDayStatsButton
+              date={selectedDate}
+              takenCount={filteredReminders.filter(r => r.status === 'taken').length}
+              scheduledCount={filteredReminders.length}
+              onPress={() => {}}
+            />
           </View>
 
           {/* Reminders List */}
