@@ -35,6 +35,7 @@ import { Reminder } from '../../types';
 import { getWeekDates } from './utils';
 import { statusColors, typeIcons } from './constants';
 import { useCountdown, useCourses } from '../../hooks';
+import { MedicationDayStatsButton } from '../../components';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -165,6 +166,9 @@ const MedCalendarScreen: React.FC = () => {
   const filteredReminders = reminders
     .filter(reminder => reminder.date === selectedDate)
     .sort((a, b) => a.time.localeCompare(b.time));
+
+  const takenCount = filteredReminders.filter(r => r.status === 'taken').length;
+  const scheduledCount = filteredReminders.length;
 
   const getDayStatusDots = (date: string) =>
     reminders
@@ -323,38 +327,45 @@ const MedCalendarScreen: React.FC = () => {
                   {day.dayLabel}
                 </Text>
               ))}
-            </View>
-            <View style={styles.datesRow}>
-              {getWeekDates(weekOffset).map((day) => (
-                <TouchableOpacity
-                  key={day.fullDate}
-                  onPress={() => setSelectedDate(day.fullDate)}
-                  style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      day.fullDate === selectedDate && styles.selectedDayText,
-                      day.isToday && styles.todayText,
-                    ]}
-                  >
-                    {day.dateNumber}
-                  </Text>
-                  <View style={styles.dotContainer}>
-                    {getDayStatusDots(day.fullDate).map((dot, idx) => (
-                      <View key={idx} style={[styles.dot, { backgroundColor: dot.color }]} />
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
+          <View style={styles.datesRow}>
+            {getWeekDates(weekOffset).map((day) => (
+              <TouchableOpacity
+                key={day.fullDate}
+                onPress={() => setSelectedDate(day.fullDate)}
+                style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
+              >
+                <Text
+                  style={[
+                    styles.dayText,
+                    day.fullDate === selectedDate && styles.selectedDayText,
+                    day.isToday && styles.todayText,
+                  ]}
+                >
+                  {day.dateNumber}
+                </Text>
+                <View style={styles.dotContainer}>
+                  {getDayStatusDots(day.fullDate).map((dot, idx) => (
+                    <View key={idx} style={[styles.dot, { backgroundColor: dot.color }]} />
+                  ))}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-          {/* Reminders List */}
-          <FlatList
-            data={filteredReminders}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ReminderCard item={item} />}
+        <MedicationDayStatsButton
+          date={selectedDate}
+          takenCount={takenCount}
+          scheduledCount={scheduledCount}
+          style={{ marginBottom: 16 }}
+        />
+
+        {/* Reminders List */}
+        <FlatList
+          data={filteredReminders}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <ReminderCard item={item} />}
             ListEmptyComponent={() => (
               <View style={styles.emptyListContainer}>
                 <Icon name="pill-off" size={60} color="#444" />
