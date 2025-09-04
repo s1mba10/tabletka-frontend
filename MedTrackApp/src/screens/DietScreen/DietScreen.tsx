@@ -1,3 +1,4 @@
+// screens/diet/DietScreen.tsx
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -9,7 +10,6 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, addDays } from 'date-fns';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -26,10 +26,7 @@ import { loadDiary, saveDiary } from '../../nutrition/storage';
 type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
 
 const DietScreen: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), 'yyyy-MM-dd'),
-  );
-
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const navigation = useNavigation<NavProp>();
   const [weekOffset, setWeekOffset] = useState(0);
   const lastNavTime = useRef(0);
@@ -58,10 +55,7 @@ const DietScreen: React.FC = () => {
 
   const targetCalories = 3300; // mock target
 
-  const { mealTotals, dayTotals } = useMemo(
-    () => aggregateMeals(dayEntries),
-    [dayEntries],
-  );
+  const { mealTotals, dayTotals } = useMemo(() => aggregateMeals(dayEntries), [dayEntries]);
 
   const rsk = computeRskPercents(
     {
@@ -186,25 +180,21 @@ const DietScreen: React.FC = () => {
       return;
     }
 
-    Alert.alert(
-      'Очистить приём пищи?',
-      `Все продукты из ${mealName} будут удалены.`,
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Очистить',
-          style: 'destructive',
-          onPress: () => {
-            setEntriesByDate(prev => {
-              const day = prev[selectedDate] || createEmptyDay();
-              const updated = { ...day, [meal]: [] };
-              return { ...prev, [selectedDate]: updated };
-            });
-            showToast('Очищено');
-          },
+    Alert.alert('Очистить приём пищи?', `Все продукты из ${mealName} будут удалены.`, [
+      { text: 'Отмена', style: 'cancel' },
+      {
+        text: 'Очистить',
+        style: 'destructive',
+        onPress: () => {
+          setEntriesByDate(prev => {
+            const day = prev[selectedDate] || createEmptyDay();
+            const updated = { ...day, [meal]: [] };
+            return { ...prev, [selectedDate]: updated };
+          });
+          showToast('Очищено');
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleClearDay = (date: string) => {
@@ -215,20 +205,13 @@ const DietScreen: React.FC = () => {
   const handleConfirm = (entry: NormalizedEntry) => {
     setEntriesByDate(prev => {
       const day = prev[selectedDate] || createEmptyDay();
-      const updated = {
-        ...day,
-        [entry.mealType]: [...day[entry.mealType], entry],
-      };
+      const updated = { ...day, [entry.mealType]: [...day[entry.mealType], entry] };
       return { ...prev, [selectedDate]: updated };
     });
   };
 
   const handleSelectEntry = (meal: MealType, id: string) => {
-    navigation.navigate('FoodEdit', {
-      date: selectedDate,
-      meal,
-      entryId: id,
-    });
+    navigation.navigate('FoodEdit', { date: selectedDate, meal, entryId: id });
   };
 
   useEffect(() => {
@@ -260,18 +243,16 @@ const DietScreen: React.FC = () => {
 
   const handleSummaryPress = useCallback(() => {
     const now = Date.now();
-    if (now - lastNavTime.current < 500) {
-      return;
-    }
+    if (now - lastNavTime.current < 500) return;
     lastNavTime.current = now;
-    navigation.navigate('NutritionStats', {
-      selectedDate,
-    });
+    navigation.navigate('NutritionStats', { selectedDate });
   }, [navigation, selectedDate]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+    // ⬇️ ВАЖНО: учитываем только верхнюю «чёлку», без нижнего safe-area,
+    // чтобы TabNavigator сам занял низ без чёрного промежутка
+    <SafeAreaView edges={['top']} style={[styles.container, localStyles.noBottomInset]}>
+      <ScrollView contentContainerStyle={[styles.content, localStyles.contentPad]}>
         <NutritionCalendar
           value={selectedDate}
           onChange={setSelectedDate}
@@ -281,6 +262,7 @@ const DietScreen: React.FC = () => {
           onPrevWeek={() => setWeekOffset(w => w - 1)}
           onNextWeek={() => setWeekOffset(w => w + 1)}
         />
+
         <Pressable
           onPress={handleSummaryPress}
           hitSlop={8}
@@ -303,6 +285,7 @@ const DietScreen: React.FC = () => {
             />
           </View>
         </Pressable>
+
         {meals.map(meal => (
           <MealPanel
             key={meal.mealKey}
@@ -314,6 +297,7 @@ const DietScreen: React.FC = () => {
           />
         ))}
       </ScrollView>
+
       {activeMeal && (
         <AddFoodModal
           mealType={activeMeal}
@@ -329,6 +313,20 @@ const DietScreen: React.FC = () => {
 
 export default DietScreen;
 
+const localStyles = StyleSheet.create({
+  // Убираем возможные нижние паддинги/маргины контейнера,
+  // чтобы не было «плашки» над таббаром
+  noBottomInset: {
+    paddingBottom: 0,
+    marginBottom: 0,
+  },
+  // Лёгкий отступ снизу для скролла, чтобы контент не упирался в таббар,
+  // но и без лишней тёмной зоны
+  contentPad: {
+    paddingBottom: 16,
+  },
+});
+
 const summaryStyles = StyleSheet.create({
   chevron: {
     position: 'absolute',
@@ -338,4 +336,3 @@ const summaryStyles = StyleSheet.create({
     pointerEvents: 'none',
   },
 });
-
