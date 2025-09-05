@@ -73,6 +73,7 @@ const MedicationDayStatsButton: React.FC<Props> = ({
   }, [finalOffset, reduceMotion, circumference, offsetAnim, scheduledCount]);
 
   const halo = percent > 100;
+  const color = "#00E5FF";
 
   return (
     <Pressable
@@ -105,7 +106,7 @@ const MedicationDayStatsButton: React.FC<Props> = ({
                   cx={size / 2}
                   cy={size / 2}
                   r={radius}
-                  stroke="#00E5FF"
+                  stroke={color}
                   strokeWidth={strokeWidth + 12}
                   strokeLinecap="butt"
                   fill="none"
@@ -119,7 +120,7 @@ const MedicationDayStatsButton: React.FC<Props> = ({
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#00E5FF"
+                stroke={color}
                 strokeWidth={strokeWidth + 6}
                 strokeLinecap={progress === 1 ? 'butt' : 'round'}
                 fill="none"
@@ -132,7 +133,7 @@ const MedicationDayStatsButton: React.FC<Props> = ({
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#00E5FF"
+                stroke={color}
                 strokeWidth={strokeWidth}
                 strokeLinecap={progress === 1 ? 'butt' : 'round'}
                 fill="none"
@@ -145,7 +146,7 @@ const MedicationDayStatsButton: React.FC<Props> = ({
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#00E5FF"
+                stroke={color}
                 strokeWidth={strokeWidth}
                 strokeLinecap={progress === 1 ? 'butt' : 'round'}
                 fill="none"
