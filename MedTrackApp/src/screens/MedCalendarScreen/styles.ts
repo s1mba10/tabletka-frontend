@@ -188,21 +188,4 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
   },
-  emptyListContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
-  },
-  emptyListText: {
-    color: '#AAA',
-    fontSize: 18,
-    marginTop: 20,
-    fontWeight: 'bold',
-  },
-  emptyListSubText: {
-    color: '#666',
-    fontSize: 14,
-    marginTop: 10,
-  },
 });
