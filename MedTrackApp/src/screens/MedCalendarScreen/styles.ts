@@ -205,4 +205,8 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 10,
   },
+  emptyListImage: {
+  width: 180,
+  height: 150,
+},
 });

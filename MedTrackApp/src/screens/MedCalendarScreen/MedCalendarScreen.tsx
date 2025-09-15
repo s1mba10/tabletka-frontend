@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   Platform,
+  Image
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -364,7 +365,11 @@ const MedCalendarScreen: React.FC = () => {
             renderItem={({ item }) => <ReminderCard item={item} />}
             ListEmptyComponent={() => (
               <View style={styles.emptyListContainer}>
-                <Icon name="pill-off" size={60} color="#444" />
+                <Image
+                  source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
+                  style={styles.emptyListImage}
+                  resizeMode="contain"
+                />
                 <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
                 <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
               </View>
