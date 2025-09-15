@@ -36,6 +36,7 @@ import { getWeekDates } from './utils';
 import { statusColors, typeIcons } from './constants';
 import { useCountdown, useCourses } from '../../hooks';
 import MedicationDayStatsButton from '../../components/MedicationDayStatsButton';
+import EmptyDayState from './EmptyDayState';
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -363,14 +364,15 @@ const MedCalendarScreen: React.FC = () => {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <ReminderCard item={item} />}
             ListEmptyComponent={() => (
-              <View style={styles.emptyListContainer}>
-                <Icon name="pill-off" size={60} color="#444" />
-                <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-                <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-              </View>
+              <EmptyDayState
+                selectedDate={new Date(selectedDate)}
+                onAddReminder={() =>
+                  navigation.navigate('ReminderAdd', { selectedDate, mainKey: route.key })
+                }
+              />
             )}
             // убираем лишний нижний отступ (TabNavigator сам занимает низ)
-            contentContainerStyle={{ paddingBottom: 0 }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 0 }}
           />
 
           {/* Speed Dial FAB */}

@@ -74,6 +74,24 @@ const MedicationDayStatsButton: React.FC<Props> = ({
 
   const halo = percent > 100;
   const color = "#00E5FF";
+  if (scheduledCount === 0) {
+    return (
+      <Pressable
+        onPress={onPress}
+        android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+        style={({ pressed }) => [
+          styles.container,
+          styles.emptyContainer,
+          style,
+          { opacity: pressed ? 0.8 : 1 },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Дневная статистика. Нет запланированных приёмов."
+      >
+        <Text style={[styles.title, styles.emptyTitle]}>Нет запланированных приёмов</Text>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -211,6 +229,13 @@ const styles = StyleSheet.create({
   caption: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
+  },
+  emptyContainer: {
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    flex: 0,
+    textAlign: 'center',
   },
 });
 
