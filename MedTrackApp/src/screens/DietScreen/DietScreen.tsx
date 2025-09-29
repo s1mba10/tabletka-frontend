@@ -1,4 +1,6 @@
 // screens/diet/DietScreen.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import WaterTracker from '../../components/WaterTracker';
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -34,6 +36,7 @@ const DietScreen: React.FC = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const lastNavTime = useRef(0);
 
+  // ---- ДНЕВНИК ПРИЁМОВ ПИЩИ ----
   const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
     breakfast: [],
     lunch: [],
@@ -212,6 +215,16 @@ const DietScreen: React.FC = () => {
     navigation.navigate('FoodEdit', { date: selectedDate, meal, entryId: id });
   };
 
+  // ---- ВОДА (стаканы) ----
+  const [waterByDate, setWaterByDate] = useState<Record<string, number>>({});
+  const waterForSelected = waterByDate[selectedDate] ?? 0;
+  const WATER_KEY = 'diet.waterByDate.v1';
+
+  const handleWaterChange = (next: number) => {
+    setWaterByDate(prev => ({ ...prev, [selectedDate]: next }));
+  };
+
+  // ---- Загрузка данных ----
   useEffect(() => {
     loadDiary()
       .then(data => {
@@ -219,6 +232,10 @@ const DietScreen: React.FC = () => {
         isLoaded.current = true;
       })
       .catch(() => showToast('Не удалось загрузить данные'));
+
+    AsyncStorage.getItem(WATER_KEY)
+      .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
+      .catch(() => {});
   }, []);
 
   useFocusEffect(
@@ -229,15 +246,24 @@ const DietScreen: React.FC = () => {
           isLoaded.current = true;
         })
         .catch(() => showToast('Не удалось загрузить данные'));
+
+      AsyncStorage.getItem(WATER_KEY)
+        .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
+        .catch(() => {});
     }, []),
   );
 
+  // ---- Сохранение данных ----
   useEffect(() => {
     if (!isLoaded.current) return;
     saveDiary(entriesByDate).then(ok => {
       if (!ok) showToast('Не удалось сохранить изменения');
     });
   }, [entriesByDate]);
+
+  useEffect(() => {
+    AsyncStorage.setItem(WATER_KEY, JSON.stringify(waterByDate)).catch(() => {});
+  }, [waterByDate]);
 
   const handleSummaryPress = useCallback(() => {
     const now = Date.now();
@@ -304,6 +330,13 @@ const DietScreen: React.FC = () => {
                 onClearMeal={() => handleClearMeal(meal.mealKey)}
               />
             ))}
+
+            {/* === Трекер воды (10 стаканов) === */}
+            <WaterTracker
+              value={waterForSelected}
+              total={10}
+              onChange={handleWaterChange}
+            />
           </ScrollView>
         </View>
 

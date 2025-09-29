@@ -325,8 +325,8 @@ const MainScreen: React.FC = () => {
 
   const StatsQuickGrid: React.FC = () => (
     <View style={styles.grid4}>
-      <MiniStat icon="run" label="Exercise" value="2.0 ч" accent="green" />
-      <MiniStat icon="heart-pulse" label="BPM" value="86" accent="orange" />
+      <MiniStat icon="run" label="Спорт" value="2.0 ч" accent="green" />
+      <MiniStat icon="heart-pulse" label="Пульс" value="86" accent="orange" />
       <MiniStat icon="scale-bathroom" label="Вес" value="72.8" accent="yellow" />
       <MiniStat icon="water" label="Вода" value="12 стак." />
     </View>
