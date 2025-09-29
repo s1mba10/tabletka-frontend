@@ -1,5 +1,5 @@
 // components/WaterTracker.tsx
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -22,8 +22,9 @@ const TOP_W = 28;
 const BOT_W = 22;
 const INNER_H = CUP_H - 6;
 
-/* Animated Rect из react-native-svg (ВАЖНО: не через Svg.Rect!) */
-const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
+/* Пороговые значения поведения воды */
+const LOW_EPS = 0.02;   // ниже — воду не рисуем совсем
+const FULL_EPS = 0.995; // выше (с учётом fullLevel) — волна замирает и поверхность ровная
 
 type Props = {
   value: number;                               // отмечено стаканов (0..total)
@@ -49,9 +50,7 @@ const WaterTracker: React.FC<Props> = ({
 
   /* ---------- Анимируемые уровни для каждого стакана ---------- */
   const levelsRef = useRef<Animated.Value[]>([]);
-
   useEffect(() => {
-    // подгоняем массив под актуальный total
     const arr = levelsRef.current.slice(0, total);
     while (arr.length < total) {
       const i = arr.length;
@@ -184,9 +183,6 @@ const WaterTracker: React.FC<Props> = ({
         <Text style={styles.liters}>
           {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
         </Text>
-        <Text style={styles.totalLitersHint}>
-          {total} ст. = {totalLiters.toFixed(1)} л
-        </Text>
       </>
     );
 
@@ -218,59 +214,32 @@ const WaterTracker: React.FC<Props> = ({
 
       {/* Сетка стаканов */}
       <View style={styles.row}>
-        {Array.from({ length: total }).map((_, i) => {
-          const level = levelsRef.current[i] || new Animated.Value(i < value ? 1 : 0);
-          // высота заливки (0.. fullLevel * INNER_H)
-          const height = level.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, fillLevel * INNER_H],
-          });
-          // y = yBot - height
-          const yTop = CUP_H - 3;
-          const yAnim = Animated.subtract(yTop, height);
-          const showPlusOpacity = Animated.subtract(1, level);
+        {Array.from({ length: total }).map((_, i) => (
+          <Pressable
+            key={i}
+            onPress={() => handleToggle(i)}
+            android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+            style={({ pressed }) => [styles.cupTouch, pressed && { opacity: 0.9 }]}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={`Стакан ${i + 1} из ${total}${i < value ? ', заполнен' : ', пустой'}`}
+            accessibilityHint={
+              i < value
+                ? 'Нажмите, чтобы убрать этот стакан из счёта'
+                : 'Нажмите, чтобы добавить этот стакан'
+            }
+          >
+            <CupWithWave
+              index={i}
+              level={levelsRef.current[i] || new Animated.Value(i < value ? 1 : 0)}
+              fullLevel={fillLevel}
+              isFilledTarget={i < value}
+            />
 
-          return (
-            <Pressable
-              key={i}
-              onPress={() => handleToggle(i)}
-              android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
-              style={({ pressed }) => [styles.cupTouch, pressed && { opacity: 0.9 }]}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityLabel={`Стакан ${i + 1} из ${total}${i < value ? ', заполнен' : ', пустой'}`}
-              accessibilityHint={
-                i < value
-                  ? 'Нажмите, чтобы убрать этот стакан из счёта'
-                  : 'Нажмите, чтобы добавить этот стакан'
-              }
-            >
-              <CupBaseSvg filled={i < value} />
-
-              {/* Анимируемая заливка */}
-              <Svg width={CUP_W} height={CUP_H} style={StyleSheet.absoluteFill}>
-                <Defs>
-                  <ClipPath id={`cupClip-${i}`}>
-                    <Path d={cupPath()} />
-                  </ClipPath>
-                </Defs>
-                <AnimatedSvgRect
-                  x={0 as any}
-                  y={yAnim as any}
-                  width={CUP_W as any}
-                  height={Animated.add(height, 2) as any}
-                  fill={'rgba(0,186,255,0.7)'}
-                  clipPath={`url(#cupClip-${i})`}
-                />
-              </Svg>
-
-              {/* Плюс исчезает при заполнении */}
-              <Animated.View pointerEvents="none" style={[styles.plusWrap, { opacity: showPlusOpacity }]}>
-                <Text style={styles.plus}>＋</Text>
-              </Animated.View>
-            </Pressable>
-          );
-        })}
+            {/* Плюс исчезает при заполнении */}
+            <CupPlus level={levelsRef.current[i] || new Animated.Value(i < value ? 1 : 0)} />
+          </Pressable>
+        ))}
       </View>
     </View>
   );
@@ -278,9 +247,8 @@ const WaterTracker: React.FC<Props> = ({
 
 export default WaterTracker;
 
-/* ---------- Статический контур стакана и вспомогалки ---------- */
-
-const cupPath = () => {
+/* ---------- SVG path стакана (общий для разных компонентов) ---------- */
+const cupPathString = () => {
   const xTopL = (CUP_W - TOP_W) / 2;
   const xTopR = xTopL + TOP_W;
   const xBotL = (CUP_W - BOT_W) / 2;
@@ -294,25 +262,153 @@ const cupPath = () => {
           Z`;
 };
 
-const CupBaseSvg: React.FC<{ filled: boolean }> = ({ filled }) => {
-  const strokeColor = filled ? 'rgba(0,186,255,0.95)' : 'rgba(255,255,255,0.28)';
-  const path = cupPath();
+/* ---------- Плюс с плавным появлением/исчезновением ---------- */
+const CupPlus: React.FC<{ level: Animated.Value }> = ({ level }) => {
+  const [lvl, setLvl] = useState(0);
+  useEffect(() => {
+    const id = level.addListener(({ value }) => setLvl(value as number));
+    return () => level.removeListener(id);
+  }, [level]);
+  return (
+    <View pointerEvents="none" style={[styles.plusWrap, { opacity: 1 - lvl }]}>
+      <Text style={styles.plus}>＋</Text>
+    </View>
+  );
+};
+
+/* ---------- Стакан с волной ---------- */
+const CupWithWave: React.FC<{
+  index: number;
+  level: Animated.Value;   // 0..1
+  fullLevel: number;       // доля высоты, которая считается «полной»
+  isFilledTarget: boolean; // влияет на цвет контура
+}> = ({ index, level, fullLevel, isFilledTarget }) => {
+  const [lvl, setLvl] = useState(0);     // текущее числовое значение уровня
+  const [phase, setPhase] = useState(0); // фаза волны
+
+  // слушаем Animated.Value, чтобы знать текущую высоту (и обновлять волну)
+  useEffect(() => {
+    const id = level.addListener(({ value }) => setLvl(value as number));
+    return () => level.removeListener(id);
+  }, [level]);
+
+  // расчёты высоты поверхности
+  const yBot = CUP_H - 3;
+  const topHeight = fullLevel * INNER_H * Math.min(1, Math.max(0, lvl));
+  const surfaceY = yBot - topHeight;
+
+  // «полнота» с учётом fullLevel (0..1)
+  const fullness = Math.min(1, Math.max(0, lvl * fullLevel));
+
+  // амплитуда зависит от наполнения: 0 у полного
+  const baseAmp = 3;
+  const amp = fullness > FULL_EPS ? 0 : baseAmp * (1 - fullness);
+
+  // ДВИЖЕНИЕ ВОЛНЫ: запускаем только если есть вода и ещё не «полный верх»
+  const shouldAnimate = lvl > LOW_EPS && fullness < FULL_EPS;
+
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!shouldAnimate) {
+      // остановить анимацию
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      return;
+    }
+    let last = Date.now();
+    const tick = () => {
+      const now = Date.now();
+      const dt = now - last;
+      last = now;
+      const speed = 30; // пикс/сек
+      setPhase(p => (p + (speed * dt) / 1000) % (CUP_W * 2));
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    last = Date.now();
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [shouldAnimate]);
+
+  const strokeColor = isFilledTarget ? 'rgba(0,186,255,0.95)' : 'rgba(255,255,255,0.28)';
+  const waterColor = 'rgba(0,186,255,0.7)';
+  const cupPath = cupPathString();
+
+  // координаты для верхнего «ободка»
   const xTopL = (CUP_W - TOP_W) / 2;
   const xTopR = xTopL + TOP_W;
   const yTop = 3;
 
   return (
-    <Svg width={CUP_W} height={CUP_H}>
-      <Path d={path} stroke={strokeColor} strokeWidth={STROKE} fill="transparent" />
-      <Path
-        d={`M ${xTopL + 1} ${yTop + 1} L ${xTopR - 1} ${yTop + 1}`}
-        stroke={strokeColor}
-        strokeWidth={1}
-        opacity={filled ? 0.8 : 0.4}
-      />
-    </Svg>
+    <View style={{ width: CUP_W, height: CUP_H }}>
+      {/* Контур стакана */}
+      <Svg width={CUP_W} height={CUP_H} style={StyleSheet.absoluteFill}>
+        <Path d={cupPath} stroke={strokeColor} strokeWidth={STROKE} fill="transparent" />
+        <Path
+          d={`M ${xTopL + 1} ${yTop + 1} L ${xTopR - 1} ${yTop + 1}`}
+          stroke={strokeColor}
+          strokeWidth={1}
+          opacity={isFilledTarget ? 0.8 : 0.4}
+        />
+      </Svg>
+
+      {/* Вода */}
+      <Svg width={CUP_W} height={CUP_H} style={StyleSheet.absoluteFill}>
+        <Defs>
+          <ClipPath id={`cupClip-${index}`}>
+            <Path d={cupPath} />
+          </ClipPath>
+        </Defs>
+
+        {/* НИЗКИЙ УРОВЕНЬ: воды вообще не видно */}
+        {lvl <= LOW_EPS ? null : (
+          <>
+            {/* ПОЛНЫЙ ВЕРХ (ровная поверхность, без движения) */}
+            {fullness >= FULL_EPS ? (
+              <Rect
+                x={0}
+                y={surfaceY}
+                width={CUP_W}
+                height={yBot - surfaceY + 3}
+                fill={waterColor}
+                clipPath={`url(#cupClip-${index})`}
+              />
+            ) : (
+              // ПРОМЕЖУТОК: волна с движением
+              <Path
+                d={buildWavePath(surfaceY, amp, phase)}
+                fill={waterColor}
+                clipPath={`url(#cupClip-${index})`}
+              />
+            )}
+          </>
+        )}
+      </Svg>
+    </View>
   );
 };
+
+/* Построение волнового пути */
+function buildWavePath(surfaceY: number, amp: number, phase: number) {
+  const yBot = CUP_H - 3;
+  const wavelength = 24; // пикс
+  const samples = 24;
+  const xStart = -CUP_W;
+  const xEnd = CUP_W * 2;
+  const width = xEnd - xStart;
+
+  const pts: string[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const x = xStart + (width * i) / samples;
+    const y = surfaceY + amp * Math.sin(((x + phase) / wavelength) * 2 * Math.PI);
+    pts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`);
+  }
+  pts.push(`L ${xEnd} ${yBot + 3}`);
+  pts.push(`L ${xStart} ${yBot + 3} Z`);
+  return pts.join(' ');
+}
 
 /* --------------------- Стили ---------------------- */
 const styles = StyleSheet.create({
