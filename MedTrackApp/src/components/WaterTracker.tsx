@@ -1,5 +1,5 @@
 // components/WaterTracker.tsx
-import React from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,29 @@ import {
   Platform,
   Alert,
   ActionSheetIOS,
+  Animated,
 } from 'react-native';
-import Svg, { Path, Rect, Defs, ClipPath } from 'react-native-svg';
+import Svg, { Path, Defs, ClipPath, Rect } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+/* ---------- Константы стакана ---------- */
+const CUP_W = 34;
+const CUP_H = 42;
+const STROKE = 2;
+const TOP_W = 28;
+const BOT_W = 22;
+const INNER_H = CUP_H - 6;
+
+/* Animated Rect из react-native-svg (ВАЖНО: не через Svg.Rect!) */
+const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
+
 type Props = {
-  value: number;                  // отмечено стаканов (0..total)
-  total?: number;                 // всего стаканов
+  value: number;                               // отмечено стаканов (0..total)
+  total?: number;                              // всего стаканов
   onChange: (next: number) => void;
-  glassMl?: number;               // объём одного стакана в мл (по умолчанию 250)
-  fillLevel?: number;             // визуальная высота заливки 0..1
-  style?: ViewStyle;              // стиль контейнера снаружи
+  glassMl?: number;                            // объём одного стакана в мл (по умолчанию 250)
+  fillLevel?: number;                          // визуальная высота заливки для "полного" стакана (0..1)
+  style?: ViewStyle;                           // стиль контейнера снаружи
   onChangeTotal?: (nextTotal: number) => void; // изменить дневную цель (опционально)
 };
 
@@ -35,14 +47,96 @@ const WaterTracker: React.FC<Props> = ({
   const liters = (value * glassMl) / 1000;
   const totalLiters = (total * glassMl) / 1000;
 
+  /* ---------- Анимируемые уровни для каждого стакана ---------- */
+  const levelsRef = useRef<Animated.Value[]>([]);
+
+  useEffect(() => {
+    // подгоняем массив под актуальный total
+    const arr = levelsRef.current.slice(0, total);
+    while (arr.length < total) {
+      const i = arr.length;
+      arr.push(new Animated.Value(i < value ? 1 : 0));
+    }
+    levelsRef.current = arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total]);
+
+  // стартовые значения при первом монтировании
+  useEffect(() => {
+    levelsRef.current.forEach((lv, i) => lv.setValue(i < value ? 1 : 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // плавная синхронизация, если value меняется извне
+  const prevValueRef = useRef<number>(value);
+  useEffect(() => {
+    const prev = prevValueRef.current;
+    if (value === prev) return;
+
+    if (value > prev) {
+      const anims = [];
+      for (let i = prev; i < Math.min(value, total); i++) {
+        anims.push(
+          Animated.timing(levelsRef.current[i], {
+            toValue: 1,
+            duration: 220,
+            useNativeDriver: false,
+          }),
+        );
+      }
+      Animated.stagger(35, anims).start();
+    } else {
+      const anims = [];
+      for (let i = prev - 1; i >= Math.max(value, 0); i--) {
+        anims.push(
+          Animated.timing(levelsRef.current[i], {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+        );
+      }
+      Animated.stagger(35, anims).start();
+    }
+
+    prevValueRef.current = value;
+  }, [value, total]);
+
+  /* ---------- Обработчики ---------- */
   const handleToggle = (index: number) => {
-    // Тап по последнему заполненному — «отменяем» его, иначе заполняем до index+1
     const next = index === value - 1 ? value - 1 : index + 1;
+
+    if (next > value) {
+      const anims = [];
+      for (let i = value; i < Math.min(next, total); i++) {
+        anims.push(
+          Animated.timing(levelsRef.current[i], {
+            toValue: 1,
+            duration: 220,
+            useNativeDriver: false,
+          }),
+        );
+      }
+      Animated.stagger(35, anims).start();
+    } else if (next < value) {
+      const anims = [];
+      for (let i = value - 1; i >= Math.max(next, 0); i--) {
+        anims.push(
+          Animated.timing(levelsRef.current[i], {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+        );
+      }
+      Animated.stagger(35, anims).start();
+    }
+
     onChange(Math.max(0, Math.min(total, next)));
   };
 
   const waterBlue = 'rgba(0,186,255,0.95)';
-  const gearGray  = 'rgba(255,255,255,0.65)';
+  const gearGray = 'rgba(255,255,255,0.65)';
 
   const openTotalPicker = () => {
     if (!onChangeTotal) return;
@@ -80,48 +174,62 @@ const WaterTracker: React.FC<Props> = ({
     }
   };
 
+  const rightInfo = useMemo(() => {
+    const content = (
+      <>
+        <View style={styles.counterRow}>
+          {onChangeTotal && <Icon name="pencil-outline" size={14} color={gearGray} />}
+          <Text style={styles.counter}>{value}/{total} ст.</Text>
+        </View>
+        <Text style={styles.liters}>
+          {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
+        </Text>
+        <Text style={styles.totalLitersHint}>
+          {total} ст. = {totalLiters.toFixed(1)} л
+        </Text>
+      </>
+    );
+
+    if (!onChangeTotal) return <View style={styles.rightInfoStatic}>{content}</View>;
+
+    return (
+      <Pressable
+        onPress={openTotalPicker}
+        hitSlop={8}
+        style={({ pressed }) => [styles.rightInfoPressable, pressed && { opacity: 0.85 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Изменить дневную цель по воде"
+      >
+        {content}
+      </Pressable>
+    );
+  }, [onChangeTotal, value, total, liters, totalLiters]);
+
   return (
     <View style={[styles.card, style]}>
+      {/* Шапка */}
       <View style={styles.headerRow}>
-        {/* слева: заголовок + капля */}
         <View style={styles.titleRow}>
           <Text style={styles.title}>Стаканы воды</Text>
           <Icon name="water" size={18} color={waterBlue} style={{ marginLeft: 4 }} />
         </View>
-
-        {/* справа: (опционально) кликабельная зона с карандашом и счётчиками */}
-        {onChangeTotal ? (
-          <Pressable
-            onPress={openTotalPicker}
-            hitSlop={8}
-            style={({ pressed }) => [styles.rightInfoPressable, pressed && { opacity: 0.85 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Изменить дневную цель по воде"
-          >
-            <View style={styles.counterRow}>
-              <Icon name="pencil-outline" size={14} color={gearGray} />
-              <Text style={styles.counter}>{value}/{total} ст.</Text>
-            </View>
-            <Text style={styles.liters}>
-              {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={styles.rightInfoStatic}>
-            <Text style={styles.counter}>{value}/{total} ст.</Text>
-            <Text style={styles.liters}>
-              {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
-            </Text>
-            <Text style={styles.totalLitersHint}>
-              {total} ст. = {totalLiters.toFixed(1)} л
-            </Text>
-          </View>
-        )}
+        {rightInfo}
       </View>
 
+      {/* Сетка стаканов */}
       <View style={styles.row}>
         {Array.from({ length: total }).map((_, i) => {
-          const filled = i < value;
+          const level = levelsRef.current[i] || new Animated.Value(i < value ? 1 : 0);
+          // высота заливки (0.. fullLevel * INNER_H)
+          const height = level.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, fillLevel * INNER_H],
+          });
+          // y = yBot - height
+          const yTop = CUP_H - 3;
+          const yAnim = Animated.subtract(yTop, height);
+          const showPlusOpacity = Animated.subtract(1, level);
+
           return (
             <Pressable
               key={i}
@@ -130,19 +238,36 @@ const WaterTracker: React.FC<Props> = ({
               style={({ pressed }) => [styles.cupTouch, pressed && { opacity: 0.9 }]}
               hitSlop={6}
               accessibilityRole="button"
-              accessibilityLabel={`Стакан ${i + 1} из ${total}${filled ? ', заполнен' : ', пустой'}`}
+              accessibilityLabel={`Стакан ${i + 1} из ${total}${i < value ? ', заполнен' : ', пустой'}`}
               accessibilityHint={
-                filled
+                i < value
                   ? 'Нажмите, чтобы убрать этот стакан из счёта'
                   : 'Нажмите, чтобы добавить этот стакан'
               }
             >
-              <CupSvg filled={filled} fillLevel={fillLevel} />
-              {!filled && (
-                <View pointerEvents="none" style={styles.plusWrap}>
-                  <Text style={styles.plus}>＋</Text>
-                </View>
-              )}
+              <CupBaseSvg filled={i < value} />
+
+              {/* Анимируемая заливка */}
+              <Svg width={CUP_W} height={CUP_H} style={StyleSheet.absoluteFill}>
+                <Defs>
+                  <ClipPath id={`cupClip-${i}`}>
+                    <Path d={cupPath()} />
+                  </ClipPath>
+                </Defs>
+                <AnimatedSvgRect
+                  x={0 as any}
+                  y={yAnim as any}
+                  width={CUP_W as any}
+                  height={Animated.add(height, 2) as any}
+                  fill={'rgba(0,186,255,0.7)'}
+                  clipPath={`url(#cupClip-${i})`}
+                />
+              </Svg>
+
+              {/* Плюс исчезает при заполнении */}
+              <Animated.View pointerEvents="none" style={[styles.plusWrap, { opacity: showPlusOpacity }]}>
+                <Text style={styles.plus}>＋</Text>
+              </Animated.View>
             </Pressable>
           );
         })}
@@ -153,57 +278,32 @@ const WaterTracker: React.FC<Props> = ({
 
 export default WaterTracker;
 
-/* ---------- SVG-«стакан»: верх шире низа (нормальная форма) ---------- */
+/* ---------- Статический контур стакана и вспомогалки ---------- */
 
-const CUP_W = 34;
-const CUP_H = 42;
-const STROKE = 2;
-const TOP_W = 28;   // ширина горлышка (шире)
-const BOT_W = 22;   // ширина донышка (уже)
-const INNER_H = CUP_H - 6;
-
-const CupSvg: React.FC<{ filled: boolean; fillLevel: number }> = ({ filled, fillLevel }) => {
+const cupPath = () => {
   const xTopL = (CUP_W - TOP_W) / 2;
   const xTopR = xTopL + TOP_W;
   const xBotL = (CUP_W - BOT_W) / 2;
   const xBotR = xBotL + BOT_W;
   const yTop = 3;
   const yBot = CUP_H - 3;
+  return `M ${xTopL} ${yTop}
+          L ${xTopR} ${yTop}
+          L ${xBotR} ${yBot}
+          L ${xBotL} ${yBot}
+          Z`;
+};
 
-  const cupPath = `M ${xTopL} ${yTop}
-                   L ${xTopR} ${yTop}
-                   L ${xBotR} ${yBot}
-                   L ${xBotL} ${yBot}
-                   Z`;
-
-  const fillHeight = Math.max(0, Math.min(1, fillLevel)) * INNER_H;
-  const fillY = yBot - fillHeight;
-
+const CupBaseSvg: React.FC<{ filled: boolean }> = ({ filled }) => {
   const strokeColor = filled ? 'rgba(0,186,255,0.95)' : 'rgba(255,255,255,0.28)';
-  const waterColor  = filled ? 'rgba(0,186,255,0.7)'  : 'transparent';
+  const path = cupPath();
+  const xTopL = (CUP_W - TOP_W) / 2;
+  const xTopR = xTopL + TOP_W;
+  const yTop = 3;
 
   return (
     <Svg width={CUP_W} height={CUP_H}>
-      <Defs>
-        <ClipPath id="cupClip">
-          <Path d={cupPath} />
-        </ClipPath>
-      </Defs>
-
-      {/* Контур стакана */}
-      <Path d={cupPath} stroke={strokeColor} strokeWidth={STROKE} fill="transparent" />
-
-      {/* Заливка снизу */}
-      <Rect
-        x={0}
-        y={fillY}
-        width={CUP_W}
-        height={fillHeight + 2}
-        fill={waterColor}
-        clipPath="url(#cupClip)"
-      />
-
-      {/* тонкий верхний «ободок» */}
+      <Path d={path} stroke={strokeColor} strokeWidth={STROKE} fill="transparent" />
       <Path
         d={`M ${xTopL + 1} ${yTop + 1} L ${xTopR - 1} ${yTop + 1}`}
         stroke={strokeColor}
@@ -215,7 +315,6 @@ const CupSvg: React.FC<{ filled: boolean; fillLevel: number }> = ({ filled, fill
 };
 
 /* --------------------- Стили ---------------------- */
-
 const styles = StyleSheet.create({
   card: {
     marginTop: 16,
@@ -240,21 +339,9 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
 
-  // правая зона — кликабельная
-  rightInfoPressable: {
-    alignItems: 'flex-end',
-  },
-  // статичная правая зона (когда нет onChangeTotal)
+  rightInfoPressable: { alignItems: 'flex-end' },
   rightInfoStatic: { alignItems: 'flex-end' },
-
-  // иконка + счётчик в одной строке, минимальный зазор
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-    // зазор делаем маленьким через маргины, чтобы одинаково на iOS/Android
-  },
-
+  counterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
   title: { color: '#fff', fontSize: 16, fontWeight: '600' },
   counter: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginLeft: 6 },
   liters: { color: 'rgba(255,255,255,0.75)', fontSize: 12 },
@@ -267,7 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative', // для абсолютного позиционирования плюса
+    position: 'relative',
   },
   plusWrap: {
     position: 'absolute',
