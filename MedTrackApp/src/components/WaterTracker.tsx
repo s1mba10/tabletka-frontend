@@ -50,49 +50,64 @@ const WaterTracker: React.FC<Props> = ({
 
   /* ---------- Анимируемые уровни для каждого стакана ---------- */
   const levelsRef = useRef<Animated.Value[]>([]);
+
+  // ВАЖНО: больше НИКОГДА не укорачиваем массив уровней — только расширяем
   useEffect(() => {
-    const arr = levelsRef.current.slice(0, total);
+    const arr = levelsRef.current;
     while (arr.length < total) {
       const i = arr.length;
       arr.push(new Animated.Value(i < value ? 1 : 0));
     }
-    levelsRef.current = arr;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [total]);
+    // arr остаётся той же ссылкой; не делаем slice()
+  }, [total, value]);
 
   // стартовые значения при первом монтировании
   useEffect(() => {
     levelsRef.current.forEach((lv, i) => lv.setValue(i < value ? 1 : 0));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // если родитель по какой-то причине не обрезал значение — обрежем сами мягко
+  useEffect(() => {
+    if (value > total) {
+      // отложим на следующий тик, чтобы не конфликтовать с ререндером
+      const id = setTimeout(() => onChange(total), 0);
+      return () => clearTimeout(id);
+    }
+  }, [value, total, onChange]);
 
   // плавная синхронизация, если value меняется извне
   const prevValueRef = useRef<number>(value);
   useEffect(() => {
-    const prev = prevValueRef.current;
-    if (value === prev) return;
+    let prev = prevValueRef.current;
 
-    if (value > prev) {
-      const anims = [];
-      for (let i = prev; i < Math.min(value, total); i++) {
+    // гарантируем, что prev в допустимых пределах текущих буферов
+    const maxIndex = Math.min(levelsRef.current.length, total);
+
+    prev = Math.min(prev, maxIndex);
+    const nextVal = Math.min(value, maxIndex);
+
+    if (nextVal === prev) {
+      prevValueRef.current = value;
+      return;
+    }
+
+    if (nextVal > prev) {
+      const anims: Animated.CompositeAnimation[] = [];
+      for (let i = prev; i < nextVal; i++) {
+        const v = levelsRef.current[i];
+        if (!v) continue;
         anims.push(
-          Animated.timing(levelsRef.current[i], {
-            toValue: 1,
-            duration: 220,
-            useNativeDriver: false,
-          }),
+          Animated.timing(v, { toValue: 1, duration: 220, useNativeDriver: false }),
         );
       }
       Animated.stagger(35, anims).start();
     } else {
-      const anims = [];
-      for (let i = prev - 1; i >= Math.max(value, 0); i--) {
+      const anims: Animated.CompositeAnimation[] = [];
+      for (let i = prev - 1; i >= nextVal; i--) {
+        const v = levelsRef.current[i];
+        if (!v) continue;
         anims.push(
-          Animated.timing(levelsRef.current[i], {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: false,
-          }),
+          Animated.timing(v, { toValue: 0, duration: 200, useNativeDriver: false }),
         );
       }
       Animated.stagger(35, anims).start();
@@ -105,27 +120,27 @@ const WaterTracker: React.FC<Props> = ({
   const handleToggle = (index: number) => {
     const next = index === value - 1 ? value - 1 : index + 1;
 
-    if (next > value) {
-      const anims = [];
-      for (let i = value; i < Math.min(next, total); i++) {
+    // локальная анимация только в рамках существующих буферов
+    const maxIndex = Math.min(levelsRef.current.length, total);
+    const safeNext = Math.min(Math.max(0, next), maxIndex);
+
+    if (safeNext > value) {
+      const anims: Animated.CompositeAnimation[] = [];
+      for (let i = value; i < safeNext; i++) {
+        const v = levelsRef.current[i];
+        if (!v) continue;
         anims.push(
-          Animated.timing(levelsRef.current[i], {
-            toValue: 1,
-            duration: 220,
-            useNativeDriver: false,
-          }),
+          Animated.timing(v, { toValue: 1, duration: 220, useNativeDriver: false }),
         );
       }
       Animated.stagger(35, anims).start();
-    } else if (next < value) {
-      const anims = [];
-      for (let i = value - 1; i >= Math.max(next, 0); i--) {
+    } else if (safeNext < value) {
+      const anims: Animated.CompositeAnimation[] = [];
+      for (let i = value - 1; i >= safeNext; i--) {
+        const v = levelsRef.current[i];
+        if (!v) continue;
         anims.push(
-          Animated.timing(levelsRef.current[i], {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: false,
-          }),
+          Animated.timing(v, { toValue: 0, duration: 200, useNativeDriver: false }),
         );
       }
       Animated.stagger(35, anims).start();
@@ -155,6 +170,7 @@ const WaterTracker: React.FC<Props> = ({
           if (idx != null && idx >= 0 && idx < options.length) {
             const nextTotal = presets[idx];
             onChangeTotal(nextTotal);
+            // на всякий случай подстрахуемся и здесь
             if (value > nextTotal) onChange(nextTotal);
           }
         },
@@ -182,6 +198,9 @@ const WaterTracker: React.FC<Props> = ({
         </View>
         <Text style={styles.liters}>
           {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
+        </Text>
+        <Text style={styles.totalLitersHint}>
+          {total} ст. = {totalLiters.toFixed(1)} л
         </Text>
       </>
     );
@@ -247,7 +266,7 @@ const WaterTracker: React.FC<Props> = ({
 
 export default WaterTracker;
 
-/* ---------- SVG path стакана (общий для разных компонентов) ---------- */
+/* ---------- SVG path стакана ---------- */
 const cupPathString = () => {
   const xTopL = (CUP_W - TOP_W) / 2;
   const xTopR = xTopL + TOP_W;
@@ -262,7 +281,7 @@ const cupPathString = () => {
           Z`;
 };
 
-/* ---------- Плюс с плавным появлением/исчезновением ---------- */
+/* ---------- Плюс ---------- */
 const CupPlus: React.FC<{ level: Animated.Value }> = ({ level }) => {
   const [lvl, setLvl] = useState(0);
   useEffect(() => {
@@ -276,41 +295,35 @@ const CupPlus: React.FC<{ level: Animated.Value }> = ({ level }) => {
   );
 };
 
-/* ---------- Стакан с волной ---------- */
+/* ---------- Стакан с волной и режимами (нет воды / волна / ровно) ---------- */
 const CupWithWave: React.FC<{
   index: number;
   level: Animated.Value;   // 0..1
   fullLevel: number;       // доля высоты, которая считается «полной»
   isFilledTarget: boolean; // влияет на цвет контура
 }> = ({ index, level, fullLevel, isFilledTarget }) => {
-  const [lvl, setLvl] = useState(0);     // текущее числовое значение уровня
-  const [phase, setPhase] = useState(0); // фаза волны
+  const [lvl, setLvl] = useState(0);
+  const [phase, setPhase] = useState(0);
 
-  // слушаем Animated.Value, чтобы знать текущую высоту (и обновлять волну)
   useEffect(() => {
     const id = level.addListener(({ value }) => setLvl(value as number));
     return () => level.removeListener(id);
   }, [level]);
 
-  // расчёты высоты поверхности
   const yBot = CUP_H - 3;
   const topHeight = fullLevel * INNER_H * Math.min(1, Math.max(0, lvl));
   const surfaceY = yBot - topHeight;
 
-  // «полнота» с учётом fullLevel (0..1)
   const fullness = Math.min(1, Math.max(0, lvl * fullLevel));
-
-  // амплитуда зависит от наполнения: 0 у полного
   const baseAmp = 3;
   const amp = fullness > FULL_EPS ? 0 : baseAmp * (1 - fullness);
 
-  // ДВИЖЕНИЕ ВОЛНЫ: запускаем только если есть вода и ещё не «полный верх»
+  // ДВИЖЕНИЕ ВОЛНЫ — только если есть вода и не «полный верх»
   const shouldAnimate = lvl > LOW_EPS && fullness < FULL_EPS;
 
   const rafRef = useRef<number | null>(null);
   useEffect(() => {
     if (!shouldAnimate) {
-      // остановить анимацию
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       return;
@@ -320,7 +333,7 @@ const CupWithWave: React.FC<{
       const now = Date.now();
       const dt = now - last;
       last = now;
-      const speed = 30; // пикс/сек
+      const speed = 30;
       setPhase(p => (p + (speed * dt) / 1000) % (CUP_W * 2));
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -336,7 +349,6 @@ const CupWithWave: React.FC<{
   const waterColor = 'rgba(0,186,255,0.7)';
   const cupPath = cupPathString();
 
-  // координаты для верхнего «ободка»
   const xTopL = (CUP_W - TOP_W) / 2;
   const xTopR = xTopL + TOP_W;
   const yTop = 3;
@@ -362,10 +374,10 @@ const CupWithWave: React.FC<{
           </ClipPath>
         </Defs>
 
-        {/* НИЗКИЙ УРОВЕНЬ: воды вообще не видно */}
+        {/* НИЗКИЙ УРОВЕНЬ — вообще ничего не рисуем */}
         {lvl <= LOW_EPS ? null : (
           <>
-            {/* ПОЛНЫЙ ВЕРХ (ровная поверхность, без движения) */}
+            {/* Почти полный — ровная поверхность, без волны */}
             {fullness >= FULL_EPS ? (
               <Rect
                 x={0}
@@ -376,7 +388,6 @@ const CupWithWave: React.FC<{
                 clipPath={`url(#cupClip-${index})`}
               />
             ) : (
-              // ПРОМЕЖУТОК: волна с движением
               <Path
                 d={buildWavePath(surfaceY, amp, phase)}
                 fill={waterColor}
@@ -390,10 +401,9 @@ const CupWithWave: React.FC<{
   );
 };
 
-/* Построение волнового пути */
 function buildWavePath(surfaceY: number, amp: number, phase: number) {
   const yBot = CUP_H - 3;
-  const wavelength = 24; // пикс
+  const wavelength = 24;
   const samples = 24;
   const xStart = -CUP_W;
   const xEnd = CUP_W * 2;
