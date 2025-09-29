@@ -160,7 +160,7 @@ const MainScreen: React.FC = () => {
   const isOverTarget = totalKcal > DAILY_TARGET_KCAL;
 
   // Моки для процентов «Тренировки» и «Питание»
-  const workoutPct = 90;
+  const workoutPct = 0;
   const nutritionPct = 65;
 
   // Среднее соблюдение (лекарства + тренировки + питание)
@@ -375,7 +375,7 @@ const MainScreen: React.FC = () => {
               <Icon name={theme.badgeIcon as any} size={14} color={theme.badgeTint} />
               <Text style={[styles.badgeText, { color: theme.badgeTint }]}>{theme.badgeText}</Text>
             </View>
-            <Text style={styles.weeklyTitle}>Соблюдение недели</Text>
+            <Text style={styles.weeklyTitle}>Прогресс недели</Text>
           </View>
           <MiniRing
             size={72}
