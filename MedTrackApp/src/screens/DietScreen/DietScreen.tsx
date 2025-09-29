@@ -220,8 +220,25 @@ const DietScreen: React.FC = () => {
   const waterForSelected = waterByDate[selectedDate] ?? 0;
   const WATER_KEY = 'diet.waterByDate.v1';
 
+  // дневная цель по воде (кол-во стаканов)
+  const WATER_TOTAL_KEY = 'settings.waterTotal.v1';
+  const [dailyWaterTotal, setDailyWaterTotal] = useState<number>(10);
+
   const handleWaterChange = (next: number) => {
     setWaterByDate(prev => ({ ...prev, [selectedDate]: next }));
+  };
+
+  const handleChangeDailyWaterTotal = (nextTotal: number) => {
+    setDailyWaterTotal(nextTotal);
+    AsyncStorage.setItem(WATER_TOTAL_KEY, String(nextTotal)).catch(() => {});
+    // если текущие стаканы больше новой цели — обрежем
+    setWaterByDate(prev => {
+      const curr = prev[selectedDate] ?? 0;
+      if (curr > nextTotal) {
+        return { ...prev, [selectedDate]: nextTotal };
+      }
+      return prev;
+    });
   };
 
   // ---- Загрузка данных ----
@@ -236,6 +253,13 @@ const DietScreen: React.FC = () => {
     AsyncStorage.getItem(WATER_KEY)
       .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
       .catch(() => {});
+
+    AsyncStorage.getItem(WATER_TOTAL_KEY)
+      .then(raw => {
+        const parsed = raw ? parseInt(raw, 10) : NaN;
+        if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
+      })
+      .catch(() => {});
   }, []);
 
   useFocusEffect(
@@ -249,6 +273,13 @@ const DietScreen: React.FC = () => {
 
       AsyncStorage.getItem(WATER_KEY)
         .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
+        .catch(() => {});
+
+      AsyncStorage.getItem(WATER_TOTAL_KEY)
+        .then(raw => {
+          const parsed = raw ? parseInt(raw, 10) : NaN;
+          if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
+        })
         .catch(() => {});
     }, []),
   );
@@ -331,11 +362,12 @@ const DietScreen: React.FC = () => {
               />
             ))}
 
-            {/* === Трекер воды (10 стаканов) === */}
+            {/* === Трекер воды === */}
             <WaterTracker
               value={waterForSelected}
-              total={10}
+              total={dailyWaterTotal}
               onChange={handleWaterChange}
+              onChangeTotal={handleChangeDailyWaterTotal}
             />
           </ScrollView>
         </View>

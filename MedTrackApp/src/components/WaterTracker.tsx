@@ -1,9 +1,17 @@
 // components/WaterTracker.tsx
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ViewStyle,
+  Platform,
+  Alert,
+  ActionSheetIOS,
+} from 'react-native';
 import Svg, { Path, Rect, Defs, ClipPath } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 
 type Props = {
   value: number;                  // отмечено стаканов (0..total)
@@ -12,6 +20,7 @@ type Props = {
   glassMl?: number;               // объём одного стакана в мл (по умолчанию 250)
   fillLevel?: number;             // визуальная высота заливки 0..1
   style?: ViewStyle;              // стиль контейнера снаружи
+  onChangeTotal?: (nextTotal: number) => void; // изменить дневную цель (опционально)
 };
 
 const WaterTracker: React.FC<Props> = ({
@@ -21,39 +30,94 @@ const WaterTracker: React.FC<Props> = ({
   glassMl = 250,
   fillLevel = 0.65,
   style,
+  onChangeTotal,
 }) => {
   const liters = (value * glassMl) / 1000;
   const totalLiters = (total * glassMl) / 1000;
 
   const handleToggle = (index: number) => {
-    // Тап по тому же последнему заполненному — «отменяем» его.
-    // Иначе заполняем до index+1 (последовательная логика).
+    // Тап по последнему заполненному — «отменяем» его, иначе заполняем до index+1
     const next = index === value - 1 ? value - 1 : index + 1;
     onChange(Math.max(0, Math.min(total, next)));
   };
 
-  return (
-  <View style={[styles.card, style]}>
-    <View style={styles.headerRow}>
-      {/* Заголовок + иконка капли */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={styles.title}>Стаканы воды</Text>
-        <Icon
-          name="water"              // можно заменить на water-outline или water-plus
-          size={18}
-          color="rgba(0,186,255,0.95)" // тот же цвет, что у заливки стакана
-          style={{ marginLeft: 2 }}
-        />
-      </View>
+  const waterBlue = 'rgba(0,186,255,0.95)';
+  const gearGray  = 'rgba(255,255,255,0.65)';
 
-      {/* Правая часть (счётчики) */}
-      <View style={styles.rightInfo}>
-        <Text style={styles.counter}>{value}/{total} ст.</Text>
-        <Text style={styles.liters}>
-          {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
-        </Text>
+  const openTotalPicker = () => {
+    if (!onChangeTotal) return;
+
+    const presets = [6, 8, 10, 12, 14];
+    const options = presets.map(n => `${n} стак.`);
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: 'Дневная цель по воде',
+          options: [...options, 'Отмена'],
+          cancelButtonIndex: options.length,
+          userInterfaceStyle: 'dark',
+        },
+        idx => {
+          if (idx != null && idx >= 0 && idx < options.length) {
+            const nextTotal = presets[idx];
+            onChangeTotal(nextTotal);
+            if (value > nextTotal) onChange(nextTotal);
+          }
+        },
+      );
+    } else {
+      Alert.alert('Дневная цель по воде', 'Выбери количество стаканов в день:', [
+        ...presets.map(v => ({
+          text: `${v} стак.`,
+          onPress: () => {
+            onChangeTotal(v);
+            if (value > v) onChange(v);
+          },
+        })),
+        { text: 'Отмена', style: 'cancel' },
+      ]);
+    }
+  };
+
+  return (
+    <View style={[styles.card, style]}>
+      <View style={styles.headerRow}>
+        {/* слева: заголовок + капля */}
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Стаканы воды</Text>
+          <Icon name="water" size={18} color={waterBlue} style={{ marginLeft: 4 }} />
+        </View>
+
+        {/* справа: (опционально) кликабельная зона с карандашом и счётчиками */}
+        {onChangeTotal ? (
+          <Pressable
+            onPress={openTotalPicker}
+            hitSlop={8}
+            style={({ pressed }) => [styles.rightInfoPressable, pressed && { opacity: 0.85 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Изменить дневную цель по воде"
+          >
+            <View style={styles.counterRow}>
+              <Icon name="pencil-outline" size={14} color={gearGray} />
+              <Text style={styles.counter}>{value}/{total} ст.</Text>
+            </View>
+            <Text style={styles.liters}>
+              {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={styles.rightInfoStatic}>
+            <Text style={styles.counter}>{value}/{total} ст.</Text>
+            <Text style={styles.liters}>
+              {value} ст. = {liters.toFixed(liters < 1 ? 2 : 1)} л
+            </Text>
+            <Text style={styles.totalLitersHint}>
+              {total} ст. = {totalLiters.toFixed(1)} л
+            </Text>
+          </View>
+        )}
       </View>
-    </View>
 
       <View style={styles.row}>
         {Array.from({ length: total }).map((_, i) => {
@@ -67,7 +131,11 @@ const WaterTracker: React.FC<Props> = ({
               hitSlop={6}
               accessibilityRole="button"
               accessibilityLabel={`Стакан ${i + 1} из ${total}${filled ? ', заполнен' : ', пустой'}`}
-              accessibilityHint={filled ? 'Нажмите, чтобы убрать этот стакан из счёта' : 'Нажмите, чтобы добавить этот стакан'}
+              accessibilityHint={
+                filled
+                  ? 'Нажмите, чтобы убрать этот стакан из счёта'
+                  : 'Нажмите, чтобы добавить этот стакан'
+              }
             >
               <CupSvg filled={filled} fillLevel={fillLevel} />
               {!filled && (
@@ -170,10 +238,26 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 10,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
+
+  // правая зона — кликабельная
+  rightInfoPressable: {
+    alignItems: 'flex-end',
+  },
+  // статичная правая зона (когда нет onChangeTotal)
+  rightInfoStatic: { alignItems: 'flex-end' },
+
+  // иконка + счётчик в одной строке, минимальный зазор
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    // зазор делаем маленьким через маргины, чтобы одинаково на iOS/Android
+  },
+
   title: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  rightInfo: { alignItems: 'flex-end' },
-  counter: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
-  liters: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
+  counter: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginLeft: 6 },
+  liters: { color: 'rgba(255,255,255,0.75)', fontSize: 12 },
   totalLitersHint: { color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 2 },
 
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
