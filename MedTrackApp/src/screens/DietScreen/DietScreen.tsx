@@ -12,6 +12,7 @@ import {
   StyleSheet,
   View,
   StatusBar,
+  InteractionManager,
 } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { format, addDays } from 'date-fns';
@@ -314,19 +315,42 @@ const DietScreen: React.FC = () => {
     waterYRef.current = event.nativeEvent.layout.y ?? 0;
   }, []);
 
+  // Плавный и надёжный автоскролл
+  const tryScrollToWater = useCallback(() => {
+    const y = Math.max(0, waterYRef.current - 12);
+    scrollRef.current?.scrollTo({ y, animated: true });
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (route.params?.jumpTo === 'water') {
-        const timeout = setTimeout(() => {
-          scrollRef.current?.scrollTo({ y: Math.max(0, waterYRef.current - 12), animated: true });
-          navigation.setParams({ jumpTo: undefined });
-        }, 80);
+        let cancelled = false;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 4;
 
-        return () => clearTimeout(timeout);
+        const run = () => {
+          if (cancelled) return;
+          attempts += 1;
+          tryScrollToWater();
+          if (attempts < MAX_ATTEMPTS) {
+            setTimeout(run, 100);
+          } else {
+            navigation.setParams({ jumpTo: undefined });
+          }
+        };
+
+        InteractionManager.runAfterInteractions(() => {
+          if (cancelled) return;
+          setTimeout(run, 50);
+        });
+
+        return () => {
+          cancelled = true;
+        };
       }
 
       return undefined;
-    }, [route.params?.jumpTo, navigation]),
+    }, [route.params?.jumpTo, navigation, tryScrollToWater]),
   );
 
   return (

@@ -141,18 +141,18 @@ const getStatusTheme = (pct: number) => {
 const getWaterTheme = (pct: number) => {
   if (pct >= 70)
     return {
-      tint: '#00B6FF',                         // яркий голубой
+      tint: '#00B6FF',
       badgeBg: 'rgba(0,182,255,0.18)',
       badgeTint: '#CFEFFF',
     };
   if (pct >= 30)
     return {
-      tint: '#4FC3F7',                         // светло-голубой
+      tint: '#4FC3F7',
       badgeBg: 'rgba(79,195,247,0.16)',
       badgeTint: '#DAF2FF',
     };
   return {
-    tint: '#1E88E5',                           // насыщённый синий
+    tint: '#1E88E5',
     badgeBg: 'rgba(30,136,229,0.16)',
     badgeTint: '#CFE3FF',
   };
@@ -393,12 +393,21 @@ const MainScreen: React.FC = () => {
     setActiveMeal(null);
   };
 
-  // Карточка воды — теперь монохромная голубая палитра
+  // Карточка воды — переход к вложенному экрану Diet внутри таба "Питание"
   const WaterStatCard: React.FC = () => {
     const t = getWaterTheme(waterPct);
     const goToWater = () => {
-      // Замените на соответствующий таб/экран, где стоит WaterTracker
-      navigation.getParent()?.navigate('Питание' as never, { jumpTo: 'water' } as never);
+      const parent = navigation.getParent();
+      if (parent) {
+        // Родитель — TabNavigator. Переходим в таб "Питание" и сразу во вложенный стек на экран "Diet".
+        (parent as any).navigate('Питание', {
+          screen: 'Diet',
+          params: { jumpTo: 'water' },
+        });
+      } else {
+        // Фоллбэк (на случай, если Diet окажется в этом же стеке)
+        (navigation as any).navigate('Diet', { jumpTo: 'water' });
+      }
     };
 
     return (
@@ -455,15 +464,6 @@ const MainScreen: React.FC = () => {
 
       {/* Вертикальная прокрутка */}
       <ScrollView style={styles.verticalScroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator>
-        {/* ===== Горизонтальные карточки фич — закомментировано ===== */}
-        {/*
-        <View style={styles.featuresContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {features.map((feature) => <FeatureButton key={feature.title} feature={feature} />)}
-          </ScrollView>
-        </View>
-        */}
-
         {/* Карточка прогресса недели */}
         <View style={[styles.weeklyCard, { backgroundColor: theme.bg }]}>
           <View style={styles.weeklyLeft}>
