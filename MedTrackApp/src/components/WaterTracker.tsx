@@ -1,4 +1,3 @@
-// components/WaterTracker.tsx
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import {
   View,

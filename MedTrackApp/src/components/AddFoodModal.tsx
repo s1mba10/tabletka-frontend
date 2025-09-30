@@ -69,7 +69,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
 
-  // FIX: хранить выбранное как объединение, а не только CatalogItem
   const [selectedCatalog, setSelectedCatalog] = useState<CatalogItem | UserCatalogItem | null>(null);
   const [selectedSource, setSelectedSource] = useState<'catalog' | 'user' | null>(null);
 
@@ -128,7 +127,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     type: 'catalog' | 'user' | 'favorite',
   ) => (type === 'favorite' ? favKey(item as FavoriteItem) : (item as CatalogItem | UserCatalogItem).id);
 
-  // FIX: поднял вычисление allSearchItems ВЫШЕ всех useEffect, которые на него ссылаются
   const allSearchItems = useMemo<SearchItem[]>(() => {
     const map = new Map<string, SearchItem>();
     localCatalog.forEach(it => map.set(itemKey(it, 'catalog'), { type: 'catalog', item: it }));
@@ -141,7 +139,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     );
   }, [userCatalog, favorites]);
 
-  // FIX: этот эффект теперь после объявления allSearchItems
   useEffect(() => {
     if (!ingredientPickerVisible) return;
     const q = ingredientSearch.trim().toLowerCase();
@@ -603,7 +600,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                   : '',
               );
             } else {
-              // FIX: сохраняем как объединённый тип + правильный источник
               setSelectedCatalog(data as CatalogItem | UserCatalogItem);
               setSelectedSource(item.type === 'catalog' ? 'catalog' : 'user');
             }
@@ -754,7 +750,6 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const handleToggle = () => {
       if (selectedCatalog) {
         const type = selectedSource === 'user' ? 'user' : 'catalog';
-        // FIX: создаём корректный SearchItem по источнику
         if (type === 'catalog') {
           toggleFavorite({ type: 'catalog', item: selectedCatalog as CatalogItem });
         } else {

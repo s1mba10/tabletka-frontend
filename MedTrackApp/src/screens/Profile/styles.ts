@@ -62,7 +62,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  // Update button styles
   updateButton: {
     flexDirection: 'row',
     backgroundColor: '#007AFF',
@@ -81,7 +80,6 @@ export const styles = StyleSheet.create({
     backgroundColor: '#3A5D7E',
     opacity: 0.7,
   },
-  // Enhanced adherence section styles
   adherenceSection: {
     backgroundColor: '#1E1E1E',
     borderRadius: 10,
@@ -104,7 +102,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   
-  // New adherence display styles
   adherenceContainer: {
     position: 'relative',
     alignItems: 'center',
@@ -180,7 +177,6 @@ export const styles = StyleSheet.create({
     fontSize: 14,
   },
   
-  // Keep the existing styles you need
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -200,7 +196,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  // Update statLabel styles to make Пропущено fit
   statLabel: {
     color: '#888',
     fontSize: 12,

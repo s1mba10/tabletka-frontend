@@ -1,4 +1,3 @@
-// screens/diet/DietScreen.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WaterTracker from '../../components/WaterTracker';
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';

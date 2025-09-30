@@ -64,7 +64,6 @@ const ReminderEdit: React.FC = () => {
 
   const saveReminder = async () => {
     try {
-      // Create updated reminder
       const updatedReminder: Reminder = {
         ...reminder,
         name,
@@ -72,23 +71,18 @@ const ReminderEdit: React.FC = () => {
         time,
       };
 
-      // Retrieve existing reminders from AsyncStorage
       const storedRemindersJson = await AsyncStorage.getItem('reminders');
-      
+
       if (storedRemindersJson) {
-        // Parse stored reminders
         const storedReminders: Reminder[] = JSON.parse(storedRemindersJson);
 
-        // Find and replace the updated reminder
-        const updatedReminders = storedReminders.map(r => 
+        const updatedReminders = storedReminders.map(r =>
           r.id === reminder.id ? updatedReminder : r
         );
 
-        // Save updated reminders back to AsyncStorage
         await AsyncStorage.setItem('reminders', JSON.stringify(updatedReminders));
       }
 
-      // Navigate back to Main screen with updated reminder
       const key = mainKey || navigation.getState().routes[0]?.key;
       navigation.goBack();
       // @ts-ignore

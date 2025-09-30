@@ -1,4 +1,3 @@
-// src/health/ios.healthkit.ts
 import { Platform } from 'react-native';
 import type {
   DateRange, EnergySample, HealthSource, HRSample, StepSample, WeightSample, Workout, Scope, Unsubscribe, DataType,

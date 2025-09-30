@@ -1,4 +1,3 @@
-// screens/main/styles.ts
 import { StyleSheet } from 'react-native';
 
 const YELLOW = '#FFC107';

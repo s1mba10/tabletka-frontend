@@ -31,7 +31,7 @@ const Profile: React.FC = () => {
     adherence_percentage: 0,
   });
 
-  const screenWidth = Dimensions.get('window').width - 40; // Account for padding
+  const screenWidth = Dimensions.get('window').width - 40;
 
   useEffect(() => {
     navigation.setOptions({ headerTitle: 'Profile' });
@@ -51,7 +51,6 @@ const Profile: React.FC = () => {
     };
     loadUser();
   }, []);
-
 
   const loadStats = async () => {
     try {
@@ -113,16 +112,11 @@ const Profile: React.FC = () => {
     );
   };
 
-
-
-  // Navigate to medications management
   const navigateToMedications = () => {
-    // Switch to the Medications tab instead of pushing a new screen on top
     const parentNavigator = navigation.getParent();
     parentNavigator?.navigate('Препараты');
   };
 
-  // Data for bar chart
   const barData = {
     labels: ['Принято', 'Пропущено'],
     datasets: [
@@ -133,7 +127,6 @@ const Profile: React.FC = () => {
     ],
   };
 
-  // Chart configuration
   const chartConfig = {
     backgroundGradientFrom: '#1E1E1E',
     backgroundGradientTo: '#1E1E1E',
@@ -150,7 +143,6 @@ const Profile: React.FC = () => {
     },
   };
 
-  // Get adherence color based on percentage
   const getAdherenceColor = (percentage: number): string => {
     if (percentage >= 80) return '#4CAF50'; // Good - Green
     if (percentage >= 60) return '#FFC107'; // Okay - Yellow
@@ -164,24 +156,17 @@ const Profile: React.FC = () => {
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
 
-
-
-
-
-
-        {/* Medication Adherence Section */}
         <View style={styles.adherenceSection}>
           <Text style={styles.sectionTitle}>Статистика</Text>
-          
-          {/* Adherence Rate - Enhanced Circular Progress */}
+
           <View style={styles.chartContainer}>
             <Text style={styles.chartTitle}>Процент соблюдения</Text>
             <View style={styles.centeredChart}>
-              <AdherenceDisplay 
-                percentage={user.adherence_percentage} 
-                color={adherenceColor} 
+              <AdherenceDisplay
+                percentage={user.adherence_percentage}
+                color={adherenceColor}
               />
-              
+
               <View style={styles.adherenceLegend}>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
@@ -195,7 +180,6 @@ const Profile: React.FC = () => {
             </View>
           </View>
 
-          {/* Medications Summary - Bar Chart */}
           <View style={styles.chartContainer}>
             <Text style={styles.chartTitle}>Общая информация</Text>
             <BarChart
@@ -217,8 +201,6 @@ const Profile: React.FC = () => {
               showValuesOnTopOfBars
             />
           </View>
-
-          {/* Stats Summary */}
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{user.total_taken}</Text>

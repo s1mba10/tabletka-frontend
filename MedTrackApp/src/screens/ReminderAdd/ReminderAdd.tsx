@@ -81,7 +81,6 @@ const ReminderAdd: React.FC = () => {
     return date;
   });
 
-  // Ensure single-day course when repeating once
   useEffect(() => {
     if (repeat === 'once') {
       setEndDate(startDate);
@@ -400,46 +399,45 @@ const ReminderAdd: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          {/* Сделать чтобы было похоже на листание с правой станицы на левую, а не наоборот */}
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-left" size={28} color="#007AFF" />
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icon name="arrow-left" size={28} color="#007AFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Добавить напоминание</Text>
+          </View>
+          <Text style={styles.dateInfo}>
+            {startDate === endDate
+              ? `Дата: ${formatDateRu(startDate)}`
+              : `Курс: ${formatDateRu(startDate)} - ${formatDateRu(endDate)}`}
+          </Text>
+
+          <Text style={styles.label}>Название</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            maxLength={35}
+            placeholder="Название лекарства"
+            placeholderTextColor="#666"
+          />
+          <TouchableOpacity onPress={() => setSelectVisible(true)} style={styles.selectButton}>
+            <Icon name="format-list-bulleted" size={20} color="#007AFF" />
+            <Text style={styles.selectButtonText}>Выбрать из добавленных</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Добавить напоминание</Text>
-        </View>
-        <Text style={styles.dateInfo}>
-          {startDate === endDate
-            ? `Дата: ${formatDateRu(startDate)}`
-            : `Курс: ${formatDateRu(startDate)} - ${formatDateRu(endDate)}`}
-        </Text>
 
-        <Text style={styles.label}>Название</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          maxLength={35}
-          placeholder="Название лекарства"
-          placeholderTextColor="#666"
-        />
-        <TouchableOpacity onPress={() => setSelectVisible(true)} style={styles.selectButton}>
-          <Icon name="format-list-bulleted" size={20} color="#007AFF" />
-          <Text style={styles.selectButtonText}>Выбрать из добавленных</Text>
-        </TouchableOpacity>
+          <Text style={styles.label}>Дозировка</Text>
+          <TextInput
+            style={styles.input}
+            value={dosage}
+            keyboardType="default"
+            maxLength={35}
+            onChangeText={setDosage}
+            placeholder="Например: 1"
+            placeholderTextColor="#666"
+          />
 
-        <Text style={styles.label}>Дозировка</Text>
-        <TextInput
-          style={styles.input}
-          value={dosage}
-          keyboardType="default"
-          maxLength={35}
-          onChangeText={setDosage}
-          placeholder="Например: 1"
-          placeholderTextColor="#666"
-        />
-
-        <Text style={styles.label}>Тип</Text>
-        <View style={styles.typeContainer}>
+          <Text style={styles.label}>Тип</Text>
+          <View style={styles.typeContainer}>
           {typeOptions.map((option) => (
             <TouchableOpacity
               key={option.value}

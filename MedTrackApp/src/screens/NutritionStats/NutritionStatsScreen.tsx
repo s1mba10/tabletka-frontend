@@ -1,4 +1,3 @@
-// screens/nutrition/NutritionStatsScreen.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, AccessibilityInfo, Animated, Easing } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
