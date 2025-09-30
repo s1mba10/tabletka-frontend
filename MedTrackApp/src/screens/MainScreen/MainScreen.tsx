@@ -1,5 +1,5 @@
 // screens/main/MainScreen.tsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -56,6 +56,11 @@ const getThisWeek = () => {
 const fmtKcal = (kcal: number) => `${Math.round(kcal)} ккал`;
 const DAILY_TARGET_KCAL = 3300;
 
+// Ключи и константы воды (как на DietScreen)
+const WATER_KEY = 'diet.waterByDate.v1';
+const WATER_TOTAL_KEY = 'settings.waterTotal.v1';
+const DEFAULT_GLASS_ML = 250;
+
 // ===== Мини-кольцо (SVG) — точное заполнение по проценту =====
 const MiniRing: React.FC<{
   size: number;
@@ -102,14 +107,14 @@ const MiniRing: React.FC<{
   );
 };
 
-// Тема карточки по статусу + динамическая плашка
+// Тема карточки по статусу + динамическая плашка (общая)
 const getStatusTheme = (pct: number) => {
   if (pct >= 70)
     return {
       tint: '#4CAF50',
       bg: '#162016',
       badgeBg: 'rgba(76,175,80,0.18)',
-      badgeIcon: 'leaf',      // или 'check-circle-outline'
+      badgeIcon: 'leaf',
       badgeText: 'Соблюдение',
       badgeTint: '#CDE7CD',
     };
@@ -129,6 +134,27 @@ const getStatusTheme = (pct: number) => {
     badgeIcon: 'fire',
     badgeText: 'Активность',
     badgeTint: '#F8C2B6',
+  };
+};
+
+// ВОДА: монохромная голубая палитра
+const getWaterTheme = (pct: number) => {
+  if (pct >= 70)
+    return {
+      tint: '#00B6FF',                         // яркий голубой
+      badgeBg: 'rgba(0,182,255,0.18)',
+      badgeTint: '#CFEFFF',
+    };
+  if (pct >= 30)
+    return {
+      tint: '#4FC3F7',                         // светло-голубой
+      badgeBg: 'rgba(79,195,247,0.16)',
+      badgeTint: '#DAF2FF',
+    };
+  return {
+    tint: '#1E88E5',                           // насыщённый синий
+    badgeBg: 'rgba(30,136,229,0.16)',
+    badgeTint: '#CFE3FF',
   };
 };
 
@@ -167,6 +193,29 @@ const MainScreen: React.FC = () => {
   const avgPct = Math.round((Math.round(medicinePct) + workoutPct + nutritionPct) / 3);
   const theme = getStatusTheme(avgPct);
 
+  // ===== ВОДА: локальное состояние главного экрана (пассивная статистика)
+  const [waterByDate, setWaterByDate] = useState<Record<string, number>>({});
+  const [dailyWaterTotal, setDailyWaterTotal] = useState<number>(10);
+  const glassMl = DEFAULT_GLASS_ML;
+
+  const todayKey = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const waterToday = waterByDate[todayKey] ?? 0;
+  const waterLiters = (waterToday * glassMl) / 1000;
+  const waterTotalLiters = (dailyWaterTotal * glassMl) / 1000;
+  const waterPct = dailyWaterTotal > 0 ? Math.min(100, Math.round((waterToday / dailyWaterTotal) * 100)) : 0;
+
+  const loadWater = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(WATER_KEY);
+      setWaterByDate(raw ? JSON.parse(raw) : {});
+    } catch {}
+    try {
+      const rawTotal = await AsyncStorage.getItem(WATER_TOTAL_KEY);
+      const parsed = rawTotal ? parseInt(rawTotal, 10) : NaN;
+      if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
+    } catch {}
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       reloadStats();
@@ -200,7 +249,8 @@ const MainScreen: React.FC = () => {
 
       loadProfile();
       loadFood();
-    }, [reloadStats]),
+      loadWater(); // <— загрузка воды
+    }, [reloadStats, loadWater]),
   );
 
   useEffect(() => {
@@ -328,7 +378,7 @@ const MainScreen: React.FC = () => {
       <MiniStat icon="run" label="Спорт" value="2.0 ч" accent="green" />
       <MiniStat icon="heart-pulse" label="Пульс" value="86" accent="orange" />
       <MiniStat icon="scale-bathroom" label="Вес" value="72.8" accent="yellow" />
-      <MiniStat icon="water" label="Вода" value="12 стак." />
+      <MiniStat icon="water" label="Вода" value={`${waterToday}/${dailyWaterTotal}`} />
     </View>
   );
 
@@ -341,6 +391,52 @@ const MainScreen: React.FC = () => {
       return merged;
     });
     setActiveMeal(null);
+  };
+
+  // Карточка воды — теперь монохромная голубая палитра
+  const WaterStatCard: React.FC = () => {
+    const t = getWaterTheme(waterPct);
+    const goToWater = () => {
+      // Замените на соответствующий таб/экран, где стоит WaterTracker
+      navigation.getParent()?.navigate('Питание' as never);
+    };
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={goToWater}
+        style={[styles.weeklyCard, { backgroundColor: '#171717', marginBottom: 12, borderColor: 'rgba(255,255,255,0.06)' }]}
+      >
+        <View style={[styles.weeklyLeft, { paddingRight: 12 }]}>
+          <View style={[styles.badge, { backgroundColor: t.badgeBg }]}>
+            <Icon name="cup-water" size={14} color={t.badgeTint} />
+            <Text style={[styles.badgeText, { color: t.badgeTint }]}>Водный баланс</Text>
+          </View>
+          <Text style={styles.weeklyTitle}>Вода сегодня</Text>
+          <Text style={[styles.miniLabel, { marginTop: 6 }]}>
+            {waterToday}/{dailyWaterTotal} ст. • {waterLiters.toFixed(waterLiters < 1 ? 2 : 1)} л
+          </Text>
+          <Text style={[styles.miniLabel, { marginTop: 2 }]}>
+            Цель: {waterTotalLiters.toFixed(1)} л
+          </Text>
+        </View>
+
+        <MiniRing
+          size={72}
+          stroke={8}
+          percent={waterPct}
+          trackColor="rgba(255,255,255,0.12)"
+          color={t.tint}
+          centerBg="#171717"
+          center={
+            <View style={styles.ringLabel}>
+              <Text style={styles.ringDays}>{waterPct}</Text>
+              <Text style={styles.ringSub}>%</Text>
+            </View>
+          }
+        />
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -368,7 +464,7 @@ const MainScreen: React.FC = () => {
         </View>
         */}
 
-        {/* Карточка прогресса недели: фон и плашка зависят от статуса, процент внутри кольца */}
+        {/* Карточка прогресса недели */}
         <View style={[styles.weeklyCard, { backgroundColor: theme.bg }]}>
           <View style={styles.weeklyLeft}>
             <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
@@ -396,8 +492,11 @@ const MainScreen: React.FC = () => {
         {/* Быстрые метрики */}
         <View style={styles.quickRow}>
           <MiniStat icon="walk" label="Шаги за день" value="5 500" accent="yellow" />
-          <MiniStat icon="cup-water" label="Вода" value="12 стак." accent="green" />
+          <MiniStat icon="cup-water" label="Вода" value={`${waterToday}/${dailyWaterTotal}`} />
         </View>
+
+        {/* Карточка воды */}
+        <WaterStatCard />
 
         {/* Календарная лента недели */}
         <WeekStrip />

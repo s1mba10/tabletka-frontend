@@ -89,7 +89,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ringLabel: { alignItems: 'center' },
+  // ringDays: { color: '#FFFFFF', fontWeight: '800', fontSize: 16, lineHeight: 18 },
   ringDays: { color: '#FFFFFF', fontWeight: '800', fontSize: 18, lineHeight: 22 },
+  // ringSub: { color: 'rgba(255,255,255,0.85)', fontSize: 10, lineHeight: 12 },
   ringSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, lineHeight: 12 },
 
   // Быстрые метрики
@@ -137,4 +139,23 @@ export const styles = StyleSheet.create({
 
   // Саммари
   summaryRow: { flexDirection: 'row', marginVertical: 16, gap: 12 },
-});
+
+  waterCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginBottom: 12,
+  },
+  waterLeft: { width: 64, alignItems: 'center', justifyContent: 'center' },
+  waterRight: { flex: 1 },
+  waterTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  waterTitle: { color: '#F1F1F1', fontSize: 14, fontWeight: '700' },
+  waterMainLine: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  waterHint: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
+  });
