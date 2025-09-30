@@ -24,7 +24,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Medications: undefined;
   BodyDiary: undefined;
-  Diet: undefined;
+  Diet: { jumpTo?: 'water' } | undefined;
   FoodEdit: {
     date: string;
     meal: MealType;

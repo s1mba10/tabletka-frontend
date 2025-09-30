@@ -398,7 +398,7 @@ const MainScreen: React.FC = () => {
     const t = getWaterTheme(waterPct);
     const goToWater = () => {
       // Замените на соответствующий таб/экран, где стоит WaterTracker
-      navigation.getParent()?.navigate('Питание' as never);
+      navigation.getParent()?.navigate('Питание' as never, { jumpTo: 'water' } as never);
     };
 
     return (

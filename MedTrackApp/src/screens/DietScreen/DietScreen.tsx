@@ -13,8 +13,10 @@ import {
   View,
   StatusBar,
 } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 import { format, addDays } from 'date-fns';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../components';
@@ -35,6 +37,9 @@ const DietScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const [weekOffset, setWeekOffset] = useState(0);
   const lastNavTime = useRef(0);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const waterYRef = useRef(0);
+  const route = useRoute<RouteProp<RootStackParamList, 'Diet'>>();
 
   // ---- ДНЕВНИК ПРИЁМОВ ПИЩИ ----
   const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
@@ -305,6 +310,24 @@ const DietScreen: React.FC = () => {
 
   // динамический верхний inset только на Android при прозрачном статус-баре
   const androidTopPad = Platform.OS === 'android' ? Math.max(insets.top, 8) : 0;
+  const onWaterLayout = useCallback((event: LayoutChangeEvent) => {
+    waterYRef.current = event.nativeEvent.layout.y ?? 0;
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.jumpTo === 'water') {
+        const timeout = setTimeout(() => {
+          scrollRef.current?.scrollTo({ y: Math.max(0, waterYRef.current - 12), animated: true });
+          navigation.setParams({ jumpTo: undefined });
+        }, 80);
+
+        return () => clearTimeout(timeout);
+      }
+
+      return undefined;
+    }, [route.params?.jumpTo, navigation]),
+  );
 
   return (
     <>
@@ -317,7 +340,7 @@ const DietScreen: React.FC = () => {
         style={[styles.container, fixStyles.noInsets]}
       >
         <View style={{ paddingTop: androidTopPad, flex: 1 }}>
-          <ScrollView contentContainerStyle={[styles.content, fixStyles.contentPad]}>
+          <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, fixStyles.contentPad]}>
             <NutritionCalendar
               value={selectedDate}
               onChange={setSelectedDate}
@@ -363,12 +386,14 @@ const DietScreen: React.FC = () => {
             ))}
 
             {/* === Трекер воды === */}
-            <WaterTracker
-              value={waterForSelected}
-              total={dailyWaterTotal}
-              onChange={handleWaterChange}
-              onChangeTotal={handleChangeDailyWaterTotal}
-            />
+            <View onLayout={onWaterLayout}>
+              <WaterTracker
+                value={waterForSelected}
+                total={dailyWaterTotal}
+                onChange={handleWaterChange}
+                onChangeTotal={handleChangeDailyWaterTotal}
+              />
+            </View>
           </ScrollView>
         </View>
 
