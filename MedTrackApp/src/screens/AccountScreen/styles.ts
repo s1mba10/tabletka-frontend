@@ -186,6 +186,11 @@ export const styles = StyleSheet.create({
     left: 20,
     right: 20,
   },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   diaryButton: {
     backgroundColor: '#007AFF',
     padding: 15,

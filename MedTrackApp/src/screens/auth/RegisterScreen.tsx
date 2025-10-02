@@ -23,6 +23,8 @@ type NavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { register } = useAuth();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
@@ -31,6 +33,14 @@ const RegisterScreen: React.FC = () => {
 
   const handleContinue = async () => {
     const trimmedEmail = email.trim();
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    if (!trimmedFirstName || !trimmedLastName) {
+      setError('Заполните имя и фамилию');
+      return;
+    }
+
     if (!emailRegex.test(trimmedEmail) || password.length < 6 || password !== repeatPassword) {
       setError('Неверные данные');
       return;
@@ -55,6 +65,20 @@ const RegisterScreen: React.FC = () => {
     >
       <View style={styles.inner}>
         <Text style={styles.title}>Регистрация</Text>
+        <FormTextInput
+          label="Имя"
+          value={firstName}
+          onChangeText={setFirstName}
+          placeholder="Иван"
+          autoCapitalize="words"
+        />
+        <FormTextInput
+          label="Фамилия"
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder="Иванов"
+          autoCapitalize="words"
+        />
         <FormTextInput
           label="Email"
           value={email}
