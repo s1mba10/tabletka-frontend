@@ -1,6 +1,12 @@
 import { Reminder } from '../types';
 import { MealType } from '../nutrition/types';
 
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  EmailCode: { email?: string } | undefined;
+};
+
 export type RootStackParamList = {
   MainScreen: undefined;
   Account: undefined;
@@ -33,4 +39,10 @@ export type RootStackParamList = {
   NutritionStats: {
     selectedDate: string;
   };
+  AuthStack:
+    | {
+        screen?: keyof AuthStackParamList;
+        params?: AuthStackParamList[keyof AuthStackParamList];
+      }
+    | undefined;
 };

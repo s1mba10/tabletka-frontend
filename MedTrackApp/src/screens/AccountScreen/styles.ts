@@ -167,6 +167,20 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  logoutButton: {
+    backgroundColor: '#1F1F1F',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 24,
+  },
+  logoutButtonText: {
+    color: '#FF6B6B',
+    fontWeight: '600',
+    fontSize: 16,
+  },
   floatingButton: {
     position: 'absolute',
     left: 20,

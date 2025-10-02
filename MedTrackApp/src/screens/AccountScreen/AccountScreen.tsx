@@ -26,6 +26,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { RootStackParamList } from '../../navigation';
+import { useAuth } from '../../auth/AuthContext';
 
 import { launchImageLibrary } from 'react-native-image-picker';
 
@@ -105,12 +106,19 @@ const STORAGE_KEY = 'userProfile';
 
 const AccountScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Account'>>();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    profile: authProfile,
+    updateProfile: updateAuthProfile,
+    logout: authLogout,
+  } = useAuth();
   const [profile, setProfile] = useState<ProfileData>({
     lastName: '',
     firstName: '',
     middleName: '',
     phone: '',
-    email: '',
+    email: authProfile?.email ?? '',
     gender: 'Мужской',
     birthDate: '',
     vk: '',
@@ -133,6 +141,18 @@ const AccountScreen: React.FC = () => {
       useNativeDriver: true,
     }).start();
   }, [showFloating, fadeAnim]);
+
+  useEffect(() => {
+    if (authProfile?.email) {
+      setProfile(prev => ({ ...prev, email: prev.email || authProfile.email }));
+    }
+  }, [authProfile?.email]);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigation.replace('AuthStack', { screen: 'Login' });
+    }
+  }, [authLoading, isAuthenticated, navigation]);
 
   const handleScroll = (
     e: NativeSyntheticEvent<NativeScrollEvent>,
@@ -199,6 +219,19 @@ const AccountScreen: React.FC = () => {
     );
     setProfile(prev => ({ ...prev, email: trimmed }));
   };
+
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+      navigation.replace('MainScreen');
+    } catch {
+      Alert.alert('Ошибка', 'Повторите попытку');
+    }
+  };
+
+  if (authLoading || !isAuthenticated) {
+    return null;
+  }
 
   const handlePhoneChange = (masked: string, unmasked: string) => {
     let digits = unmasked.slice(0, 11);
@@ -348,6 +381,15 @@ const AccountScreen: React.FC = () => {
         telegram: profile.telegram ? `t.me/${profile.telegram}` : '',
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      const trimmedEmail = profile.email.trim().toLowerCase();
+      const displayName = [profile.firstName.trim(), profile.lastName.trim()]
+        .filter(Boolean)
+        .join(' ');
+      await updateAuthProfile({
+        name: displayName || undefined,
+        email: trimmedEmail,
+        avatarUri: profile.avatarUri || undefined,
+      });
       Alert.alert('Изменения сохранены');
     } catch {
       Alert.alert('Ошибка', 'Не удалось сохранить данные');
@@ -549,6 +591,10 @@ const AccountScreen: React.FC = () => {
                 onLayout={e => setSaveButtonY(e.nativeEvent.layout.y)}
               >
                 <Text style={styles.saveButtonText}>Сохранить</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutButtonText}>Выйти</Text>
               </TouchableOpacity>
 
               {Platform.OS === 'ios' && showDatePicker && (

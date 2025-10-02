@@ -3,7 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { RootStackParamList } from './types';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { AuthStackParamList, RootStackParamList } from './types';
 import ReminderEdit from '../screens/ReminderEdit';
 import ReminderAdd from '../screens/ReminderAdd';
 import MainScreen from '../screens/MainScreen';
@@ -16,15 +17,29 @@ import DietScreen from '../screens/DietScreen';
 import TrainingScreen from '../screens/TrainingScreen';
 import FoodEditScreen from '../screens/FoodEditScreen';
 import NutritionStatsScreen from '../screens/NutritionStats';
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import EmailCodeScreen from '../screens/auth/EmailCodeScreen';
+import { useAuth } from '../auth/AuthContext';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
+const AuthStack = createStackNavigator<AuthStackParamList>();
+
+const AuthStackNavigator = () => (
+  <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    <AuthStack.Screen name="Login" component={LoginScreen} />
+    <AuthStack.Screen name="Register" component={RegisterScreen} />
+    <AuthStack.Screen name="EmailCode" component={EmailCodeScreen} />
+  </AuthStack.Navigator>
+);
 
 const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="MainScreen" component={MainScreen} />
     <Stack.Screen name="Account" component={AccountScreen} />
     <Stack.Screen name="BodyDiary" component={BodyDiaryScreen} />
+    <Stack.Screen name="AuthStack" component={AuthStackNavigator} />
   </Stack.Navigator>
 );
 
@@ -63,6 +78,17 @@ const DietStack = () => (
 );
 
 const AppNavigator: React.FC = () => {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text style={styles.loaderText}>Загрузка...</Text>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Tab.Navigator screenOptions={{ headerShown: false }}>
@@ -97,3 +123,17 @@ const AppNavigator: React.FC = () => {
 };
 
 export default AppNavigator;
+
+const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loaderText: {
+    color: '#FFFFFF',
+    marginTop: 12,
+    fontSize: 16,
+  },
+});
