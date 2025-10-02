@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -16,7 +15,7 @@ import { FormTextInput } from '../../components';
 import { useAuth } from '../../auth/AuthContext';
 import { AuthStackParamList } from '../../navigation';
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
 type NavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -26,22 +25,51 @@ const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (emailError) {
+      setEmailError('');
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (passwordError) {
+      setPasswordError('');
+    }
+  };
 
   const handleLogin = async () => {
     const trimmedEmail = email.trim();
-    if (!emailRegex.test(trimmedEmail) || password.length < 6) {
-      setError('Неверные данные');
+    let hasError = false;
+
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setEmailError('Некорректный email');
+      hasError = true;
+    } else {
+      setEmailError('');
+    }
+
+    if (!password || password.length < 6) {
+      setPasswordError('Пароль должен содержать минимум 6 символов');
+      hasError = true;
+    } else {
+      setPasswordError('');
+    }
+
+    if (hasError) {
       return;
     }
 
-    setError('');
     setIsSubmitting(true);
     try {
       await login(trimmedEmail, password);
       navigation.getParent()?.replace('Account');
     } catch (e) {
-      Alert.alert('Ошибка', 'Повторите попытку');
+      setPasswordError('Неверный email или пароль');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,21 +85,22 @@ const LoginScreen: React.FC = () => {
         <FormTextInput
           label="Email"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           placeholder="example@mail.ru"
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
         />
+        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
         <FormTextInput
           label="Пароль"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           placeholder="Минимум 6 символов"
           secureTextEntry
           autoCapitalize="none"
         />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
 
         <TouchableOpacity
           style={[styles.button, isSubmitting && styles.buttonDisabled]}
