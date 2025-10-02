@@ -16,7 +16,7 @@ import { FormTextInput } from '../../components';
 import { useAuth } from '../../auth/AuthContext';
 import { AuthStackParamList } from '../../navigation';
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
 type NavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -28,7 +28,13 @@ const RegisterScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    repeatPassword: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleContinue = async () => {
@@ -36,17 +42,41 @@ const RegisterScreen: React.FC = () => {
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
 
-    if (!trimmedFirstName || !trimmedLastName) {
-      setError('Заполните имя и фамилию');
+    const nextErrors = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      repeatPassword: '',
+    };
+
+    if (!trimmedFirstName) {
+      nextErrors.firstName = 'Заполните все поля';
+    }
+
+    if (!trimmedLastName) {
+      nextErrors.lastName = 'Заполните все поля';
+    }
+
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      nextErrors.email = 'Некорректный email';
+    }
+
+    if (password.length < 6) {
+      nextErrors.password = 'Пароль должен содержать минимум 6 символов';
+    }
+
+    if (password !== repeatPassword) {
+      nextErrors.repeatPassword = 'Пароли не совпадают';
+    }
+
+    setErrors(nextErrors);
+
+    const hasErrors = Object.values(nextErrors).some((message) => message.length > 0);
+    if (hasErrors) {
       return;
     }
 
-    if (!emailRegex.test(trimmedEmail) || password.length < 6 || password !== repeatPassword) {
-      setError('Неверные данные');
-      return;
-    }
-
-    setError('');
     setIsSubmitting(true);
     try {
       await register(trimmedEmail, password);
@@ -54,6 +84,13 @@ const RegisterScreen: React.FC = () => {
     } catch {
       Alert.alert('Ошибка', 'Повторите попытку');
     } finally {
+      setErrors({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        repeatPassword: '',
+      });
       setIsSubmitting(false);
     }
   };
@@ -71,6 +108,7 @@ const RegisterScreen: React.FC = () => {
           onChangeText={setFirstName}
           placeholder="Иван"
           autoCapitalize="words"
+          error={errors.firstName}
         />
         <FormTextInput
           label="Фамилия"
@@ -78,6 +116,7 @@ const RegisterScreen: React.FC = () => {
           onChangeText={setLastName}
           placeholder="Иванов"
           autoCapitalize="words"
+          error={errors.lastName}
         />
         <FormTextInput
           label="Email"
@@ -87,6 +126,7 @@ const RegisterScreen: React.FC = () => {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
+          error={errors.email}
         />
         <FormTextInput
           label="Пароль"
@@ -95,6 +135,7 @@ const RegisterScreen: React.FC = () => {
           placeholder="Минимум 6 символов"
           secureTextEntry
           autoCapitalize="none"
+          error={errors.password}
         />
         <FormTextInput
           label="Повторите пароль"
@@ -103,8 +144,8 @@ const RegisterScreen: React.FC = () => {
           placeholder="Введите пароль ещё раз"
           secureTextEntry
           autoCapitalize="none"
+          error={errors.repeatPassword}
         />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity
           style={[styles.button, isSubmitting && styles.buttonDisabled]}
@@ -153,11 +194,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-  },
-  error: {
-    color: '#FF6B6B',
-    marginBottom: 4,
-    fontSize: 13,
   },
 });
 
