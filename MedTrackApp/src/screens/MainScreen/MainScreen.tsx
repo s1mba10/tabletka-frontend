@@ -22,6 +22,7 @@ import { CategorySummaryCard } from '../../components';
 import { useAdherence } from '../../hooks';
 import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
+import { useAuth } from '../../auth/AuthContext';
 
 // питание
 import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
@@ -161,9 +162,13 @@ const MainScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { percentage: medicinePct, reloadStats } = useAdherence();
 
-  const [userName, setUserName] = useState<string | undefined>();
   const [userImage, setUserImage] = useState<string | undefined>();
-  const isPro = true;
+  const { isAuthenticated, profile } = useAuth();
+  const isPro = isAuthenticated;
+  const profileName = profile?.name?.trim();
+  const profileEmail = profile?.email?.trim();
+  const displayName = profileName || profileEmail || 'Профиль';
+  const profileInitial = (profileName || profileEmail || '').charAt(0).toUpperCase();
 
   // питание
   const selectedDate = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
@@ -224,16 +229,11 @@ const MainScreen: React.FC = () => {
           const stored = await AsyncStorage.getItem('userProfile');
           if (stored) {
             const parsed = JSON.parse(stored);
-            const firstName = parsed.firstName || '';
-            const lastName = parsed.lastName || '';
-            setUserName(firstName && lastName ? `${firstName} ${lastName}` : undefined);
             setUserImage(parsed.avatarUri || undefined);
           } else {
-            setUserName(undefined);
             setUserImage(undefined);
           }
         } catch {
-          setUserName(undefined);
           setUserImage(undefined);
         }
       };
@@ -316,7 +316,7 @@ const MainScreen: React.FC = () => {
 
   const renderAvatar = () => {
     if (userImage) return <Image source={{ uri: userImage }} style={styles.avatarImage} />;
-    if (userName) return <Text style={styles.avatarInitial}>{userName[0]}</Text>;
+    if (profileInitial) return <Text style={styles.avatarInitial}>{profileInitial}</Text>;
     return <Icon name="account" size={24} color="#888" />;
   };
 
@@ -447,19 +447,41 @@ const MainScreen: React.FC = () => {
     );
   };
 
+  const openAuthStack = () => {
+    navigation.navigate('AuthStack', { screen: 'Login' });
+  };
+
+  const handleProfilePress = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Account');
+    } else {
+      openAuthStack();
+    }
+  };
+
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       {/* Профиль */}
-      <TouchableOpacity style={styles.profileRow} onPress={() => navigation.navigate('Account')} activeOpacity={0.7}>
-        <View style={styles.avatar}>{renderAvatar()}</View>
-        <View style={styles.infoRow}>
-          <Text style={userName ? styles.profileName : styles.profileNamePlaceholder}>
-            {userName || 'Имя не указано'}
-          </Text>
-          {isPro && <Icon name="crown" size={16} color="#FFD700" style={styles.crown} />}
-          <Icon name="chevron-right" size={22} color="#888" style={styles.chevron} />
-        </View>
-      </TouchableOpacity>
+      {isAuthenticated ? (
+        <TouchableOpacity style={styles.profileRow} onPress={handleProfilePress} activeOpacity={0.7}>
+          <View style={styles.avatar}>{renderAvatar()}</View>
+          <View style={styles.infoRow}>
+            <Text style={profileName ? styles.profileName : styles.profileNamePlaceholder}>
+              {displayName}
+            </Text>
+            {isPro && <Icon name="crown" size={16} color="#FFD700" style={styles.crown} />}
+            <Icon name="chevron-right" size={22} color="#888" style={styles.chevron} />
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.loginPrompt} onPress={openAuthStack} activeOpacity={0.8}>
+          <View style={styles.loginIconWrapper}>
+            <Icon name="account-arrow-right" size={22} color="#FFFFFF" />
+          </View>
+          <Text style={styles.loginPromptText}>Войдите в аккаунт</Text>
+          <Icon name="chevron-right" size={22} color="#9E9E9E" />
+        </TouchableOpacity>
+      )}
 
       {/* Вертикальная прокрутка */}
       <ScrollView style={styles.verticalScroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator>
