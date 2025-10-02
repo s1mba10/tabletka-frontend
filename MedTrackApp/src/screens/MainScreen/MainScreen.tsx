@@ -24,7 +24,7 @@ import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
 
 // питание
-import AddFoodModal from '../../components/AddFoodModal';
+import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';

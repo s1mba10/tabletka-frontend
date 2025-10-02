@@ -20,7 +20,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { NutritionCalendar, MacronutrientSummary, MealPanel } from '../../components';
-import AddFoodModal from '../../components/AddFoodModal';
+import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { RootStackParamList } from '../../navigation';
 import { aggregateMeals, computeRskPercents } from '../../nutrition/aggregate';
