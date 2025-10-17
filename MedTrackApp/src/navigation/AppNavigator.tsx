@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
+import { Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RootStackParamList } from './types';
 import ReminderEdit from '../screens/ReminderEdit';
@@ -16,6 +17,7 @@ import DietScreen from '../screens/DietScreen';
 import TrainingScreen from '../screens/TrainingScreen';
 import FoodEditScreen from '../screens/FoodEditScreen';
 import NutritionStatsScreen from '../screens/NutritionStats';
+import CustomTabBar from './CustomTabBar';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -63,9 +65,17 @@ const DietStack = () => (
 );
 
 const AppNavigator: React.FC = () => {
+  const isIOS = Platform.OS === 'ios';
+
   return (
     <NavigationContainer>
-      <Tab.Navigator screenOptions={{ headerShown: false }}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          ...(isIOS ? { tabBarStyle: { backgroundColor: 'transparent', position: 'absolute' } } : {}),
+        }}
+        {...(isIOS ? { tabBar: (props) => <CustomTabBar {...props} /> } : {})}
+      >
         <Tab.Screen
           name="Главная"
           component={MainStack}
