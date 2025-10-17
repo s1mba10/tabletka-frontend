@@ -32,6 +32,32 @@ export const styles = StyleSheet.create({
   profileNamePlaceholder: { color: '#888', fontSize: 18, fontWeight: 'normal' },
   crown: { marginLeft: 6 },
   chevron: { marginLeft: 8 },
+  loginPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 12,
+  },
+  loginIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginRight: 12,
+  },
+  loginPromptText: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 
   // Фичи (на будущее)
   featuresContainer: { paddingVertical: 6, marginBottom: 14 },

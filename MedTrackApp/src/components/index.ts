@@ -4,3 +4,4 @@ export { default as NutritionCalendar } from './NutritionCalendar';
 export { default as MacronutrientSummary } from './MacronutrientSummary';
 export { default as MealPanel } from './MealPanel';
 export { default as AddFoodModal } from './AddFoodModal/AddFoodModal';
+export { default as FormTextInput } from './FormTextInput';

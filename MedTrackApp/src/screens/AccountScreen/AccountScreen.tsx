@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ActivityIndicator,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,6 +27,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { RootStackParamList } from '../../navigation';
+import { useAuth } from '../../auth/AuthContext';
 
 import { launchImageLibrary } from 'react-native-image-picker';
 
@@ -102,15 +104,46 @@ const GenderSelector: React.FC<GenderSelectorProps> = ({ value, onChange }) => {
 };
 
 const STORAGE_KEY = 'userProfile';
+type SocialPlatform = 'vk' | 'instagram' | 'telegram';
+
+const cleanSocial = (platform: SocialPlatform, text: string) => {
+  let value = text.trim();
+  value = value.replace(/^https?:\/\//i, '');
+
+  switch (platform) {
+    case 'vk':
+      value = value.replace(/^(?:m\.)?vk\.com\//i, '');
+      break;
+    case 'instagram':
+      value = value.replace(/^instagram\.com\//i, '');
+      break;
+    case 'telegram':
+      value = value.replace(/^t\.me\//i, '');
+      value = value.replace(/^@/, '');
+      break;
+    default:
+      break;
+  }
+
+  value = value.replace(/[^A-Za-z0-9_.]/g, '');
+  return value.slice(0, 32);
+};
 
 const AccountScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Account'>>();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    profile: authProfile,
+    updateProfile: updateAuthProfile,
+    logout: authLogout,
+  } = useAuth();
   const [profile, setProfile] = useState<ProfileData>({
     lastName: '',
     firstName: '',
     middleName: '',
     phone: '',
-    email: '',
+    email: authProfile?.email ?? '',
     gender: 'Мужской',
     birthDate: '',
     vk: '',
@@ -134,9 +167,19 @@ const AccountScreen: React.FC = () => {
     }).start();
   }, [showFloating, fadeAnim]);
 
-  const handleScroll = (
-    e: NativeSyntheticEvent<NativeScrollEvent>,
-  ) => {
+  useEffect(() => {
+    if (authProfile?.email) {
+      setProfile(prev => ({ ...prev, email: prev.email || authProfile.email }));
+    }
+  }, [authProfile?.email]);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigation.replace('AuthStack', { screen: 'Login' });
+    }
+  }, [authLoading, isAuthenticated, navigation]);
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (saveButtonY === null) return;
     const { layoutMeasurement, contentOffset } = e.nativeEvent;
     const bottom = contentOffset.y + layoutMeasurement.height;
@@ -158,34 +201,8 @@ const AccountScreen: React.FC = () => {
   const handleMiddleNameChange = (text: string) =>
     setProfile(prev => ({ ...prev, middleName: formatNameInput(text) }));
 
-  const cleanSocial = (
-    platform: 'vk' | 'instagram' | 'telegram',
-    text: string,
-  ) => {
-    let value = text.trim();
-    value = value.replace(/^https?:\/\//i, '');
-
-    switch (platform) {
-      case 'vk':
-        value = value.replace(/^(?:m\.)?vk\.com\//i, '');
-        break;
-      case 'instagram':
-        value = value.replace(/^instagram\.com\//i, '');
-        break;
-      case 'telegram':
-        value = value.replace(/^t\.me\//i, '');
-        value = value.replace(/^@/, '');
-        break;
-      default:
-        break;
-    }
-
-    value = value.replace(/[^A-Za-z0-9_.]/g, '');
-    return value.slice(0, 32);
-  };
-
   const handleSocialChange = (
-    key: 'vk' | 'instagram' | 'telegram',
+    key: SocialPlatform,
   ) =>
     (text: string) =>
       setProfile(prev => ({ ...prev, [key]: cleanSocial(key, text) }));
@@ -200,20 +217,7 @@ const AccountScreen: React.FC = () => {
     setProfile(prev => ({ ...prev, email: trimmed }));
   };
 
-  const handlePhoneChange = (masked: string, unmasked: string) => {
-    let digits = unmasked.slice(0, 11);
-    if (!digits) {
-      setPhoneInput('');
-      setProfile(prev => ({ ...prev, phone: '' }));
-      return;
-    }
-    if (digits.startsWith('8')) digits = '7' + digits.slice(1);
-    if (!digits.startsWith('7')) digits = '7' + digits;
-    setPhoneInput(masked);
-    setProfile(prev => ({ ...prev, phone: '+' + digits }));
-  };
-
-  const formatPhone = (value: string) => {
+  const formatPhone = useCallback((value: string) => {
     const digits = value.replace(/\D/g, '');
     if (!digits) return '';
     let out = '+7';
@@ -222,7 +226,7 @@ const AccountScreen: React.FC = () => {
     if (digits.length >= 7) out += `-${digits.slice(7, 9)}`;
     if (digits.length >= 9) out += `-${digits.slice(9, 11)}`;
     return out;
-  };
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -231,9 +235,7 @@ const AccountScreen: React.FC = () => {
         if (stored) {
           const parsed = JSON.parse(stored) as Partial<ProfileData>;
           const gender = parsed.gender === 'Женский' ? 'Женский' : 'Мужской';
-          const vk = parsed.vk
-            ? cleanSocial('vk', parsed.vk)
-            : '';
+          const vk = parsed.vk ? cleanSocial('vk', parsed.vk) : '';
           const instagram = parsed.instagram
             ? cleanSocial('instagram', parsed.instagram)
             : '';
@@ -259,7 +261,42 @@ const AccountScreen: React.FC = () => {
       } catch {}
     };
     load();
-  }, []);
+  }, [formatPhone]);
+
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+      navigation.replace('MainScreen');
+    } catch {
+      Alert.alert('Ошибка', 'Повторите попытку');
+    }
+  };
+
+  const shouldShowFallback = authLoading || !isAuthenticated;
+
+  if (shouldShowFallback) {
+    return (
+      <SafeAreaView edges={["top"]} style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const handlePhoneChange = (masked: string, unmasked: string) => {
+    let digits = unmasked.slice(0, 11);
+    if (!digits) {
+      setPhoneInput('');
+      setProfile(prev => ({ ...prev, phone: '' }));
+      return;
+    }
+    if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+    if (!digits.startsWith('7')) digits = '7' + digits;
+    setPhoneInput(masked);
+    setProfile(prev => ({ ...prev, phone: '+' + digits }));
+  };
 
   const openDatePicker = () => {
     setSelectedBirthDateObj(
@@ -348,6 +385,15 @@ const AccountScreen: React.FC = () => {
         telegram: profile.telegram ? `t.me/${profile.telegram}` : '',
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      const trimmedEmail = profile.email.trim().toLowerCase();
+      const displayName = [profile.firstName.trim(), profile.lastName.trim()]
+        .filter(Boolean)
+        .join(' ');
+      await updateAuthProfile({
+        name: displayName || undefined,
+        email: trimmedEmail,
+        avatarUri: profile.avatarUri || undefined,
+      });
       Alert.alert('Изменения сохранены');
     } catch {
       Alert.alert('Ошибка', 'Не удалось сохранить данные');
@@ -549,6 +595,10 @@ const AccountScreen: React.FC = () => {
                 onLayout={e => setSaveButtonY(e.nativeEvent.layout.y)}
               >
                 <Text style={styles.saveButtonText}>Сохранить</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutButtonText}>Выйти</Text>
               </TouchableOpacity>
 
               {Platform.OS === 'ios' && showDatePicker && (
