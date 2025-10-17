@@ -320,20 +320,28 @@ const MainScreen: React.FC = () => {
     return <Icon name="account" size={24} color="#888" />;
   };
 
-  const MiniStat: React.FC<{ icon: string; label: string; value: string; accent?: 'orange'|'green'|'yellow'|'gray'; onPress?: () => void; }>
-    = ({ icon, label, value, accent='gray', onPress }) => {
-      const border =
-        accent==='orange' ? '#FF5722' :
-        accent==='green'  ? '#4CAF50' :
-        accent==='yellow' ? '#FFC107' : 'rgba(255,255,255,0.06)';
-      return (
-        <TouchableOpacity style={[styles.miniStat, { borderColor: border }]} onPress={onPress} activeOpacity={0.8}>
-          <View style={styles.miniIconBubble}><Icon name={icon as any} size={18} color="#EDEDED" /></View>
-          <Text style={styles.miniLabel}>{label}</Text>
-          <Text style={styles.miniValue}>{value}</Text>
-        </TouchableOpacity>
-      );
-    };
+  const MiniStat: React.FC<{
+    icon: string; label: string; value: string;
+    accent?: 'orange'|'green'|'yellow'|'gray';
+    onPress?: () => void; borderWidth?: number;
+    }> = ({ icon, label, value, accent='gray', onPress, borderWidth = 2.5 }) => {
+    const border =
+      accent==='orange' ? '#FF5722' :
+      accent==='green'  ? '#4CAF50' :
+      accent==='yellow' ? '#FFC107' : 'rgba(255,255,255,0.06)';
+
+    return (
+      <TouchableOpacity
+        style={[styles.miniStat, { borderColor: border, borderWidth }]}
+        onPress={onPress}
+        activeOpacity={0.8}
+    >
+      <View style={styles.miniIconBubble}><Icon name={icon as any} size={18} color="#EDEDED" /></View>
+      <Text style={styles.miniLabel}>{label}</Text>
+      <Text style={styles.miniValue}>{value}</Text>
+    </TouchableOpacity>
+    );
+  };
 
   const WeekStrip: React.FC = () => {
     const week = getThisWeek();
