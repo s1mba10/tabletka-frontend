@@ -19,6 +19,13 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#121212',
   },
+  containerIOS: {
+    flex: 1,
+    paddingTop: 20,
+    paddingBottom: 80,
+    paddingHorizontal: 20,
+    backgroundColor: '#121212',
+  },
   title: {
     fontSize: 24,
     color: 'white',

@@ -392,7 +392,7 @@ const ReminderAdd: React.FC = () => {
     Alert.alert('Добавлено', `${newReminders.length} ${reminderText} успешно создано!`);
   };
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={Platform.OS === 'ios' ? styles.containerIOS : styles.container}>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
