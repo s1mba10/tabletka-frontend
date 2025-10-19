@@ -9,6 +9,7 @@ import {
   ImageBackground,
   Animated,
   ImageSourcePropType,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -29,6 +30,7 @@ import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
+import classnames from 'classnames'
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
@@ -490,10 +492,7 @@ const MainScreen: React.FC = () => {
           <Icon name="chevron-right" size={22} color="#9E9E9E" />
         </TouchableOpacity>
       )}
-
-      {/* Вертикальная прокрутка */}
-      <ScrollView style={styles.verticalScroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator>
-        {/* Карточка прогресса недели */}
+      <ScrollView style={styles.verticalScroll} contentContainerStyle={Platform.OS === 'ios' ? styles.scrollContentIOS : styles.scrollContent} showsVerticalScrollIndicator>
         <View style={[styles.weeklyCard, { backgroundColor: theme.bg }]}>
           <View style={styles.weeklyLeft}>
             <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
