@@ -30,7 +30,6 @@ import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
-import classnames from 'classnames'
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
