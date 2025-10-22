@@ -5,12 +5,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ScrollView,
   Platform,
-  ToastAndroid,
-  Alert,
   Pressable,
   View,
   StatusBar,
   InteractionManager,
+  Alert,
 } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { format, addDays } from 'date-fns';
@@ -24,6 +23,7 @@ import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { RootStackParamList } from '../../navigation';
 import { aggregateMeals, computeRskPercents } from '../../nutrition/aggregate';
 import { formatNumber } from '../../utils/number';
+import { showToast } from '../../utils/toast';
 import { styles } from './styles';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 
@@ -110,11 +110,6 @@ const DietScreen: React.FC = () => {
     const day = entriesByDate[date];
     if (!day) return false;
     return (Object.values(day) as NormalizedEntry[][]).some(arr => arr.length > 0);
-  };
-
-  const showToast = (message: string) => {
-    if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
-    else Alert.alert(message);
   };
 
   const handleCopyFromYesterday = (date: string) => {

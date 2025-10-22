@@ -7,9 +7,6 @@ import {
   TextInput,
   FlatList,
   ScrollView,
-  Platform,
-  ToastAndroid,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +21,7 @@ import {
 } from '../../nutrition/types';
 import { localCatalog } from '../../nutrition/catalog';
 import { formatNumber } from '../../utils/number';
+import { showToast } from '../../utils/toast';
 import {
   loadFavorites,
   loadRecents,
@@ -44,11 +42,6 @@ const mealTitles: Record<string, string> = {
   lunch: 'Обед',
   dinner: 'Ужин',
   snack: 'Перекус/Другое',
-};
-
-const showToast = (message: string) => {
-  if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
-  else Alert.alert(message);
 };
 
 type SearchItem =
