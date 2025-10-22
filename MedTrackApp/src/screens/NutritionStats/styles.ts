@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export const styles = StyleSheet.create({
   screen: {
@@ -9,6 +9,7 @@ export const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#000',
     flexGrow: 1,
+    paddingBottom: Platform.OS === 'ios' ? 80 : undefined,
   },
   cardRow: {
     flexDirection: 'row',
