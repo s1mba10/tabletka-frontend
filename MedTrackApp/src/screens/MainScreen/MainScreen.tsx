@@ -30,6 +30,7 @@ import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
+import { STORAGE_KEYS } from '../../constants/storageKeys';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
@@ -57,9 +58,7 @@ const getThisWeek = () => {
 const fmtKcal = (kcal: number) => `${Math.round(kcal)} ккал`;
 const DAILY_TARGET_KCAL = 3300;
 
-// Ключи и константы воды (как на DietScreen)
-const WATER_KEY = 'diet.waterByDate.v1';
-const WATER_TOTAL_KEY = 'settings.waterTotal.v1';
+// Константы воды (как на DietScreen)
 const DEFAULT_GLASS_ML = 250;
 
 // ===== Мини-кольцо (SVG) — точное заполнение по проценту =====
@@ -211,11 +210,11 @@ const MainScreen: React.FC = () => {
 
   const loadWater = useCallback(async () => {
     try {
-      const raw = await AsyncStorage.getItem(WATER_KEY);
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.WATER_BY_DATE);
       setWaterByDate(raw ? JSON.parse(raw) : {});
     } catch {}
     try {
-      const rawTotal = await AsyncStorage.getItem(WATER_TOTAL_KEY);
+      const rawTotal = await AsyncStorage.getItem(STORAGE_KEYS.WATER_TOTAL);
       const parsed = rawTotal ? parseInt(rawTotal, 10) : NaN;
       if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
     } catch {}
@@ -227,7 +226,7 @@ const MainScreen: React.FC = () => {
 
       const loadProfile = async () => {
         try {
-          const stored = await AsyncStorage.getItem('userProfile');
+          const stored = await AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE);
           if (stored) {
             const parsed = JSON.parse(stored);
             setUserImage(parsed.avatarUri || undefined);

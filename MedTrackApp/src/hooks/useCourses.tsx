@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MedicationCourse, Reminder } from '../types';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 interface CoursesContextValue {
   courses: MedicationCourse[];
@@ -20,7 +21,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const stored = await AsyncStorage.getItem('courses');
+      const stored = await AsyncStorage.getItem(STORAGE_KEYS.COURSES);
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -42,7 +43,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const saveAll = async (items: MedicationCourse[]) => {
     setCourses(items);
-    await AsyncStorage.setItem('courses', JSON.stringify(items));
+    await AsyncStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(items));
   };
 
   const saveCourse = async (course: MedicationCourse) => {
@@ -59,7 +60,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await saveAll(filtered);
 
     try {
-      const storedReminders = await AsyncStorage.getItem('reminders');
+      const storedReminders = await AsyncStorage.getItem(STORAGE_KEYS.REMINDERS);
       if (storedReminders) {
         try {
           const parsed = JSON.parse(storedReminders);
@@ -68,7 +69,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
               (r: Reminder) => r.courseId !== id,
             );
             await AsyncStorage.setItem(
-              'reminders',
+              STORAGE_KEYS.REMINDERS,
               JSON.stringify(updatedReminders),
             );
           }

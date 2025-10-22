@@ -26,6 +26,7 @@ import { formatNumber } from '../../utils/number';
 import { showToast } from '../../utils/toast';
 import { styles } from './styles';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
+import { STORAGE_KEYS } from '../../constants/storageKeys';
 
 type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
 
@@ -217,10 +218,8 @@ const DietScreen: React.FC = () => {
   // ---- ВОДА (стаканы) ----
   const [waterByDate, setWaterByDate] = useState<Record<string, number>>({});
   const waterForSelected = waterByDate[selectedDate] ?? 0;
-  const WATER_KEY = 'diet.waterByDate.v1';
 
   // дневная цель по воде (кол-во стаканов)
-  const WATER_TOTAL_KEY = 'settings.waterTotal.v1';
   const [dailyWaterTotal, setDailyWaterTotal] = useState<number>(10);
 
   const handleWaterChange = (next: number) => {
@@ -229,7 +228,7 @@ const DietScreen: React.FC = () => {
 
   const handleChangeDailyWaterTotal = (nextTotal: number) => {
     setDailyWaterTotal(nextTotal);
-    AsyncStorage.setItem(WATER_TOTAL_KEY, String(nextTotal)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.WATER_TOTAL, String(nextTotal)).catch(() => {});
     // если текущие стаканы больше новой цели — обрежем
     setWaterByDate(prev => {
       const curr = prev[selectedDate] ?? 0;
@@ -249,11 +248,11 @@ const DietScreen: React.FC = () => {
       })
       .catch(() => showToast('Не удалось загрузить данные'));
 
-    AsyncStorage.getItem(WATER_KEY)
+    AsyncStorage.getItem(STORAGE_KEYS.WATER_BY_DATE)
       .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
       .catch(() => {});
 
-    AsyncStorage.getItem(WATER_TOTAL_KEY)
+    AsyncStorage.getItem(STORAGE_KEYS.WATER_TOTAL)
       .then(raw => {
         const parsed = raw ? parseInt(raw, 10) : NaN;
         if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
@@ -270,11 +269,11 @@ const DietScreen: React.FC = () => {
         })
         .catch(() => showToast('Не удалось загрузить данные'));
 
-      AsyncStorage.getItem(WATER_KEY)
+      AsyncStorage.getItem(STORAGE_KEYS.WATER_BY_DATE)
         .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
         .catch(() => {});
 
-      AsyncStorage.getItem(WATER_TOTAL_KEY)
+      AsyncStorage.getItem(STORAGE_KEYS.WATER_TOTAL)
         .then(raw => {
           const parsed = raw ? parseInt(raw, 10) : NaN;
           if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
@@ -292,7 +291,7 @@ const DietScreen: React.FC = () => {
   }, [entriesByDate]);
 
   useEffect(() => {
-    AsyncStorage.setItem(WATER_KEY, JSON.stringify(waterByDate)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.WATER_BY_DATE, JSON.stringify(waterByDate)).catch(() => {});
   }, [waterByDate]);
 
   const handleSummaryPress = useCallback(() => {

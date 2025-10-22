@@ -6,17 +6,13 @@ import {
   MealType,
   NormalizedEntry,
 } from './types';
-
-export const FAVORITES_KEY = 'nutrition:favorites:v1';
-export const RECENTS_KEY = 'nutrition:recents:v1';
-export const USER_CATALOG_KEY = 'nutrition:userCatalog:v1';
-export const DIARY_KEY = 'nutrition:diary:v1';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 export type DiaryData = Record<string, Record<MealType, NormalizedEntry[]>>;
 
 export async function loadFavorites(): Promise<FavoriteItem[]> {
   try {
-    const raw = await AsyncStorage.getItem(FAVORITES_KEY);
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.NUTRITION_FAVORITES);
     return raw ? JSON.parse(raw) : [];
   } catch (e) {
     return [];
@@ -25,7 +21,7 @@ export async function loadFavorites(): Promise<FavoriteItem[]> {
 
 export async function saveFavorites(items: FavoriteItem[]): Promise<boolean> {
   try {
-    await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
+    await AsyncStorage.setItem(STORAGE_KEYS.NUTRITION_FAVORITES, JSON.stringify(items));
     return true;
   } catch (e) {
     return false;
@@ -34,7 +30,7 @@ export async function saveFavorites(items: FavoriteItem[]): Promise<boolean> {
 
 export async function loadRecents(): Promise<RecentItem[]> {
   try {
-    const raw = await AsyncStorage.getItem(RECENTS_KEY);
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.NUTRITION_RECENTS);
     return raw ? JSON.parse(raw) : [];
   } catch (e) {
     return [];
@@ -43,7 +39,7 @@ export async function loadRecents(): Promise<RecentItem[]> {
 
 export async function saveRecents(items: RecentItem[]) {
   try {
-    await AsyncStorage.setItem(RECENTS_KEY, JSON.stringify(items));
+    await AsyncStorage.setItem(STORAGE_KEYS.NUTRITION_RECENTS, JSON.stringify(items));
   } catch (e) {}
 }
 
@@ -56,7 +52,7 @@ export async function addRecent(item: RecentItem) {
 
 export async function loadUserCatalog(): Promise<UserCatalogItem[]> {
   try {
-    const raw = await AsyncStorage.getItem(USER_CATALOG_KEY);
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.NUTRITION_USER_CATALOG);
     return raw ? JSON.parse(raw) : [];
   } catch (e) {
     return [];
@@ -65,13 +61,13 @@ export async function loadUserCatalog(): Promise<UserCatalogItem[]> {
 
 export async function saveUserCatalog(items: UserCatalogItem[]) {
   try {
-    await AsyncStorage.setItem(USER_CATALOG_KEY, JSON.stringify(items));
+    await AsyncStorage.setItem(STORAGE_KEYS.NUTRITION_USER_CATALOG, JSON.stringify(items));
   } catch (e) {}
 }
 
 export async function loadDiary(): Promise<DiaryData> {
   try {
-    const raw = await AsyncStorage.getItem(DIARY_KEY);
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.NUTRITION_DIARY);
     return raw ? JSON.parse(raw) : {};
   } catch (e) {
     return {};
@@ -80,7 +76,7 @@ export async function loadDiary(): Promise<DiaryData> {
 
 export async function saveDiary(data: DiaryData): Promise<boolean> {
   try {
-    await AsyncStorage.setItem(DIARY_KEY, JSON.stringify(data));
+    await AsyncStorage.setItem(STORAGE_KEYS.NUTRITION_DIARY, JSON.stringify(data));
     return true;
   } catch (e) {
     return false;

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 export type AuthProfile = {
   id: string;
@@ -22,10 +23,6 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const AUTH_KEY = 'auth:isAuthenticated';
-const PROFILE_KEY = 'auth:profile';
-const PENDING_EMAIL_KEY = 'auth:pendingEmail';
-
 const randomDelay = () => 400 + Math.floor(Math.random() * 300);
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -40,9 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loadState = async () => {
       try {
         const [[, authValue], [, profileValue], [, pendingValue]] = await AsyncStorage.multiGet([
-          AUTH_KEY,
-          PROFILE_KEY,
-          PENDING_EMAIL_KEY,
+          STORAGE_KEYS.AUTH_IS_AUTHENTICATED,
+          STORAGE_KEYS.AUTH_PROFILE,
+          STORAGE_KEYS.AUTH_PENDING_EMAIL,
         ]);
 
         setIsAuthenticated(authValue === 'true');
@@ -72,9 +69,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const persistState = useCallback(
     async (nextAuth: boolean, nextProfile: AuthProfile | null, nextPending: string | null) => {
       const entries: [string, string | null][] = [
-        [AUTH_KEY, nextAuth ? 'true' : 'false'],
-        [PROFILE_KEY, nextProfile ? JSON.stringify(nextProfile) : null],
-        [PENDING_EMAIL_KEY, nextPending],
+        [STORAGE_KEYS.AUTH_IS_AUTHENTICATED, nextAuth ? 'true' : 'false'],
+        [STORAGE_KEYS.AUTH_PROFILE, nextProfile ? JSON.stringify(nextProfile) : null],
+        [STORAGE_KEYS.AUTH_PENDING_EMAIL, nextPending],
       ];
 
       const tasks = entries.map(([key, value]) =>
