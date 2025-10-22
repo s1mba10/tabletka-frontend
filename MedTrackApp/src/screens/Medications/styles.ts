@@ -7,12 +7,6 @@ export const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 110 : undefined,
     backgroundColor: '#121212',
   },
-  containerIOS: {
-    flex: 1,
-    paddingTop: 20,
-    paddingBottom: 110,
-    backgroundColor: '#121212',
-  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
