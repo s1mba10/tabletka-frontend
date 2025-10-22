@@ -30,6 +30,7 @@ import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
+import { createEmptyDay } from '../../nutrition/utils';
 import { STORAGE_KEYS } from '../../constants/storageKeys';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
@@ -172,12 +173,6 @@ const MainScreen: React.FC = () => {
 
   // питание
   const selectedDate = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
-  const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
-  });
   const [entriesByDate, setEntriesByDate] = useState<
     Record<string, Record<MealType, NormalizedEntry[]>>
   >({});

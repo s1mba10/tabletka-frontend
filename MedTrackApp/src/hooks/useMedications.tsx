@@ -75,7 +75,11 @@ export const MedicationsProvider: React.FC<{
       m.id === id ? { ...m, ...payload } : m,
     );
     await saveMedications(updated);
-    return updated.find(m => m.id === id)!;
+    const found = updated.find(m => m.id === id);
+    if (!found) {
+      throw new Error(`Medication with id ${id} not found`);
+    }
+    return found;
   };
 
   const removeMedication = async (id: number) => {

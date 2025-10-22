@@ -26,6 +26,7 @@ import { formatNumber } from '../../utils/number';
 import { showToast } from '../../utils/toast';
 import { styles } from './styles';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
+import { createEmptyDay } from '../../nutrition/utils';
 import { STORAGE_KEYS } from '../../constants/storageKeys';
 
 type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
@@ -42,13 +43,6 @@ const DietScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'Diet'>>();
 
   // ---- ДНЕВНИК ПРИЁМОВ ПИЩИ ----
-  const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
-  });
-
   const [entriesByDate, setEntriesByDate] = useState<
     Record<string, Record<MealType, NormalizedEntry[]>>
   >({});

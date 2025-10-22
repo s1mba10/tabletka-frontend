@@ -8,6 +8,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import { RootStackParamList } from '../../navigation';
 import { loadDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
+import { createEmptyDay } from '../../nutrition/utils';
 import WeeklyCaloriesCard from './WeeklyCaloriesCard';
 import WeeklyMacrosRow from './WeeklyMacrosRow';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
@@ -20,13 +21,6 @@ const kcalTarget = 3300;
 const proteinTarget = 120;
 const fatTarget = 80;
 const carbsTarget = 300;
-
-const createEmptyDay = (): Record<MealType, NormalizedEntry[]> => ({
-  breakfast: [],
-  lunch: [],
-  dinner: [],
-  snack: [],
-});
 
 /**
  * Один прогресс-ринг без градиентов/фильтров.
