@@ -8,7 +8,6 @@ import {
   ToastAndroid,
   Alert,
   Pressable,
-  StyleSheet,
   View,
   StatusBar,
   InteractionManager,
@@ -360,10 +359,10 @@ const DietScreen: React.FC = () => {
       {/* iOS: top+bottom, Android: только bottom (верх — вручную по insets.top) */}
       <SafeAreaView
         edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
-        style={[styles.container, fixStyles.noInsets]}
+        style={[styles.container, styles.noInsets]}
       >
         <View style={{ paddingTop: androidTopPad, flex: 1 }}>
-          <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, fixStyles.contentPad]}>
+          <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, styles.contentPad]}>
             <NutritionCalendar
               value={selectedDate}
               onChange={setSelectedDate}
@@ -435,25 +434,3 @@ const DietScreen: React.FC = () => {
 };
 
 export default DietScreen;
-
-const fixStyles = StyleSheet.create({
-  noInsets: {
-    paddingTop: 0,
-    paddingBottom: 0,
-    marginTop: 0,
-    marginBottom: 0,
-  },
-  contentPad: {
-    paddingBottom: 16,
-  },
-});
-
-const summaryStyles = StyleSheet.create({
-  chevron: {
-    position: 'absolute',
-    right: 4,
-    top: '50%',
-    marginTop: -8,
-    pointerEvents: 'none',
-  },
-});
