@@ -143,7 +143,7 @@ const Medications: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={Platform.OS === 'ios' ? styles.containerIOS : styles.container}>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}

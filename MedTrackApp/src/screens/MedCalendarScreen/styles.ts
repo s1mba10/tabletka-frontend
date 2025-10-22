@@ -5,6 +5,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
+  containerIOS: {
+    flex: 1,
+    paddingBottom: 70,
+    backgroundColor: '#121212',
+  },
   weekHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

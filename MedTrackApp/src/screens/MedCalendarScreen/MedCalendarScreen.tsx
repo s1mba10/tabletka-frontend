@@ -290,7 +290,7 @@ const MedCalendarScreen: React.FC = () => {
         barStyle="light-content"
       />
 
-      <SafeAreaView edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []} style={styles.container}>
+      <SafeAreaView edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []} style={Platform.OS === 'ios' ? styles.containerIOS : styles.container}>
         <View style={{ flex: 1, paddingTop: androidTopPad }}>
           {/* Week Navigation */}
           <View style={styles.weekHeader}>
