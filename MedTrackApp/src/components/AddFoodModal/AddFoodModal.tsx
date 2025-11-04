@@ -53,6 +53,19 @@ type SearchItem =
 // Union type для всех возможных item из SearchItem
 type SelectableItem = CatalogItem | UserCatalogItem | FavoriteItem;
 
+// Type guards для точного определения типа
+const isFavoriteItem = (item: SelectableItem): item is FavoriteItem => {
+  return 'sourceId' in item || 'createdAt' in item;
+};
+
+const isUserCatalogItem = (item: SelectableItem): item is UserCatalogItem => {
+  return 'type' in item || 'ingredients' in item || 'dishWeight' in item;
+};
+
+const isCatalogItem = (item: SelectableItem): item is CatalogItem => {
+  return !isFavoriteItem(item) && !isUserCatalogItem(item);
+};
+
 type TabKey = 'search' | 'recents' | 'favorites' | 'recipes';
 
 const TABS: { key: TabKey; title: string }[] = [
@@ -432,12 +445,21 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       showToast(ok ? 'Удалено из избранного' : 'Не удалось сохранить изменения');
     } else {
       const base: SelectableItem = it.item;
+
+      // Определяем sourceId в зависимости от типа
+      let sourceId: string | undefined;
+      if (isFavoriteItem(base)) {
+        sourceId = base.sourceId ?? base.id;
+      } else {
+        sourceId = base.id;
+      }
+
       const newFav: FavoriteItem = {
         id: Math.random().toString(),
-        sourceId: 'sourceId' in base ? base.sourceId : ('id' in base ? base.id : undefined),
+        sourceId,
         name: base.name,
         per100g: base.per100g,
-        defaultPortionGrams: 'defaultPortionGrams' in base ? base.defaultPortionGrams : undefined,
+        defaultPortionGrams: isFavoriteItem(base) ? base.defaultPortionGrams : undefined,
         createdAt: Date.now(),
       };
       const prev = favorites;
@@ -637,7 +659,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                     resetSelection();
                     setSelectedCatalog(item);
                     setSelectedSource('user');
-                    setPortion(String(item.dishWeight || 100));
+                    setPortion(String(item.dishWeight ?? 100));
                   }}
                 >
                   <Text style={styles.itemName}>{item.name}</Text>
