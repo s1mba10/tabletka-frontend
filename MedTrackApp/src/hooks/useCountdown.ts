@@ -12,7 +12,7 @@ export interface CountdownResult {
  */
 export function useCountdown(target: Date | null, active: boolean, onExpire?: () => void): CountdownResult {
   const [remaining, setRemaining] = useState(0);
-  const intervalRef = useRef<NodeJS.Timer>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   useEffect(() => {
     if (!active || !target) {
