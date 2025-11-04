@@ -53,9 +53,9 @@ const CustomTabBar: React.FC<Props> = ({ state, descriptors, navigation }) => {
         style={[
           styles.indicator,
           {
-            width: segmentWidth * 0.88,
+            width: segmentWidth * 0.95,
             transform: [{ translateX }],
-            left: H_PADDING + (segmentWidth * (1 - 0.88)) / 2,
+            left: H_PADDING + (segmentWidth * (1 - 0.95)) / 2,
           },
         ]}
       />
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   indicator: {
