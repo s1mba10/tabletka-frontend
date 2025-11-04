@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MedicationCourse, Reminder } from '../types';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { loadArrayFromStorage } from '../utils/asyncStorageUtils';
 
 interface CoursesContextValue {
   courses: MedicationCourse[];
@@ -21,21 +22,8 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEYS.COURSES);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setCourses(parsed);
-          } else {
-            setCourses([]);
-          }
-        } catch {
-          setCourses([]);
-        }
-      } else {
-        setCourses([]);
-      }
+      const data = await loadArrayFromStorage<MedicationCourse>(STORAGE_KEYS.COURSES);
+      setCourses(data);
     } finally {
       setLoading(false);
     }

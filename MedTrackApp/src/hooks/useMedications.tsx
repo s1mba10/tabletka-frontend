@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Medication } from '../types';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { loadArrayFromStorage } from '../utils/asyncStorageUtils';
 
 export interface MedicationsContextValue {
   medications: Medication[];
@@ -28,21 +29,8 @@ export const MedicationsProvider: React.FC<{
   const fetchMedications = async () => {
     setLoading(true);
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEYS.MEDICATIONS);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setMedications(parsed);
-          } else {
-            setMedications([]);
-          }
-        } catch {
-          setMedications([]);
-        }
-      } else {
-        setMedications([]);
-      }
+      const data = await loadArrayFromStorage<Medication>(STORAGE_KEYS.MEDICATIONS);
+      setMedications(data);
     } finally {
       setLoading(false);
     }
