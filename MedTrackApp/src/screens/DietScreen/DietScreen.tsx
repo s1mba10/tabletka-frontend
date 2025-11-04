@@ -242,14 +242,18 @@ const DietScreen: React.FC = () => {
       })
       .catch(() => showToast('Не удалось загрузить данные'));
 
-    AsyncStorage.getItem(STORAGE_KEYS.WATER_BY_DATE)
-      .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
-      .catch(() => {});
-
-    AsyncStorage.getItem(STORAGE_KEYS.WATER_TOTAL)
-      .then(raw => {
-        const parsed = raw ? parseInt(raw, 10) : NaN;
-        if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
+    // Загружаем water данные за один I/O запрос
+    AsyncStorage.multiGet([STORAGE_KEYS.WATER_BY_DATE, STORAGE_KEYS.WATER_TOTAL])
+      .then(([[, waterByDateRaw], [, waterTotalRaw]]) => {
+        if (waterByDateRaw) {
+          setWaterByDate(JSON.parse(waterByDateRaw));
+        }
+        if (waterTotalRaw) {
+          const parsed = parseInt(waterTotalRaw, 10);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            setDailyWaterTotal(parsed);
+          }
+        }
       })
       .catch(() => {});
   }, []);
@@ -263,14 +267,18 @@ const DietScreen: React.FC = () => {
         })
         .catch(() => showToast('Не удалось загрузить данные'));
 
-      AsyncStorage.getItem(STORAGE_KEYS.WATER_BY_DATE)
-        .then(raw => setWaterByDate(raw ? JSON.parse(raw) : {}))
-        .catch(() => {});
-
-      AsyncStorage.getItem(STORAGE_KEYS.WATER_TOTAL)
-        .then(raw => {
-          const parsed = raw ? parseInt(raw, 10) : NaN;
-          if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
+      // Загружаем water данные за один I/O запрос
+      AsyncStorage.multiGet([STORAGE_KEYS.WATER_BY_DATE, STORAGE_KEYS.WATER_TOTAL])
+        .then(([[, waterByDateRaw], [, waterTotalRaw]]) => {
+          if (waterByDateRaw) {
+            setWaterByDate(JSON.parse(waterByDateRaw));
+          }
+          if (waterTotalRaw) {
+            const parsed = parseInt(waterTotalRaw, 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              setDailyWaterTotal(parsed);
+            }
+          }
         })
         .catch(() => {});
     }, []),

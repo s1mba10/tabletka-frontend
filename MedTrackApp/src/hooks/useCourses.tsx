@@ -56,27 +56,35 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const removeCourse = async (id: number) => {
-    const filtered = courses.filter(c => c.id !== id);
-    await saveAll(filtered);
-
     try {
-      const storedReminders = await AsyncStorage.getItem(STORAGE_KEYS.REMINDERS);
-      if (storedReminders) {
-        try {
-          const parsed = JSON.parse(storedReminders);
-          if (Array.isArray(parsed)) {
-            const updatedReminders = (parsed as Reminder[]).filter(
-              (r: Reminder) => r.courseId !== id,
-            );
-            await AsyncStorage.setItem(
-              STORAGE_KEYS.REMINDERS,
-              JSON.stringify(updatedReminders),
-            );
-          }
-        } catch {}
-      }
+      // Load both courses and reminders atomically
+      const [[, coursesRaw], [, remindersRaw]] = await AsyncStorage.multiGet([
+        STORAGE_KEYS.COURSES,
+        STORAGE_KEYS.REMINDERS,
+      ]);
+
+      // Parse courses
+      const storedCourses = coursesRaw ? JSON.parse(coursesRaw) : [];
+      const filteredCourses = Array.isArray(storedCourses)
+        ? storedCourses.filter((c: MedicationCourse) => c.id !== id)
+        : [];
+
+      // Parse reminders
+      const storedReminders = remindersRaw ? JSON.parse(remindersRaw) : [];
+      const filteredReminders = Array.isArray(storedReminders)
+        ? storedReminders.filter((r: Reminder) => r.courseId !== id)
+        : [];
+
+      // Save both atomically
+      await AsyncStorage.multiSet([
+        [STORAGE_KEYS.COURSES, JSON.stringify(filteredCourses)],
+        [STORAGE_KEYS.REMINDERS, JSON.stringify(filteredReminders)],
+      ]);
+
+      // Update state only after successful storage
+      setCourses(filteredCourses);
     } catch (e) {
-      console.error('Failed to remove reminders for course', id, e);
+      console.error('Failed to remove course and reminders for id', id, e);
     }
   };
 

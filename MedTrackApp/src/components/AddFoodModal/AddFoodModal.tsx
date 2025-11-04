@@ -29,6 +29,7 @@ import {
   addRecent,
   loadUserCatalog,
   saveUserCatalog,
+  loadAllNutritionData,
 } from '../../nutrition/storage';
 
 import { styles } from './styles';
@@ -112,9 +113,12 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   // ------- Загрузка -------
   useEffect(() => {
-    loadFavorites().then(setFavorites);
-    loadRecents().then(setRecents);
-    loadUserCatalog().then(setUserCatalog);
+    // Загружаем все nutrition данные за один I/O запрос
+    loadAllNutritionData().then(({ favorites, recents, userCatalog }) => {
+      setFavorites(favorites);
+      setRecents(recents);
+      setUserCatalog(userCatalog);
+    });
   }, []);
 
   // ------- Утилиты ключей -------

@@ -205,13 +205,21 @@ const MainScreen: React.FC = () => {
 
   const loadWater = useCallback(async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEYS.WATER_BY_DATE);
-      setWaterByDate(raw ? JSON.parse(raw) : {});
-    } catch {}
-    try {
-      const rawTotal = await AsyncStorage.getItem(STORAGE_KEYS.WATER_TOTAL);
-      const parsed = rawTotal ? parseInt(rawTotal, 10) : NaN;
-      if (!Number.isNaN(parsed) && parsed > 0) setDailyWaterTotal(parsed);
+      // Загружаем оба значения за один I/O запрос
+      const [[, waterByDateRaw], [, waterTotalRaw]] = await AsyncStorage.multiGet([
+        STORAGE_KEYS.WATER_BY_DATE,
+        STORAGE_KEYS.WATER_TOTAL,
+      ]);
+
+      if (waterByDateRaw) {
+        setWaterByDate(JSON.parse(waterByDateRaw));
+      }
+      if (waterTotalRaw) {
+        const parsed = parseInt(waterTotalRaw, 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+          setDailyWaterTotal(parsed);
+        }
+      }
     } catch {}
   }, []);
 

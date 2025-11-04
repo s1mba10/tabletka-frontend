@@ -65,6 +65,36 @@ export async function loadUserCatalog(): Promise<UserCatalogItem[]> {
   }
 }
 
+/**
+ * Оптимизированная загрузка всех nutrition данных за один I/O запрос
+ */
+export async function loadAllNutritionData(): Promise<{
+  favorites: FavoriteItem[];
+  recents: RecentItem[];
+  userCatalog: UserCatalogItem[];
+}> {
+  try {
+    const [[, favoritesRaw], [, recentsRaw], [, catalogRaw]] = await AsyncStorage.multiGet([
+      STORAGE_KEYS.NUTRITION_FAVORITES,
+      STORAGE_KEYS.NUTRITION_RECENTS,
+      STORAGE_KEYS.NUTRITION_USER_CATALOG,
+    ]);
+
+    return {
+      favorites: favoritesRaw ? JSON.parse(favoritesRaw) : [],
+      recents: recentsRaw ? JSON.parse(recentsRaw) : [],
+      userCatalog: catalogRaw ? JSON.parse(catalogRaw) : [],
+    };
+  } catch (error) {
+    console.error('Failed to load nutrition data:', error);
+    return {
+      favorites: [],
+      recents: [],
+      userCatalog: [],
+    };
+  }
+}
+
 export async function saveUserCatalog(items: UserCatalogItem[]): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEYS.NUTRITION_USER_CATALOG, JSON.stringify(items));
