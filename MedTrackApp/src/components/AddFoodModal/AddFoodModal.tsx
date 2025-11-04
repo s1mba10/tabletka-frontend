@@ -50,6 +50,9 @@ type SearchItem =
   | { type: 'user'; item: UserCatalogItem }
   | { type: 'favorite'; item: FavoriteItem };
 
+// Union type для всех возможных item из SearchItem
+type SelectableItem = CatalogItem | UserCatalogItem | FavoriteItem;
+
 type TabKey = 'search' | 'recents' | 'favorites' | 'recipes';
 
 const TABS: { key: TabKey; title: string }[] = [
@@ -356,7 +359,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   const handleSaveIngredient = () => {
     if (!ingredientSelected) return;
-    const base: any = ingredientSelected.item;
+    const base: SelectableItem = ingredientSelected.item;
     const grams = parseFloat(ingredientMass.replace(',', '.'));
     if (!base.per100g || grams <= 0) return;
     setDishIngredients(prev => {
@@ -419,7 +422,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   // ------- Избранное -------
   const toggleFavorite = async (it: SearchItem) => {
-    const key = itemKey(it.item as any, it.type);
+    const key = itemKey(it.item, it.type);
     if (favorites.some(f => favKey(f) === key)) {
       const prev = favorites;
       const updated = favorites.filter(f => favKey(f) !== key);
@@ -428,13 +431,13 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       if (!ok) setFavorites(prev);
       showToast(ok ? 'Удалено из избранного' : 'Не удалось сохранить изменения');
     } else {
-      const base = it.item as CatalogItem | UserCatalogItem | FavoriteItem;
+      const base: SelectableItem = it.item;
       const newFav: FavoriteItem = {
         id: Math.random().toString(),
-        sourceId: (base as any).sourceId || (base as any).id,
-        name: (base as any).name,
-        per100g: (base as any).per100g,
-        defaultPortionGrams: (base as any).defaultPortionGrams,
+        sourceId: 'sourceId' in base ? base.sourceId : ('id' in base ? base.id : undefined),
+        name: base.name,
+        per100g: base.per100g,
+        defaultPortionGrams: 'defaultPortionGrams' in base ? base.defaultPortionGrams : undefined,
         createdAt: Date.now(),
       };
       const prev = favorites;
@@ -485,7 +488,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   // ------- Рендер элементов списков -------
   const renderSearchItem = ({ item }: { item: SearchItem }) => {
-    const data = item.item as any;
+    const data: SelectableItem = item.item;
     const key = itemKey(data, item.type);
     const isFav = favorites.some(f => favKey(f) === key);
     return (
@@ -588,7 +591,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
   // ------- Мои/Создать рецепт -------
   const myRecipes = useMemo(
-    () => userCatalog.filter(u => (u as any).type === 'composite'),
+    () => userCatalog.filter(u => u.type === 'composite'),
     [userCatalog],
   );
 
@@ -634,7 +637,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                     resetSelection();
                     setSelectedCatalog(item);
                     setSelectedSource('user');
-                    setPortion(String((item as any).dishWeight || 100));
+                    setPortion(String(item.dishWeight || 100));
                   }}
                 >
                   <Text style={styles.itemName}>{item.name}</Text>
@@ -728,7 +731,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
       ) : (
         <FlatList
           data={searchResults}
-          keyExtractor={i => itemKey(i.item as any, i.type)}
+          keyExtractor={i => itemKey(i.item, i.type)}
           renderItem={renderSearchItem}
           contentContainerStyle={contentPad}
         />
@@ -852,7 +855,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         ingredientSearch={ingredientSearch}
         onIngredientSearchChange={setIngredientSearch}
         ingredientResults={ingredientResults}
-        itemKey={itemKey as any}
+        itemKey={itemKey}
         onPickItem={setIngredientSelected}
         ingredientMass={ingredientMass}
         onIngredientMassChange={setIngredientMass}

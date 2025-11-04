@@ -1,8 +1,14 @@
 import React from 'react';
 import { Modal, View, Text, TextInput, FlatList, TouchableOpacity } from 'react-native';
 import { styles } from './styles';
+import { CatalogItem, UserCatalogItem, FavoriteItem } from '../../nutrition/types';
 
-type SearchItem = any;
+type SearchItem =
+  | { type: 'catalog'; item: CatalogItem }
+  | { type: 'user'; item: UserCatalogItem }
+  | { type: 'favorite'; item: FavoriteItem };
+
+type SelectableItem = CatalogItem | UserCatalogItem | FavoriteItem;
 
 type Props = {
   visible: boolean;
@@ -12,7 +18,7 @@ type Props = {
   ingredientSearch: string;
   onIngredientSearchChange: (v: string) => void;
   ingredientResults: SearchItem[];
-  itemKey: (item: any, type: any) => string;
+  itemKey: (item: SelectableItem, type: 'catalog' | 'user' | 'favorite') => string;
   onPickItem: (item: SearchItem) => void;
 
   ingredientMass: string;
@@ -50,7 +56,7 @@ const IngredientPickerModal: React.FC<Props> = ({
             />
             <FlatList
               data={ingredientResults}
-              keyExtractor={(i: any) => itemKey(i.item as any, i.type)}
+              keyExtractor={(i: SearchItem) => itemKey(i.item, i.type)}
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.listItem} onPress={() => onPickItem(item)}>
                   <Text style={styles.itemName}>{item.item.name}</Text>

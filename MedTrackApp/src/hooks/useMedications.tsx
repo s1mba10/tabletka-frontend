@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Medication } from '../types';
 import { STORAGE_KEYS } from '../constants/storageKeys';
@@ -26,7 +26,7 @@ export const MedicationsProvider: React.FC<{
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchMedications = async () => {
+  const fetchMedications = useCallback(async () => {
     setLoading(true);
     try {
       const data = await loadArrayFromStorage<Medication>(STORAGE_KEYS.MEDICATIONS);
@@ -34,7 +34,7 @@ export const MedicationsProvider: React.FC<{
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const saveMedications = async (items: Medication[]) => {
     setMedications(items);
@@ -77,7 +77,7 @@ export const MedicationsProvider: React.FC<{
 
   useEffect(() => {
     fetchMedications();
-  }, []);
+  }, [fetchMedications]);
 
   return (
     <MedicationsContext.Provider

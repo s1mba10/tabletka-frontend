@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MedicationCourse, Reminder } from '../types';
 import { STORAGE_KEYS } from '../constants/storageKeys';
@@ -19,7 +19,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [courses, setCourses] = useState<MedicationCourse[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
       const data = await loadArrayFromStorage<MedicationCourse>(STORAGE_KEYS.COURSES);
@@ -27,7 +27,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const saveAll = async (items: MedicationCourse[]) => {
     setCourses(items);
@@ -78,7 +78,7 @@ export const CoursesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [fetchCourses]);
 
   return (
     <CoursesContext.Provider
