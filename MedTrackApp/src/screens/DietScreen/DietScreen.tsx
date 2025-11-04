@@ -28,6 +28,7 @@ import { styles } from './styles';
 import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { createEmptyDay } from '../../nutrition/utils';
 import { STORAGE_KEYS } from '../../constants/storageKeys';
+import { NUTRITION_DEFAULTS } from '../../constants/nutritionDefaults';
 
 type NavProp = StackNavigationProp<RootStackParamList, 'Diet'>;
 
@@ -58,7 +59,7 @@ const DietScreen: React.FC = () => {
     snack: { title: 'Перекус/Другое', icon: '🌙' },
   };
 
-  const targetCalories = 3300; // mock target
+  const targetCalories = NUTRITION_DEFAULTS.DAILY_CALORIES_TARGET_KCAL;
 
   const { mealTotals, dayTotals } = useMemo(() => aggregateMeals(dayEntries), [dayEntries]);
 

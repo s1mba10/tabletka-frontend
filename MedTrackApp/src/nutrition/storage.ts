@@ -7,6 +7,7 @@ import {
   NormalizedEntry,
 } from './types';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { NUTRITION_DEFAULTS } from '../constants/nutritionDefaults';
 
 export type DiaryData = Record<string, Record<MealType, NormalizedEntry[]>>;
 
@@ -51,7 +52,9 @@ export async function saveRecents(items: RecentItem[]): Promise<void> {
 export async function addRecent(item: RecentItem) {
   const items = await loadRecents();
   const updated = [item, ...items];
-  if (updated.length > 50) updated.splice(50);
+  if (updated.length > NUTRITION_DEFAULTS.MAX_RECENT_ITEMS) {
+    updated.splice(NUTRITION_DEFAULTS.MAX_RECENT_ITEMS);
+  }
   await saveRecents(updated);
 }
 

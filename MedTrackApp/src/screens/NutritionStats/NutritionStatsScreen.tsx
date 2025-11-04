@@ -13,14 +13,15 @@ import WeeklyCaloriesCard from './WeeklyCaloriesCard';
 import WeeklyMacrosRow from './WeeklyMacrosRow';
 import { MealType, NormalizedEntry } from '../../nutrition/types';
 import { styles } from './styles';
+import { NUTRITION_DEFAULTS } from '../../constants/nutritionDefaults';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-// targets (mock)
-const kcalTarget = 3300;
-const proteinTarget = 120;
-const fatTarget = 80;
-const carbsTarget = 300;
+// targets
+const kcalTarget = NUTRITION_DEFAULTS.DAILY_CALORIES_TARGET_KCAL;
+const proteinTarget = NUTRITION_DEFAULTS.DAILY_PROTEIN_TARGET_G;
+const fatTarget = NUTRITION_DEFAULTS.DAILY_FAT_TARGET_G;
+const carbsTarget = NUTRITION_DEFAULTS.DAILY_CARBS_TARGET_G;
 
 /**
  * Один прогресс-ринг без градиентов/фильтров.

@@ -32,6 +32,7 @@ import { loadDiary, saveDiary } from '../../nutrition/storage';
 import { aggregateMeals } from '../../nutrition/aggregate';
 import { createEmptyDay } from '../../nutrition/utils';
 import { STORAGE_KEYS } from '../../constants/storageKeys';
+import { NUTRITION_DEFAULTS } from '../../constants/nutritionDefaults';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'MainScreen'>;
 
@@ -57,10 +58,6 @@ const getThisWeek = () => {
 };
 
 const fmtKcal = (kcal: number) => `${Math.round(kcal)} ккал`;
-const DAILY_TARGET_KCAL = 3300;
-
-// Константы воды (как на DietScreen)
-const DEFAULT_GLASS_ML = 250;
 
 // ===== Мини-кольцо (SVG) — точное заполнение по проценту =====
 const MiniRing: React.FC<{
@@ -182,7 +179,7 @@ const MainScreen: React.FC = () => {
   const dayEntries = entriesByDate[selectedDate] || createEmptyDay();
   const { mealTotals, dayTotals } = useMemo(() => aggregateMeals(dayEntries), [dayEntries]);
   const totalKcal = dayTotals.calories || 0;
-  const isOverTarget = totalKcal > DAILY_TARGET_KCAL;
+  const isOverTarget = totalKcal > NUTRITION_DEFAULTS.DAILY_CALORIES_TARGET_KCAL;
 
   // Моки для процентов «Тренировки» и «Питание»
   const workoutPct = 0;
@@ -194,8 +191,8 @@ const MainScreen: React.FC = () => {
 
   // ===== ВОДА: локальное состояние главного экрана (пассивная статистика)
   const [waterByDate, setWaterByDate] = useState<Record<string, number>>({});
-  const [dailyWaterTotal, setDailyWaterTotal] = useState<number>(10);
-  const glassMl = DEFAULT_GLASS_ML;
+  const [dailyWaterTotal, setDailyWaterTotal] = useState<number>(NUTRITION_DEFAULTS.DEFAULT_WATER_GLASSES);
+  const glassMl = NUTRITION_DEFAULTS.DEFAULT_GLASS_ML;
 
   const todayKey = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
   const waterToday = waterByDate[todayKey] ?? 0;
@@ -556,7 +553,7 @@ const MainScreen: React.FC = () => {
           onCancel={() => setActiveMeal(null)}
           onConfirm={handleConfirmFood}
           dayTotals={dayTotals}
-          dayTargets={{ calories: DAILY_TARGET_KCAL }}
+          dayTargets={{ calories: NUTRITION_DEFAULTS.DAILY_CALORIES_TARGET_KCAL }}
         />
       )}
     </SafeAreaView>
