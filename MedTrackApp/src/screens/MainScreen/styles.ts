@@ -12,8 +12,8 @@ export const styles = StyleSheet.create({
   },
 
   verticalScroll: { flex: 1 },
-  scrollContent: { paddingBottom: 24 },
-  scrollContentIOS: { paddingBottom: 90 },
+  scrollContent: { paddingBottom: 40 },
+  scrollContentIOS: { paddingBottom: 160 },
 
   // Профиль
   profileRow: {

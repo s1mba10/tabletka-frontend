@@ -46,7 +46,7 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
   };
 
   const palette = getPalette(label);
-  const iconBackground = `${palette.start}33`;
+  const iconBackground = `${palette.start}26`;
 
   return (
     <View style={styles.wrapper} onLayout={onLayout}>
@@ -68,7 +68,7 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
                 cx={circleSize / 2}
                 cy={circleSize / 2}
                 r={radius}
-                stroke="#EAEFF5"
+                stroke="#2C2C34"
                 strokeWidth={strokeWidth}
                 fill="none"
               />
@@ -112,15 +112,12 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1F1F23',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#2A2A31',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 16,
-    shadowColor: '#141414',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
   },
   circleWrapper: {
     alignItems: 'center',
@@ -134,14 +131,14 @@ const styles = StyleSheet.create({
   percentage: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#212121',
+    color: '#F7F7FB',
   },
   labelRow: {
     alignItems: 'center',
     marginTop: 12,
   },
   label: {
-    color: '#424242',
+    color: '#E2E2EA',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -150,6 +147,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
 });
 
