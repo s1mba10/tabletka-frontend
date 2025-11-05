@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   Modal,
   TouchableWithoutFeedback,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -36,6 +37,7 @@ const Medications: React.FC = () => {
 
   const [form, setForm] = useState<MedicationFormData>({ name: '', dosage: '' });
   const [modalVisible, setModalVisible] = useState(false);
+  const fabPressAnim = useRef(new Animated.Value(1)).current;
 
   const formatDate = (iso: string) =>
     format(new Date(iso), 'd MMMM', { locale: ru });
@@ -322,9 +324,31 @@ const Medications: React.FC = () => {
         </TouchableOpacity>
       </ScrollView>
       </View>
-      <TouchableOpacity style={styles.fab} onPress={startAdd}>
-        <Icon name="plus" size={30} color="white" />
-      </TouchableOpacity>
+      <Animated.View style={[styles.fab, { transform: [{ scale: fabPressAnim }] }]}>
+        <TouchableOpacity
+          style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+          onPress={startAdd}
+          onPressIn={() => {
+            Animated.spring(fabPressAnim, {
+              toValue: 0.85,
+              useNativeDriver: true,
+              speed: 50,
+              bounciness: 0,
+            }).start();
+          }}
+          onPressOut={() => {
+            Animated.spring(fabPressAnim, {
+              toValue: 1,
+              useNativeDriver: true,
+              speed: 20,
+              bounciness: 8,
+            }).start();
+          }}
+          activeOpacity={1}
+        >
+          <Icon name="plus" size={30} color="white" />
+        </TouchableOpacity>
+      </Animated.View>
       <Modal transparent animationType="slide" visible={modalVisible}>
         <TouchableWithoutFeedback onPress={clearForm}>
           <View style={styles.modalOverlay}>

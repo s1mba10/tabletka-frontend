@@ -64,6 +64,7 @@ const MedCalendarScreen: React.FC = () => {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const fabAnim = useRef(new Animated.Value(0)).current;
+  const fabPressAnim = useRef(new Animated.Value(1)).current;
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
@@ -424,9 +425,31 @@ const MedCalendarScreen: React.FC = () => {
             </TouchableOpacity>
           </Animated.View>
 
-          <TouchableOpacity style={[styles.fab, { bottom: fabBottom }]} onPress={() => setFabOpen(prev => !prev)}>
-            <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
-          </TouchableOpacity>
+          <Animated.View style={[styles.fab, { bottom: fabBottom, transform: [{ scale: fabPressAnim }] }]}>
+            <TouchableOpacity
+              style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+              onPress={() => setFabOpen(prev => !prev)}
+              onPressIn={() => {
+                Animated.spring(fabPressAnim, {
+                  toValue: 0.85,
+                  useNativeDriver: true,
+                  speed: 50,
+                  bounciness: 0,
+                }).start();
+              }}
+              onPressOut={() => {
+                Animated.spring(fabPressAnim, {
+                  toValue: 1,
+                  useNativeDriver: true,
+                  speed: 20,
+                  bounciness: 8,
+                }).start();
+              }}
+              activeOpacity={1}
+            >
+              <Icon name={fabOpen ? 'close' : 'plus'} size={30} color="white" />
+            </TouchableOpacity>
+          </Animated.View>
 
           <WeekPickerModal
             visible={pickerVisible}
