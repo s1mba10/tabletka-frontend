@@ -163,9 +163,6 @@ export const styles = StyleSheet.create({
   // 2x2
   grid4: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
 
-  // Саммари
-  summaryRow: { flexDirection: 'row', marginVertical: 16, gap: 12 },
-
   waterCard: {
     flexDirection: 'row',
     alignItems: 'center',

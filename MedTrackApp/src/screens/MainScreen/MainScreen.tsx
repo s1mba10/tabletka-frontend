@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import Svg, { Circle } from 'react-native-svg';
 
-import { CategorySummaryCard } from '../../components';
+import { SummaryCircles } from '../../components';
 import { useAdherence } from '../../hooks';
 import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
@@ -308,12 +308,6 @@ const MainScreen: React.FC = () => {
     );
   };
 
-  const summaries = [
-    { label: 'Лекарства', icon: 'pill', value: medicinePct },
-    { label: 'Тренировки', icon: 'dumbbell', value: workoutPct },
-    { label: 'Питание', icon: 'food-apple', value: nutritionPct },
-  ];
-
   const renderAvatar = () => {
     if (userImage) return <Image source={{ uri: userImage }} style={styles.avatarImage} />;
     if (profileInitial) return <Text style={styles.avatarInitial}>{profileInitial}</Text>;
@@ -539,11 +533,7 @@ const MainScreen: React.FC = () => {
         <StatsQuickGrid />
 
         {/* Саммари */}
-        <View style={styles.summaryRow}>
-          {summaries.map((item) => (
-            <CategorySummaryCard key={item.label} icon={item.icon} label={item.label} percentage={item.value} />
-          ))}
-        </View>
+        <SummaryCircles />
       </ScrollView>
 
       {/* AddFoodModal */}

@@ -5,3 +5,5 @@ export { default as MacronutrientSummary } from './MacronutrientSummary';
 export { default as MealPanel } from './MealPanel';
 export { default as AddFoodModal } from './AddFoodModal/AddFoodModal';
 export { default as FormTextInput } from './FormTextInput';
+export { default as CircleStat } from './CircleStat';
+export { default as SummaryCircles } from './SummaryCircles';
