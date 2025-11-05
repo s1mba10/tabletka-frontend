@@ -105,20 +105,37 @@ const MedCalendarScreen: React.FC = () => {
     const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
     const direction = newIndex > currentIndex ? 'left' : 'right';
 
-    // Start from the opposite side based on direction
-    translateX.value = direction === 'left' ? 300 : -300;
-    slideOpacity.value = 0;
+    // Simulate a drag-like slide effect
+    // First, slide out in the direction of the swipe
+    const slideOutDistance = direction === 'left' ? -SCREEN_WIDTH * 0.4 : SCREEN_WIDTH * 0.4;
 
-    setSelectedDate(newDate);
-
-    // Animate in using spring for bounce effect
-    translateX.value = withSpring(0, {
-      damping: 15,      // Lower = more bouncy (default: 10)
-      stiffness: 150,   // Higher = faster (default: 100)
-      mass: 0.8,        // Lower = lighter/quicker (default: 1)
-      overshootClamping: false, // Allow overshoot
+    translateX.value = withSpring(slideOutDistance, {
+      damping: 20,
+      stiffness: 180,
+      mass: 0.7,
+      overshootClamping: true,
     });
-    slideOpacity.value = withTiming(1, { duration: 250 });
+
+    // Fade out slightly while sliding out
+    slideOpacity.value = withTiming(0.3, { duration: 150 });
+
+    // After a brief moment, change the date and slide in from opposite side
+    setTimeout(() => {
+      setSelectedDate(newDate);
+
+      // Start from the opposite side
+      translateX.value = direction === 'left' ? SCREEN_WIDTH * 0.5 : -SCREEN_WIDTH * 0.5;
+      slideOpacity.value = 0.3;
+
+      // Slide in with spring bounce (same as drag gesture)
+      translateX.value = withSpring(0, {
+        damping: 15,
+        stiffness: 150,
+        mass: 0.8,
+        overshootClamping: false,
+      });
+      slideOpacity.value = withTiming(1, { duration: 200 });
+    }, 150);
   };
 
   // Helper function to handle gesture end
