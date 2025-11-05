@@ -31,6 +31,7 @@ import ReanimatedAnimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   runOnJS,
 } from 'react-native-reanimated';
 
@@ -105,8 +106,13 @@ const MedCalendarScreen: React.FC = () => {
 
     setSelectedDate(newDate);
 
-    // Animate in using Reanimated
-    translateX.value = withTiming(0, { duration: 250 });
+    // Animate in using spring for bounce effect
+    translateX.value = withSpring(0, {
+      damping: 15,      // Lower = more bouncy (default: 10)
+      stiffness: 150,   // Higher = faster (default: 100)
+      mass: 0.8,        // Lower = lighter/quicker (default: 1)
+      overshootClamping: false, // Allow overshoot
+    });
     slideOpacity.value = withTiming(1, { duration: 250 });
   };
 
