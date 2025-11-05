@@ -166,6 +166,15 @@ export const styles = StyleSheet.create({
   // Саммари
   summaryRow: { flexDirection: 'row', marginVertical: 16, gap: 12 },
 
+  // Circular Indicators
+  circularIndicatorsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginVertical: 16,
+    paddingHorizontal: 8,
+  },
+
   waterCard: {
     flexDirection: 'row',
     alignItems: 'center',

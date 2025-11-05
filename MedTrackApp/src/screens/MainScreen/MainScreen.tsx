@@ -19,11 +19,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import Svg, { Circle } from 'react-native-svg';
 
-import { CategorySummaryCard } from '../../components';
 import { useAdherence } from '../../hooks';
 import { RootStackParamList } from '../../navigation';
 import { styles } from './styles';
 import { useAuth } from '../../auth/AuthContext';
+import CircularProgressIndicator from '../../components/CircularProgressIndicator';
 
 // питание
 import AddFoodModal from '../../components/AddFoodModal/AddFoodModal';
@@ -181,12 +181,15 @@ const MainScreen: React.FC = () => {
   const totalKcal = dayTotals.calories || 0;
   const isOverTarget = totalKcal > NUTRITION_DEFAULTS.DAILY_CALORIES_TARGET_KCAL;
 
-  // Моки для процентов «Тренировки» и «Питание»
-  const workoutPct = 0;
-  const nutritionPct = 65;
+  // Mock data for circular progress indicators
+  const circularIndicators = [
+    { label: 'Питание', value: 77 },
+    { label: 'Тренировки', value: 38 },
+    { label: 'Лекарства', value: 67 },
+  ];
 
   // Среднее соблюдение (лекарства + тренировки + питание)
-  const avgPct = Math.round((Math.round(medicinePct) + workoutPct + nutritionPct) / 3);
+  const avgPct = Math.round((circularIndicators[2].value + circularIndicators[1].value + circularIndicators[0].value) / 3);
   const theme = getStatusTheme(avgPct);
 
   // ===== ВОДА: локальное состояние главного экрана (пассивная статистика)
@@ -308,11 +311,19 @@ const MainScreen: React.FC = () => {
     );
   };
 
-  const summaries = [
-    { label: 'Лекарства', icon: 'pill', value: medicinePct },
-    { label: 'Тренировки', icon: 'dumbbell', value: workoutPct },
-    { label: 'Питание', icon: 'food-apple', value: nutritionPct },
-  ];
+  // Color mapping for circular indicators
+  const getIndicatorColor = (label: string) => {
+    switch (label) {
+      case 'Питание':
+        return '#4CAF50'; // theme.colors.recovery (green)
+      case 'Тренировки':
+        return '#FF5722'; // theme.colors.strain (orange)
+      case 'Лекарства':
+        return '#1E88E5'; // theme.colors.sleep (blue)
+      default:
+        return '#9E9E9E';
+    }
+  };
 
   const renderAvatar = () => {
     if (userImage) return <Image source={{ uri: userImage }} style={styles.avatarImage} />;
@@ -538,10 +549,17 @@ const MainScreen: React.FC = () => {
         {/* 2x2 */}
         <StatsQuickGrid />
 
-        {/* Саммари */}
-        <View style={styles.summaryRow}>
-          {summaries.map((item) => (
-            <CategorySummaryCard key={item.label} icon={item.icon} label={item.label} percentage={item.value} />
+        {/* Circular Progress Indicators */}
+        <View style={styles.circularIndicatorsRow}>
+          {circularIndicators.map((item) => (
+            <CircularProgressIndicator
+              key={item.label}
+              label={item.label}
+              value={item.value}
+              color={getIndicatorColor(item.label)}
+              size={100}
+              strokeWidth={8}
+            />
           ))}
         </View>
       </ScrollView>
