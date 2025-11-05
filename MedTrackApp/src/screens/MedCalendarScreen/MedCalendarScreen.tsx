@@ -10,6 +10,7 @@ import {
   Animated,
   Platform,
   Image,
+  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -33,6 +34,7 @@ import ReanimatedAnimated, {
   withTiming,
   withSpring,
   runOnJS,
+  withDecay,
 } from 'react-native-reanimated';
 
 import { styles } from './styles';
@@ -76,6 +78,9 @@ const MedCalendarScreen: React.FC = () => {
   // Reanimated shared values for day sliding
   const slideOpacity = useSharedValue(1);
   const translateX = useSharedValue(0);
+  const isDragging = useSharedValue(false);
+
+  const SCREEN_WIDTH = Dimensions.get('window').width;
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
@@ -116,23 +121,78 @@ const MedCalendarScreen: React.FC = () => {
     slideOpacity.value = withTiming(1, { duration: 250 });
   };
 
-  // Helper function to handle swipe gesture
-  const handleSwipeEnd = (translationX: number) => {
+  // Helper function to handle gesture end
+  const handleGestureEnd = (translationX: number, velocityX: number) => {
     const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
 
-    // Swipe left = next day, Swipe right = previous day
-    if (translationX < -50 && currentIndex < weekDates.length - 1) {
+    // Calculate threshold (30% of screen width or fast swipe)
+    const swipeThreshold = SCREEN_WIDTH * 0.3;
+    const velocityThreshold = 500; // pixels per second
+
+    // Check if at boundaries
+    const isAtStart = currentIndex === 0;
+    const isAtEnd = currentIndex === weekDates.length - 1;
+
+    // Fast swipe detection
+    const isFastSwipeLeft = velocityX < -velocityThreshold;
+    const isFastSwipeRight = velocityX > velocityThreshold;
+
+    // Determine direction based on distance or velocity
+    const shouldGoNext = (translationX < -swipeThreshold || isFastSwipeLeft) && !isAtEnd;
+    const shouldGoPrev = (translationX > swipeThreshold || isFastSwipeRight) && !isAtStart;
+
+    if (shouldGoNext) {
       animateToDate(weekDates[currentIndex + 1].fullDate);
-    } else if (translationX > 50 && currentIndex > 0) {
+    } else if (shouldGoPrev) {
       animateToDate(weekDates[currentIndex - 1].fullDate);
+    } else {
+      // Snap back to center
+      translateX.value = withSpring(0, {
+        damping: 15,
+        stiffness: 150,
+        mass: 0.8,
+        overshootClamping: false,
+      });
     }
   };
 
-  // Gesture handler for swiping between days
+  // Rubber band effect for edge resistance
+  const applyRubberBand = (translation: number, isAtStart: boolean, isAtEnd: boolean) => {
+    'worklet';
+    const maxOverscroll = 80; // Maximum pixels allowed to drag past edge
+
+    // If dragging right at start, apply resistance
+    if (isAtStart && translation > 0) {
+      return maxOverscroll * (1 - Math.exp(-translation / maxOverscroll));
+    }
+
+    // If dragging left at end, apply resistance
+    if (isAtEnd && translation < 0) {
+      return -maxOverscroll * (1 - Math.exp(translation / maxOverscroll));
+    }
+
+    return translation;
+  };
+
+  // Gesture handler for interactive dragging between days
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-10, 10])
+    .activeOffsetX([-15, 15])  // Requires 15px horizontal movement
+    .failOffsetY([-10, 10])     // Fails if vertical movement exceeds 10px (for FlatList scrolling)
+    .enableTrackpadTwoFingerGesture(false)
+    .onStart(() => {
+      isDragging.value = true;
+    })
+    .onUpdate((event) => {
+      const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+      const isAtStart = currentIndex === 0;
+      const isAtEnd = currentIndex === weekDates.length - 1;
+
+      // Apply rubber band effect at edges
+      translateX.value = applyRubberBand(event.translationX, isAtStart, isAtEnd);
+    })
     .onEnd((event) => {
-      runOnJS(handleSwipeEnd)(event.translationX);
+      isDragging.value = false;
+      runOnJS(handleGestureEnd)(event.translationX, event.velocityX);
     });
 
   // Animated style for day sliding
