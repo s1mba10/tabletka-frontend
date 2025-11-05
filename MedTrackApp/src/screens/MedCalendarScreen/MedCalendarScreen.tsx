@@ -9,7 +9,7 @@ import {
   Alert,
   Animated,
   Platform,
-  Image
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -24,9 +24,15 @@ import {
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, Swipeable, RectButton, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
+import ReanimatedAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 
 import { styles } from './styles';
 import WeekPickerModal from './WeekPickerModal';
@@ -66,6 +72,10 @@ const MedCalendarScreen: React.FC = () => {
   const fabAnim = useRef(new Animated.Value(0)).current;
   const fabPressAnim = useRef(new Animated.Value(1)).current;
 
+  // Reanimated shared values for day sliding
+  const slideOpacity = useSharedValue(1);
+  const translateX = useSharedValue(0);
+
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
   const ACTION_SPACING = 8;
@@ -83,6 +93,47 @@ const MedCalendarScreen: React.FC = () => {
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+
+  const animateToDate = (newDate: string) => {
+    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+    const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
+    const direction = newIndex > currentIndex ? 'left' : 'right';
+
+    // Start from the opposite side based on direction
+    translateX.value = direction === 'left' ? 300 : -300;
+    slideOpacity.value = 0;
+
+    setSelectedDate(newDate);
+
+    // Animate in using Reanimated
+    translateX.value = withTiming(0, { duration: 250 });
+    slideOpacity.value = withTiming(1, { duration: 250 });
+  };
+
+  // Helper function to handle swipe gesture
+  const handleSwipeEnd = (translationX: number) => {
+    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+
+    // Swipe left = next day, Swipe right = previous day
+    if (translationX < -50 && currentIndex < weekDates.length - 1) {
+      animateToDate(weekDates[currentIndex + 1].fullDate);
+    } else if (translationX > 50 && currentIndex > 0) {
+      animateToDate(weekDates[currentIndex - 1].fullDate);
+    }
+  };
+
+  // Gesture handler for swiping between days
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .onEnd((event) => {
+      runOnJS(handleSwipeEnd)(event.translationX);
+    });
+
+  // Animated style for day sliding
+  const animatedContentStyle = useAnimatedStyle(() => ({
+    opacity: slideOpacity.value,
+    transform: [{ translateX: translateX.value }],
+  }));
 
   const handleWeekSelect = (year: number, week: number) => {
     const target = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
@@ -331,7 +382,7 @@ const MedCalendarScreen: React.FC = () => {
               {getWeekDates(weekOffset).map((day) => (
                 <TouchableOpacity
                   key={day.fullDate}
-                  onPress={() => setSelectedDate(day.fullDate)}
+                  onPress={() => animateToDate(day.fullDate)}
                   style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
                 >
                   <Text
@@ -353,31 +404,35 @@ const MedCalendarScreen: React.FC = () => {
             </View>
           </View>
           
-          <MedicationDayStatsButton
-            date={selectedDate}
-            takenCount={filteredReminders.filter(r => r.status === 'taken').length}
-            scheduledCount={filteredReminders.length}
-          />
+          <GestureDetector gesture={panGesture}>
+            <ReanimatedAnimated.View style={[{ flex: 1 }, animatedContentStyle]}>
+              <MedicationDayStatsButton
+                date={selectedDate}
+                takenCount={filteredReminders.filter(r => r.status === 'taken').length}
+                scheduledCount={filteredReminders.length}
+              />
 
-          {/* Reminders List */}
-          <FlatList
-            data={filteredReminders}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ReminderCard item={item} />}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyListContainer}>
-                <Image
-                  source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
-                  style={styles.emptyListImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-                <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-              </View>
-            )}
-            // убираем лишний нижний отступ (TabNavigator сам занимает низ)
-            contentContainerStyle={{ paddingBottom: 0 }}
-          />
+            {/* Reminders List */}
+            <FlatList
+              data={filteredReminders}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <ReminderCard item={item} />}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyListContainer}>
+                  <Image
+                    source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
+                    style={styles.emptyListImage}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+                  <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+                </View>
+              )}
+              // убираем лишний нижний отступ (TabNavigator сам занимает низ)
+              contentContainerStyle={{ paddingBottom: 0 }}
+            />
+            </ReanimatedAnimated.View>
+          </GestureDetector>
 
           {/* Speed Dial FAB */}
           {fabOpen && (
