@@ -116,25 +116,27 @@ const MedCalendarScreen: React.FC = () => {
       overshootClamping: true,
     });
 
-    // Fade out slightly while sliding out
-    slideOpacity.value = withTiming(0.3, { duration: 150 });
+    // Fade out completely while sliding out
+    slideOpacity.value = withTiming(0, { duration: 150 });
 
-    // After a brief moment, change the date and slide in from opposite side
+    // After sliding out, change the date while invisible
     setTimeout(() => {
       setSelectedDate(newDate);
 
-      // Start from the opposite side
+      // Position the new content on the opposite side (still invisible)
       translateX.value = direction === 'left' ? SCREEN_WIDTH * 0.5 : -SCREEN_WIDTH * 0.5;
-      slideOpacity.value = 0.3;
 
-      // Slide in with spring bounce (same as drag gesture)
-      translateX.value = withSpring(0, {
-        damping: 15,
-        stiffness: 150,
-        mass: 0.8,
-        overshootClamping: false,
-      });
-      slideOpacity.value = withTiming(1, { duration: 200 });
+      // Small delay to ensure React has rendered new content
+      setTimeout(() => {
+        // Slide in with spring bounce (same as drag gesture)
+        translateX.value = withSpring(0, {
+          damping: 15,
+          stiffness: 150,
+          mass: 0.8,
+          overshootClamping: false,
+        });
+        slideOpacity.value = withTiming(1, { duration: 200 });
+      }, 16); // ~1 frame delay for render
     }, 150);
   };
 
