@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
-import Svg, { Rect } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Stop, Circle } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export type CategorySummaryCardProps = {
@@ -23,66 +23,88 @@ const CategorySummaryCard: React.FC<CategorySummaryCardProps> = ({
     }
   };
 
-  const thickness = size * 0.1;
-  const outerRadius = size * 0.25;
-  const cardRadius = Math.max(0, outerRadius - thickness);
-  const pathRadius = Math.max(0, outerRadius - thickness / 2);
-  const rectSize = size - thickness;
-  const perimeter =
-    4 * (rectSize - 2 * pathRadius) + 2 * Math.PI * pathRadius;
+  const cappedProgress = Math.max(0, Math.min(percentage, 100));
+  const progress = cappedProgress / 100;
 
-  const getColor = (value: number) => {
-    if (value >= 80) return '#4CAF50';
-    if (value >= 60) return '#FFC107';
-    return '#FF5722';
-  };
-  const color = getColor(percentage);
+  const { gradient, accent } = useMemo(() => {
+    switch (label) {
+      case 'Питание':
+        return {
+          gradient: ['#FFB74D', '#FF9800'],
+          accent: '#FF9800',
+        };
+      case 'Тренировки':
+        return {
+          gradient: ['#8BC34A', '#4CAF50'],
+          accent: '#4CAF50',
+        };
+      case 'Лекарства':
+      default:
+        return {
+          gradient: ['#64B5F6', '#1E88E5'],
+          accent: '#1E88E5',
+        };
+    }
+  }, [label]);
 
-  const progress = Math.max(0, Math.min(percentage, 100)) / 100;
+  const gradientId = useMemo(
+    () => `gradient-${label}-${icon}`.replace(/[^a-zA-Z0-9_-]/g, ''),
+    [icon, label],
+  );
+
+  const circleSize = Math.max(size * 0.6, 0);
+  const radius = circleSize / 2;
+  const strokeWidth = 10;
+  const innerRadius = Math.max(radius - strokeWidth / 2, 0);
+  const circumference = 2 * Math.PI * innerRadius;
+  const strokeDashoffset = circumference * (1 - progress);
 
   return (
     <View style={styles.wrapper} onLayout={onLayout}>
-      <View style={[styles.card, { margin: thickness, borderRadius: cardRadius }]}>
-        <Icon name={icon} size={26} color="#fff" />
+      <View style={styles.card}>
+        <View style={styles.iconContainer}>
+          <Icon name={icon} size={18} color={accent} />
+        </View>
+        <View style={styles.circleWrapper}>
+          {size > 0 && (
+            <View style={{ width: circleSize, height: circleSize }}>
+              <Svg width={circleSize} height={circleSize}>
+                <Defs>
+                  <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor={gradient[0]} />
+                    <Stop offset="100%" stopColor={gradient[1]} />
+                  </LinearGradient>
+                </Defs>
+                <Circle
+                  cx={radius}
+                  cy={radius}
+                  r={innerRadius}
+                  stroke="#EFF1F5"
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+                <Circle
+                  cx={radius}
+                  cy={radius}
+                  r={innerRadius}
+                  stroke={`url(#${gradientId})`}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${circumference} ${circumference}`}
+                  strokeDashoffset={strokeDashoffset}
+                  rotation="-90"
+                  origin={`${radius}, ${radius}`}
+                />
+              </Svg>
+              <View style={styles.percentageContainer} pointerEvents="none">
+                <Text style={styles.percentageValue}>{`${Math.round(cappedProgress)}%`}</Text>
+              </View>
+            </View>
+          )}
+        </View>
         <Text style={styles.label}>{label}</Text>
       </View>
-      {size > 0 && (
-        <Svg
-          pointerEvents="none"
-          width={size}
-          height={size}
-          style={StyleSheet.absoluteFill}
-        >
-          <Rect
-            x={thickness / 2}
-            y={thickness / 2}
-            width={size - thickness}
-            height={size - thickness}
-            rx={pathRadius}
-            ry={pathRadius}
-            stroke="#2C2C2C"
-            strokeWidth={thickness}
-            fill="none"
-          />
-          {progress > 0 && (
-            <Rect
-              x={thickness / 2}
-              y={thickness / 2}
-              width={size - thickness}
-              height={size - thickness}
-              rx={pathRadius}
-              ry={pathRadius}
-              stroke={color}
-              strokeWidth={thickness}
-              fill="none"
-              strokeDasharray={`${perimeter} ${perimeter}`}
-              strokeDashoffset={perimeter * (1 - progress)}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-        </Svg>
-      )}
     </View>
   );
 };
@@ -94,20 +116,45 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    borderRadius: 10,
-    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F7FB',
+  },
+  circleWrapper: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
   },
   label: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 4,
+    color: '#2D3142',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  percentageContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  percentageValue: {
+    color: '#2D3142',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
 
