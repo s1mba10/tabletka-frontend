@@ -183,7 +183,7 @@ const MainScreen: React.FC = () => {
 
   // Mock data for circular progress indicators
   const circularIndicators = [
-    { label: 'Питание', value: 77 },
+    { label: 'Питание', value: 100 },
     { label: 'Тренировки', value: 38 },
     { label: 'Лекарства', value: 67 },
   ];
@@ -502,7 +502,10 @@ const MainScreen: React.FC = () => {
         </TouchableOpacity>
       )}
       <ScrollView style={styles.verticalScroll} contentContainerStyle={Platform.OS === 'ios' ? styles.scrollContentIOS : styles.scrollContent} showsVerticalScrollIndicator>
-        {/* 1. Weekly Progress Card */}
+        {/* 1. Week Strip */}
+        <WeekStrip />
+
+        {/* 2. Weekly Progress Card */}
         <View style={[styles.weeklyCard, { backgroundColor: theme.bg }]}>
           <View style={styles.weeklyLeft}>
             <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
@@ -526,9 +529,6 @@ const MainScreen: React.FC = () => {
             }
           />
         </View>
-
-        {/* 2. Week Strip */}
-        <WeekStrip />
 
         {/* 3. Circular Progress Indicators */}
         <View style={styles.circularIndicatorsRow}>
