@@ -171,7 +171,7 @@ const MedCalendarScreen: React.FC = () => {
         bounceTranslate.setValue(0);
         Animated.sequence([
           Animated.timing(bounceTranslate, {
-            toValue: overshootDistance * direction,
+            toValue: overshootDistance * -direction,
             duration: 110,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
