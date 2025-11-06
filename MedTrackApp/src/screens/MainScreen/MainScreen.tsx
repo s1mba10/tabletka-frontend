@@ -502,6 +502,7 @@ const MainScreen: React.FC = () => {
         </TouchableOpacity>
       )}
       <ScrollView style={styles.verticalScroll} contentContainerStyle={Platform.OS === 'ios' ? styles.scrollContentIOS : styles.scrollContent} showsVerticalScrollIndicator>
+        {/* 1. Weekly Progress Card */}
         <View style={[styles.weeklyCard, { backgroundColor: theme.bg }]}>
           <View style={styles.weeklyLeft}>
             <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
@@ -526,30 +527,10 @@ const MainScreen: React.FC = () => {
           />
         </View>
 
-        {/* Быстрые метрики */}
-        <View style={styles.quickRow}>
-          <MiniStat icon="walk" label="Шаги за день" value="5 500" accent="yellow" />
-          <MiniStat icon="cup-water" label="Вода" value={`${waterToday}/${dailyWaterTotal}`} />
-        </View>
-
-        {/* Карточка воды */}
-        <WaterStatCard />
-
-        {/* Календарная лента недели */}
+        {/* 2. Week Strip */}
         <WeekStrip />
 
-        {/* Приёмы пищи */}
-        <View style={styles.mealsBlock}>
-          <MealRow title="Завтрак"  kcal={mealTotals.breakfast.calories} showWarn={isOverTarget && mealTotals.breakfast.calories > 0} onAdd={() => setActiveMeal('breakfast')} />
-          <MealRow title="Обед"     kcal={mealTotals.lunch.calories}     showWarn={isOverTarget && mealTotals.lunch.calories > 0}     onAdd={() => setActiveMeal('lunch')} />
-          <MealRow title="Ужин"     kcal={mealTotals.dinner.calories}    showWarn={isOverTarget && mealTotals.dinner.calories > 0}    onAdd={() => setActiveMeal('dinner')} />
-          <MealRow title="Перекус"  kcal={mealTotals.snack.calories}     showWarn={isOverTarget && mealTotals.snack.calories > 0}     onAdd={() => setActiveMeal('snack')} />
-        </View>
-
-        {/* 2x2 */}
-        <StatsQuickGrid />
-
-        {/* Circular Progress Indicators */}
+        {/* 3. Circular Progress Indicators */}
         <View style={styles.circularIndicatorsRow}>
           {circularIndicators.map((item) => (
             <CircularProgressIndicator
@@ -561,6 +542,26 @@ const MainScreen: React.FC = () => {
               strokeWidth={8}
             />
           ))}
+        </View>
+
+        {/* 4. Meals Block */}
+        <View style={styles.mealsBlock}>
+          <MealRow title="Завтрак"  kcal={mealTotals.breakfast.calories} showWarn={isOverTarget && mealTotals.breakfast.calories > 0} onAdd={() => setActiveMeal('breakfast')} />
+          <MealRow title="Обед"     kcal={mealTotals.lunch.calories}     showWarn={isOverTarget && mealTotals.lunch.calories > 0}     onAdd={() => setActiveMeal('lunch')} />
+          <MealRow title="Ужин"     kcal={mealTotals.dinner.calories}    showWarn={isOverTarget && mealTotals.dinner.calories > 0}    onAdd={() => setActiveMeal('dinner')} />
+          <MealRow title="Перекус"  kcal={mealTotals.snack.calories}     showWarn={isOverTarget && mealTotals.snack.calories > 0}     onAdd={() => setActiveMeal('snack')} />
+        </View>
+
+        {/* 5. Water Card */}
+        <WaterStatCard />
+
+        {/* 6. Stats Quick Grid */}
+        <StatsQuickGrid />
+
+        {/* Quick metrics row */}
+        <View style={styles.quickRow}>
+          <MiniStat icon="walk" label="Шаги за день" value="5 500" accent="yellow" />
+          <MiniStat icon="cup-water" label="Вода" value={`${waterToday}/${dailyWaterTotal}`} />
         </View>
       </ScrollView>
 
