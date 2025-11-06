@@ -98,6 +98,7 @@ const MedCalendarScreen: React.FC = () => {
 
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
+  const isAnimatingRef = useRef(false);
 
   // Helper to get adjacent dates for sliding effect
   const getAdjacentDates = () => {
@@ -108,6 +109,19 @@ const MedCalendarScreen: React.FC = () => {
       nextDate: currentIndex < weekDates.length - 1 ? weekDates[currentIndex + 1].fullDate : null,
     };
   };
+
+  // Reset container position after date changes from drag animation
+  useEffect(() => {
+    if (isAnimatingRef.current) {
+      // Use double rAF to ensure React has fully painted the new layout
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          containerTranslateX.value = withTiming(0, { duration: 1 });
+          isAnimatingRef.current = false;
+        });
+      });
+    }
+  }, [selectedDate]);
 
   // Instant date change for calendar taps (no animation)
   const instantChangeDate = (newDate: string) => {
@@ -141,11 +155,9 @@ const MedCalendarScreen: React.FC = () => {
 
   // Helper to update date and reset position after React re-renders
   const updateDateAndResetPosition = (newDate: string) => {
+    isAnimatingRef.current = true;
     setSelectedDate(newDate);
-    // Schedule position reset after React finishes re-rendering
-    setTimeout(() => {
-      containerTranslateX.value = withTiming(0, { duration: 1 });
-    }, 16); // One frame delay to ensure React has updated
+    // Position reset will happen in useEffect after React re-renders
   };
 
   // Helper function to handle gesture end
