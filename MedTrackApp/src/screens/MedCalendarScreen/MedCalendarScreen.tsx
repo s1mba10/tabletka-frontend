@@ -100,10 +100,11 @@ const MedCalendarScreen: React.FC = () => {
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
 
-  const animateToDate = (newDate: string) => {
+  const animateToDate = (newDate: string, explicitDirection?: 'left' | 'right') => {
     const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
     const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
-    const direction = newIndex > currentIndex ? 'left' : 'right';
+    // Use explicit direction if provided (for cross-week navigation), otherwise calculate from indices
+    const direction = explicitDirection || (newIndex > currentIndex ? 'left' : 'right');
 
     // Simulate a drag-like slide effect
     // First, slide out in the direction of the swipe
@@ -148,22 +149,40 @@ const MedCalendarScreen: React.FC = () => {
     const swipeThreshold = SCREEN_WIDTH * 0.3;
     const velocityThreshold = 500; // pixels per second
 
-    // Check if at boundaries
-    const isAtStart = currentIndex === 0;
-    const isAtEnd = currentIndex === weekDates.length - 1;
-
     // Fast swipe detection
     const isFastSwipeLeft = velocityX < -velocityThreshold;
     const isFastSwipeRight = velocityX > velocityThreshold;
 
     // Determine direction based on distance or velocity
-    const shouldGoNext = (translationX < -swipeThreshold || isFastSwipeLeft) && !isAtEnd;
-    const shouldGoPrev = (translationX > swipeThreshold || isFastSwipeRight) && !isAtStart;
+    const shouldGoNext = (translationX < -swipeThreshold || isFastSwipeLeft);
+    const shouldGoPrev = (translationX > swipeThreshold || isFastSwipeRight);
 
     if (shouldGoNext) {
-      animateToDate(weekDates[currentIndex + 1].fullDate);
+      if (currentIndex === weekDates.length - 1) {
+        // At last day of week, go to first day of next week
+        const currentDate = new Date(selectedDate);
+        const nextDayDate = new Date(currentDate);
+        nextDayDate.setDate(currentDate.getDate() + 1);
+        const nextDay = format(nextDayDate, 'yyyy-MM-dd');
+
+        setWeekOffset(prev => prev + 1);
+        animateToDate(nextDay, 'left');
+      } else {
+        animateToDate(weekDates[currentIndex + 1].fullDate);
+      }
     } else if (shouldGoPrev) {
-      animateToDate(weekDates[currentIndex - 1].fullDate);
+      if (currentIndex === 0) {
+        // At first day of week, go to last day of previous week
+        const currentDate = new Date(selectedDate);
+        const prevDayDate = new Date(currentDate);
+        prevDayDate.setDate(currentDate.getDate() - 1);
+        const prevDay = format(prevDayDate, 'yyyy-MM-dd');
+
+        setWeekOffset(prev => prev - 1);
+        animateToDate(prevDay, 'right');
+      } else {
+        animateToDate(weekDates[currentIndex - 1].fullDate);
+      }
     } else {
       // Snap back to center
       translateX.value = withSpring(0, {
@@ -175,24 +194,6 @@ const MedCalendarScreen: React.FC = () => {
     }
   };
 
-  // Rubber band effect for edge resistance
-  const applyRubberBand = (translation: number, isAtStart: boolean, isAtEnd: boolean) => {
-    'worklet';
-    const maxOverscroll = 80; // Maximum pixels allowed to drag past edge
-
-    // If dragging right at start, apply resistance
-    if (isAtStart && translation > 0) {
-      return maxOverscroll * (1 - Math.exp(-translation / maxOverscroll));
-    }
-
-    // If dragging left at end, apply resistance
-    if (isAtEnd && translation < 0) {
-      return -maxOverscroll * (1 - Math.exp(translation / maxOverscroll));
-    }
-
-    return translation;
-  };
-
   // Gesture handler for interactive dragging between days
   const panGesture = Gesture.Pan()
     .activeOffsetX([-15, 15])  // Requires 15px horizontal movement
@@ -202,12 +203,8 @@ const MedCalendarScreen: React.FC = () => {
       isDragging.value = true;
     })
     .onUpdate((event) => {
-      const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
-      const isAtStart = currentIndex === 0;
-      const isAtEnd = currentIndex === weekDates.length - 1;
-
-      // Apply rubber band effect at edges
-      translateX.value = applyRubberBand(event.translationX, isAtStart, isAtEnd);
+      // Direct translation without boundaries - allows unlimited scrolling
+      translateX.value = event.translationX;
     })
     .onEnd((event) => {
       isDragging.value = false;
