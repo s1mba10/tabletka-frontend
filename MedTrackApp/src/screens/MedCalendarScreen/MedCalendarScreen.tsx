@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -78,7 +78,6 @@ const MedCalendarScreen: React.FC = () => {
   // Reanimated shared values for day sliding
   const isDragging = useSharedValue(false);
   const containerTranslateX = useSharedValue(0); // For container sliding during drag
-  const contentOpacity = useSharedValue(1); // For fading during date transition
 
   const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -112,12 +111,11 @@ const MedCalendarScreen: React.FC = () => {
   };
 
   // Reset container position after date changes from drag animation
-  useEffect(() => {
+  // useLayoutEffect runs synchronously after React updates DOM but before browser paints
+  useLayoutEffect(() => {
     if (isAnimatingRef.current) {
-      // Reset position instantly and fade back in
+      // Reset position - React has already updated the three-day structure
       containerTranslateX.value = 0;
-      // Fade in the new content
-      contentOpacity.value = withTiming(1, { duration: 150 });
       isAnimatingRef.current = false;
     }
   }, [selectedDate]);
@@ -189,12 +187,7 @@ const MedCalendarScreen: React.FC = () => {
         overshootClamping: false,
       }, (finished) => {
         if (finished) {
-          // Fade out quickly before updating state
-          contentOpacity.value = withTiming(0, { duration: 80 }, (fadeFinished) => {
-            if (fadeFinished) {
-              runOnJS(updateDateAndResetPosition)(weekDates[currentIndex + 1].fullDate);
-            }
-          });
+          runOnJS(updateDateAndResetPosition)(weekDates[currentIndex + 1].fullDate);
         }
       });
     } else if (shouldGoPrev) {
@@ -207,12 +200,7 @@ const MedCalendarScreen: React.FC = () => {
         overshootClamping: false,
       }, (finished) => {
         if (finished) {
-          // Fade out quickly before updating state
-          contentOpacity.value = withTiming(0, { duration: 80 }, (fadeFinished) => {
-            if (fadeFinished) {
-              runOnJS(updateDateAndResetPosition)(weekDates[currentIndex - 1].fullDate);
-            }
-          });
+          runOnJS(updateDateAndResetPosition)(weekDates[currentIndex - 1].fullDate);
         }
       });
     } else {
@@ -269,7 +257,6 @@ const MedCalendarScreen: React.FC = () => {
   // The container starts offset by -SCREEN_WIDTH to show the middle (current) day
   const animatedContainerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: -SCREEN_WIDTH + containerTranslateX.value }],
-    opacity: contentOpacity.value,
   }));
 
   const handleWeekSelect = (year: number, week: number) => {
