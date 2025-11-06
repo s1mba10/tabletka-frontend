@@ -76,6 +76,9 @@ const MedCalendarScreen: React.FC = () => {
   const horizontalListRef = useRef<FlatList<WeekDate>>(null);
   const currentPageRef = useRef(0);
   const isProgrammaticScroll = useRef(false);
+  const isBounceAnimating = useRef(false);
+  const bounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bounceResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
@@ -91,6 +94,15 @@ const MedCalendarScreen: React.FC = () => {
       useNativeDriver: true,
     }).start();
   }, [fabOpen, fabAnim]);
+
+  useEffect(() => () => {
+    if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current);
+    if (bounceResetTimeoutRef.current) clearTimeout(bounceResetTimeoutRef.current);
+    bounceTimeoutRef.current = null;
+    bounceResetTimeoutRef.current = null;
+    isBounceAnimating.current = false;
+    isProgrammaticScroll.current = false;
+  }, []);
 
   const weekDates = getWeekDates(weekOffset);
   const currentIndex = useMemo(
@@ -147,22 +159,73 @@ const MedCalendarScreen: React.FC = () => {
     [scrollToIndex, weekDates],
   );
 
+  const triggerBounce = useCallback(
+    (index: number, direction: -1 | 0 | 1) => {
+      if (!horizontalListRef.current || direction === 0 || isBounceAnimating.current) return;
+
+      const baseOffset = index * SCREEN_WIDTH;
+      const overshootDistance = Math.min(40, SCREEN_WIDTH * 0.07);
+      const overshootOffset = baseOffset + overshootDistance * direction;
+
+      if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current);
+      if (bounceResetTimeoutRef.current) clearTimeout(bounceResetTimeoutRef.current);
+
+      isBounceAnimating.current = true;
+      isProgrammaticScroll.current = true;
+
+      horizontalListRef.current.scrollToOffset({ offset: overshootOffset, animated: true });
+
+      bounceTimeoutRef.current = setTimeout(() => {
+        horizontalListRef.current?.scrollToOffset({ offset: baseOffset, animated: true });
+        bounceTimeoutRef.current = null;
+
+        bounceResetTimeoutRef.current = setTimeout(() => {
+          isProgrammaticScroll.current = false;
+          isBounceAnimating.current = false;
+          bounceResetTimeoutRef.current = null;
+        }, 220);
+      }, 160);
+    },
+    [SCREEN_WIDTH],
+  );
+
+  const handleScrollBeginDrag = useCallback(() => {
+    if (bounceTimeoutRef.current) {
+      clearTimeout(bounceTimeoutRef.current);
+      bounceTimeoutRef.current = null;
+    }
+    if (bounceResetTimeoutRef.current) {
+      clearTimeout(bounceResetTimeoutRef.current);
+      bounceResetTimeoutRef.current = null;
+    }
+    isBounceAnimating.current = false;
+    isProgrammaticScroll.current = false;
+  }, []);
+
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetX = event.nativeEvent.contentOffset.x;
       const index = Math.round(offsetX / SCREEN_WIDTH);
       if (index < 0 || index >= weekDates.length) return;
+
+      const previousIndex = currentPageRef.current;
       currentPageRef.current = index;
+
       const newDate = weekDates[index].fullDate;
       const wasProgrammatic = isProgrammaticScroll.current;
-      if (wasProgrammatic) {
+      if (wasProgrammatic && !isBounceAnimating.current) {
         isProgrammaticScroll.current = false;
       }
       if (!wasProgrammatic && newDate !== selectedDate) {
         setSelectedDate(newDate);
       }
+
+      const direction: -1 | 0 | 1 = index > previousIndex ? 1 : index < previousIndex ? -1 : 0;
+      if (!wasProgrammatic) {
+        triggerBounce(index, direction);
+      }
     },
-    [SCREEN_WIDTH, selectedDate, weekDates],
+    [SCREEN_WIDTH, selectedDate, triggerBounce, weekDates],
   );
 
   const handleScrollToIndexFailed = useCallback(
@@ -492,6 +555,7 @@ const MedCalendarScreen: React.FC = () => {
             initialScrollIndex={currentIndex >= 0 ? currentIndex : 0}
             getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
             showsHorizontalScrollIndicator={false}
+            onScrollBeginDrag={handleScrollBeginDrag}
             onMomentumScrollEnd={handleMomentumScrollEnd}
             onScrollToIndexFailed={handleScrollToIndexFailed}
             renderItem={renderDayPage}
