@@ -34,7 +34,6 @@ import ReanimatedAnimated, {
   withTiming,
   withSpring,
   runOnJS,
-  withDecay,
 } from 'react-native-reanimated';
 
 import { styles } from './styles';
@@ -79,7 +78,8 @@ const MedCalendarScreen: React.FC = () => {
   const isDragging = useSharedValue(false);
   const containerTranslateX = useSharedValue(0); // For container sliding during drag
 
-  const SCREEN_WIDTH = Dimensions.get('window').width;
+  // Calculate screen width once on component mount
+  const [SCREEN_WIDTH] = useState(() => Dimensions.get('window').width);
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
@@ -126,35 +126,11 @@ const MedCalendarScreen: React.FC = () => {
     setSelectedDate(newDate);
   };
 
-  // Animated date change for dragging (backup, not currently used)
-  const animateToDate = (newDate: string) => {
-    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
-    const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
-
-    if (currentIndex === newIndex) return;
-
-    const direction = newIndex > currentIndex ? 'left' : 'right';
-    const slideDistance = direction === 'left' ? -SCREEN_WIDTH : SCREEN_WIDTH;
-
-    // Animate the container to slide to the next/prev day
-    containerTranslateX.value = withSpring(slideDistance, {
-      damping: 15,
-      stiffness: 150,
-      mass: 0.8,
-      overshootClamping: false,
-    }, (finished) => {
-      if (finished) {
-        // After animation completes, update the date and reset position
-        runOnJS(updateDateAndResetPosition)(newDate);
-      }
-    });
-  };
-
   // Helper to update date and reset position after React re-renders
   const updateDateAndResetPosition = (newDate: string) => {
     isAnimatingRef.current = true;
     setSelectedDate(newDate);
-    // Position reset will happen in useEffect after React re-renders
+    // Position reset will happen in useLayoutEffect after React re-renders
   };
 
   // Helper function to handle gesture end
@@ -411,7 +387,7 @@ const MedCalendarScreen: React.FC = () => {
           ListEmptyComponent={() => (
             <View style={styles.emptyListContainer}>
               <Image
-                source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
+                source={require("../../../assets/heart_pill.png")}
                 style={styles.emptyListImage}
                 resizeMode="contain"
               />
@@ -490,6 +466,9 @@ const MedCalendarScreen: React.FC = () => {
       </Swipeable>
     );
   };
+
+  // Get adjacent dates once to avoid multiple recalculations
+  const { prevDate, currentDate, nextDate } = getAdjacentDates();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -574,13 +553,13 @@ const MedCalendarScreen: React.FC = () => {
                 ]}
               >
                 {/* Previous Day */}
-                <DayContent date={getAdjacentDates().prevDate} />
+                <DayContent date={prevDate} />
 
                 {/* Current Day */}
-                <DayContent date={getAdjacentDates().currentDate} />
+                <DayContent date={currentDate} />
 
                 {/* Next Day */}
-                <DayContent date={getAdjacentDates().nextDate} />
+                <DayContent date={nextDate} />
               </ReanimatedAnimated.View>
             </ReanimatedAnimated.View>
           </GestureDetector>
