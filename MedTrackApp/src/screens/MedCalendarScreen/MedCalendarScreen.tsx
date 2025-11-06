@@ -109,6 +109,13 @@ const MedCalendarScreen: React.FC = () => {
     };
   };
 
+  // Instant date change for calendar taps (no animation)
+  const instantChangeDate = (newDate: string) => {
+    if (newDate === selectedDate) return;
+    setSelectedDate(newDate);
+  };
+
+  // Animated date change for dragging (backup, not currently used)
   const animateToDate = (newDate: string) => {
     const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
     const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
@@ -127,10 +134,18 @@ const MedCalendarScreen: React.FC = () => {
     }, (finished) => {
       if (finished) {
         // After animation completes, update the date and reset position
-        runOnJS(setSelectedDate)(newDate);
-        containerTranslateX.value = 0; // Reset to center for next transition
+        runOnJS(updateDateAndResetPosition)(newDate);
       }
     });
+  };
+
+  // Helper to update date and reset position after React re-renders
+  const updateDateAndResetPosition = (newDate: string) => {
+    setSelectedDate(newDate);
+    // Schedule position reset after React finishes re-rendering
+    setTimeout(() => {
+      containerTranslateX.value = withTiming(0, { duration: 1 });
+    }, 16); // One frame delay to ensure React has updated
   };
 
   // Helper function to handle gesture end
@@ -163,8 +178,7 @@ const MedCalendarScreen: React.FC = () => {
         overshootClamping: false,
       }, (finished) => {
         if (finished) {
-          runOnJS(setSelectedDate)(weekDates[currentIndex + 1].fullDate);
-          containerTranslateX.value = 0; // Reset for next transition
+          runOnJS(updateDateAndResetPosition)(weekDates[currentIndex + 1].fullDate);
         }
       });
     } else if (shouldGoPrev) {
@@ -177,8 +191,7 @@ const MedCalendarScreen: React.FC = () => {
         overshootClamping: false,
       }, (finished) => {
         if (finished) {
-          runOnJS(setSelectedDate)(weekDates[currentIndex - 1].fullDate);
-          containerTranslateX.value = 0; // Reset for next transition
+          runOnJS(updateDateAndResetPosition)(weekDates[currentIndex - 1].fullDate);
         }
       });
     } else {
@@ -517,7 +530,7 @@ const MedCalendarScreen: React.FC = () => {
               {getWeekDates(weekOffset).map((day) => (
                 <TouchableOpacity
                   key={day.fullDate}
-                  onPress={() => animateToDate(day.fullDate)}
+                  onPress={() => instantChangeDate(day.fullDate)}
                   style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
                 >
                   <Text
