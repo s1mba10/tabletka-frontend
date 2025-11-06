@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,10 +31,8 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 import ReanimatedAnimated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
   withSpring,
   runOnJS,
-  withDecay,
 } from 'react-native-reanimated';
 
 import { styles } from './styles';
@@ -58,6 +56,18 @@ const applyStatusRules = (items: Reminder[]): Reminder[] => {
   });
 };
 
+const EmptyRemindersPlaceholder: React.FC = () => (
+  <View style={styles.emptyListContainer}>
+    <Image
+      source={require('/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png')}
+      style={styles.emptyListImage}
+      resizeMode="contain"
+    />
+    <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+    <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+  </View>
+);
+
 const MedCalendarScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'MedCalendar'>>();
@@ -76,9 +86,8 @@ const MedCalendarScreen: React.FC = () => {
   const fabPressAnim = useRef(new Animated.Value(1)).current;
 
   // Reanimated shared values for day sliding
-  const slideOpacity = useSharedValue(1);
   const translateX = useSharedValue(0);
-  const isDragging = useSharedValue(false);
+  const isTransitioning = useSharedValue(false);
 
   const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -100,44 +109,53 @@ const MedCalendarScreen: React.FC = () => {
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
 
-  const animateToDate = (newDate: string) => {
-    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
-    const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
-    const direction = newIndex > currentIndex ? 'left' : 'right';
+  const finishTransition = useCallback(
+    (targetDate: string) => {
+      setSelectedDate(targetDate);
+      translateX.value = 0;
+      isTransitioning.value = false;
+    },
+    [isTransitioning, translateX],
+  );
 
-    // Simulate a drag-like slide effect
-    // First, slide out in the direction of the swipe
-    const slideOutDistance = direction === 'left' ? -SCREEN_WIDTH * 0.4 : SCREEN_WIDTH * 0.4;
+  const transitionToDate = useCallback(
+    (targetDate: string, direction: 'next' | 'prev') => {
+      if (!targetDate || targetDate === selectedDate) return;
+      if (isTransitioning.value) return;
 
-    translateX.value = withSpring(slideOutDistance, {
-      damping: 20,
-      stiffness: 180,
-      mass: 0.7,
-      overshootClamping: true,
-    });
+      const target = direction === 'next' ? -SCREEN_WIDTH : SCREEN_WIDTH;
+      isTransitioning.value = true;
 
-    // Fade out completely while sliding out
-    slideOpacity.value = withTiming(0, { duration: 150 });
-
-    // After sliding out, change the date while invisible
-    setTimeout(() => {
-      setSelectedDate(newDate);
-
-      // Position the new content on the opposite side (still invisible)
-      translateX.value = direction === 'left' ? SCREEN_WIDTH * 0.5 : -SCREEN_WIDTH * 0.5;
-
-      // Small delay to ensure React has rendered new content
-      setTimeout(() => {
-        // Slide in with spring bounce (same as drag gesture)
-        translateX.value = withSpring(0, {
+      translateX.value = withSpring(
+        target,
+        {
           damping: 15,
           stiffness: 150,
           mass: 0.8,
-          overshootClamping: false,
-        });
-        slideOpacity.value = withTiming(1, { duration: 200 });
-      }, 16); // ~1 frame delay for render
-    }, 150);
+        },
+        (finished) => {
+          if (finished) runOnJS(finishTransition)(targetDate);
+          else isTransitioning.value = false;
+        },
+      );
+    },
+    [SCREEN_WIDTH, finishTransition, isTransitioning, selectedDate, translateX],
+  );
+
+  const animateToDate = (newDate: string) => {
+    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+    const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
+    if (newIndex === -1 || newIndex === currentIndex) return;
+
+    const direction = newIndex > currentIndex ? 'next' : 'prev';
+
+    if (Math.abs(newIndex - currentIndex) > 1) {
+      setSelectedDate(newDate);
+      translateX.value = 0;
+      return;
+    }
+
+    transitionToDate(newDate, direction);
   };
 
   // Helper function to handle gesture end
@@ -161,9 +179,9 @@ const MedCalendarScreen: React.FC = () => {
     const shouldGoPrev = (translationX > swipeThreshold || isFastSwipeRight) && !isAtStart;
 
     if (shouldGoNext) {
-      animateToDate(weekDates[currentIndex + 1].fullDate);
+      transitionToDate(weekDates[currentIndex + 1].fullDate, 'next');
     } else if (shouldGoPrev) {
-      animateToDate(weekDates[currentIndex - 1].fullDate);
+      transitionToDate(weekDates[currentIndex - 1].fullDate, 'prev');
     } else {
       // Snap back to center
       translateX.value = withSpring(0, {
@@ -198,10 +216,8 @@ const MedCalendarScreen: React.FC = () => {
     .activeOffsetX([-15, 15])  // Requires 15px horizontal movement
     .failOffsetY([-10, 10])     // Fails if vertical movement exceeds 10px (for FlatList scrolling)
     .enableTrackpadTwoFingerGesture(false)
-    .onStart(() => {
-      isDragging.value = true;
-    })
     .onUpdate((event) => {
+      if (isTransitioning.value) return;
       const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
       const isAtStart = currentIndex === 0;
       const isAtEnd = currentIndex === weekDates.length - 1;
@@ -210,14 +226,13 @@ const MedCalendarScreen: React.FC = () => {
       translateX.value = applyRubberBand(event.translationX, isAtStart, isAtEnd);
     })
     .onEnd((event) => {
-      isDragging.value = false;
+      if (isTransitioning.value) return;
       runOnJS(handleGestureEnd)(event.translationX, event.velocityX);
     });
 
   // Animated style for day sliding
-  const animatedContentStyle = useAnimatedStyle(() => ({
-    opacity: slideOpacity.value,
-    transform: [{ translateX: translateX.value }],
+  const animatedPagerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value - SCREEN_WIDTH }],
   }));
 
   const handleWeekSelect = (year: number, week: number) => {
@@ -301,15 +316,55 @@ const MedCalendarScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, selectedDate, route.params]);
 
-  const filteredReminders = reminders
-    .filter(reminder => reminder.date === selectedDate)
-    .sort((a, b) => a.time.localeCompare(b.time));
+  const remindersByDate = useMemo(() => {
+    const map = new Map<string, Reminder[]>();
+    reminders.forEach(reminder => {
+      const existing = map.get(reminder.date);
+      if (existing) {
+        existing.push(reminder);
+      } else {
+        map.set(reminder.date, [reminder]);
+      }
+    });
+
+    map.forEach(list => list.sort((a, b) => a.time.localeCompare(b.time)));
+    return map;
+  }, [reminders]);
+
+  const getRemindersForDate = useCallback(
+    (date: string | null) => {
+      if (!date) return [] as Reminder[];
+      return remindersByDate.get(date) ?? [];
+    },
+    [remindersByDate],
+  );
+
+  const filteredReminders = useMemo(
+    () => getRemindersForDate(selectedDate),
+    [getRemindersForDate, selectedDate],
+  );
 
   const getDayStatusDots = (date: string) =>
-    reminders
-      .filter(reminder => reminder.date === date)
+    (remindersByDate.get(date) ?? [])
       .slice(0, 5)
       .map(reminder => ({ color: statusColors[reminder.status] }));
+
+  const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+  const prevDate = currentIndex > 0 ? weekDates[currentIndex - 1].fullDate : null;
+  const nextDate =
+    currentIndex !== -1 && currentIndex < weekDates.length - 1
+      ? weekDates[currentIndex + 1].fullDate
+      : null;
+
+  const prevReminders = useMemo(
+    () => getRemindersForDate(prevDate),
+    [getRemindersForDate, prevDate],
+  );
+
+  const nextReminders = useMemo(
+    () => getRemindersForDate(nextDate),
+    [getRemindersForDate, nextDate],
+  );
 
   const deleteReminder = (id: string) => {
     Alert.alert('Удалить напоминание', 'Вы уверены, что хотите удалить это напоминание?', [
@@ -353,7 +408,7 @@ const MedCalendarScreen: React.FC = () => {
     </RectButton>
   );
 
-  const ReminderCard: React.FC<{ item: Reminder }> = ({ item }) => {
+  const ReminderCard: React.FC<{ item: Reminder; isInteractive?: boolean }> = ({ item, isInteractive = true }) => {
     const due = new Date(`${item.date}T${item.time}`);
     const now = Date.now();
     const active =
@@ -363,16 +418,20 @@ const MedCalendarScreen: React.FC = () => {
 
     return (
       <Swipeable
-        ref={ref => { if (ref) rowRefs.current.set(item.id, ref); }}
-        renderRightActions={() => renderRightActions(item.id)}
-        onSwipeableOpen={() => closeOtherRows(item.id)}
+        ref={ref => { if (ref && isInteractive) rowRefs.current.set(item.id, ref); }}
+        enabled={isInteractive}
+        renderRightActions={isInteractive ? () => renderRightActions(item.id) : undefined}
+        onSwipeableOpen={isInteractive ? () => closeOtherRows(item.id) : undefined}
         friction={2}
         overshootRight={false}
       >
         <View style={[styles.reminderItem, { borderLeftColor: statusColors[item.status] }]}>
           <TouchableWithoutFeedback
-            onPress={() =>
-              navigation.navigate('ReminderEdit', { reminder: item, mainKey: route.key })
+            onPress={
+              isInteractive
+                ? () =>
+                    navigation.navigate('ReminderEdit', { reminder: item, mainKey: route.key })
+                : undefined
             }
           >
             <View style={styles.reminderContent}>
@@ -407,7 +466,12 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableWithoutFeedback>
 
           <TouchableOpacity
-            onPress={() => (item.status === 'taken' ? markAsMissed(item.id) : markAsTaken(item))}
+            onPress={
+              isInteractive
+                ? () => (item.status === 'taken' ? markAsMissed(item.id) : markAsTaken(item))
+                : undefined
+            }
+            disabled={!isInteractive}
             style={[styles.takeButton, { backgroundColor: statusColors[item.status] }]}
           >
             <Text style={styles.buttonText}>
@@ -416,6 +480,53 @@ const MedCalendarScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </Swipeable>
+    );
+  };
+
+  const renderDayColumn = ({
+    key,
+    date,
+    remindersForDay,
+    isActive,
+  }: {
+    key: string;
+    date: string | null;
+    remindersForDay: Reminder[];
+    isActive: boolean;
+  }): JSX.Element => {
+    if (!date) {
+      return <View key={key} style={[styles.dayPage, styles.dayPageWidth]} />;
+    }
+
+    const takenCount = remindersForDay.filter(r => r.status === 'taken').length;
+
+    return (
+      <View
+        key={key}
+        style={[styles.dayPage, styles.dayPageWidth]}
+        pointerEvents={isActive ? 'auto' : 'none'}
+      >
+        <MedicationDayStatsButton
+          date={date}
+          takenCount={takenCount}
+          scheduledCount={remindersForDay.length}
+        />
+
+        <View style={styles.reminderListWrapper}>
+          <FlatList
+            data={remindersForDay}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ReminderCard item={item} isInteractive={isActive} />}
+            ListEmptyComponent={EmptyRemindersPlaceholder}
+            scrollEnabled={isActive}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.dayListContent,
+              remindersForDay.length === 0 && styles.dayListContentGrow,
+            ]}
+          />
+        </View>
+      </View>
     );
   };
 
@@ -489,35 +600,15 @@ const MedCalendarScreen: React.FC = () => {
             </View>
           </View>
           
-          <GestureDetector gesture={panGesture}>
-            <ReanimatedAnimated.View style={[{ flex: 1 }, animatedContentStyle]}>
-              <MedicationDayStatsButton
-                date={selectedDate}
-                takenCount={filteredReminders.filter(r => r.status === 'taken').length}
-                scheduledCount={filteredReminders.length}
-              />
-
-            {/* Reminders List */}
-            <FlatList
-              data={filteredReminders}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <ReminderCard item={item} />}
-              ListEmptyComponent={() => (
-                <View style={styles.emptyListContainer}>
-                  <Image
-                    source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
-                    style={styles.emptyListImage}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-                  <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-                </View>
-              )}
-              // убираем лишний нижний отступ (TabNavigator сам занимает низ)
-              contentContainerStyle={{ paddingBottom: 0 }}
-            />
-            </ReanimatedAnimated.View>
-          </GestureDetector>
+          <View style={styles.swipeWrapper}>
+            <GestureDetector gesture={panGesture}>
+              <ReanimatedAnimated.View style={[styles.swipePager, animatedPagerStyle]}>
+                {renderDayColumn({ key: 'prev', date: prevDate, remindersForDay: prevReminders, isActive: false })}
+                {renderDayColumn({ key: 'current', date: selectedDate, remindersForDay: filteredReminders, isActive: true })}
+                {renderDayColumn({ key: 'next', date: nextDate, remindersForDay: nextReminders, isActive: false })}
+              </ReanimatedAnimated.View>
+            </GestureDetector>
+          </View>
 
           {/* Speed Dial FAB */}
           {fabOpen && (
