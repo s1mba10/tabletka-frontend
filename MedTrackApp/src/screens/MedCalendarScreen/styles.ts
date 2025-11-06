@@ -1,4 +1,6 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, Dimensions } from 'react-native';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export const styles = StyleSheet.create({
   container: {
@@ -119,6 +121,26 @@ export const styles = StyleSheet.create({
   },
   reminderListWrapper: {
     flex: 1,
+  },
+  swipeWrapper: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  swipePager: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  dayPage: {
+    flex: 1,
+  },
+  dayPageWidth: {
+    width: SCREEN_WIDTH,
+  },
+  dayListContent: {
+    paddingBottom: 0,
+  },
+  dayListContentGrow: {
+    flexGrow: 1,
   },
   countdownText: {
     fontSize: 12,
