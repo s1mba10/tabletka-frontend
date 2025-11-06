@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
   Platform,
   Image,
   Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  Easing,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -25,17 +28,9 @@ import {
 import { ru } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GestureHandlerRootView, Swipeable, RectButton, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, Swipeable, RectButton } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, RouteProp } from '@react-navigation/native';
-import ReanimatedAnimated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  runOnJS,
-  withDecay,
-} from 'react-native-reanimated';
 
 import { styles } from './styles';
 import WeekPickerModal from './WeekPickerModal';
@@ -46,6 +41,8 @@ import { getWeekDates } from './utils';
 import { statusColors, typeIcons } from './constants';
 import { useCountdown, useCourses } from '../../hooks';
 import MedicationDayStatsButton from '../../components/MedicationDayStatsButton';
+
+type WeekDate = ReturnType<typeof getWeekDates>[number];
 
 const applyStatusRules = (items: Reminder[]): Reminder[] => {
   const now = Date.now();
@@ -75,12 +72,13 @@ const MedCalendarScreen: React.FC = () => {
   const fabAnim = useRef(new Animated.Value(0)).current;
   const fabPressAnim = useRef(new Animated.Value(1)).current;
 
-  // Reanimated shared values for day sliding
-  const slideOpacity = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const isDragging = useSharedValue(false);
-
   const SCREEN_WIDTH = Dimensions.get('window').width;
+
+  const horizontalListRef = useRef<FlatList<WeekDate>>(null);
+  const currentPageRef = useRef(0);
+  const isProgrammaticScroll = useRef(false);
+  const isBounceAnimating = useRef(false);
+  const bounceTranslate = useRef(new Animated.Value(0)).current;
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
@@ -97,128 +95,149 @@ const MedCalendarScreen: React.FC = () => {
     }).start();
   }, [fabOpen, fabAnim]);
 
+  useEffect(
+    () => () => {
+      bounceTranslate.stopAnimation();
+      bounceTranslate.setValue(0);
+      isBounceAnimating.current = false;
+      isProgrammaticScroll.current = false;
+    },
+    [bounceTranslate],
+  );
+
   const weekDates = getWeekDates(weekOffset);
+  const currentIndex = useMemo(
+    () => weekDates.findIndex(d => d.fullDate === selectedDate),
+    [weekDates, selectedDate],
+  );
+
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
-
-  const animateToDate = (newDate: string) => {
-    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
-    const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
-    const direction = newIndex > currentIndex ? 'left' : 'right';
-
-    // Simulate a drag-like slide effect
-    // First, slide out in the direction of the swipe
-    const slideOutDistance = direction === 'left' ? -SCREEN_WIDTH * 0.4 : SCREEN_WIDTH * 0.4;
-
-    translateX.value = withSpring(slideOutDistance, {
-      damping: 20,
-      stiffness: 180,
-      mass: 0.7,
-      overshootClamping: true,
+  const remindersByDate = useMemo(() => {
+    const map = new Map<string, Reminder[]>();
+    reminders.forEach(reminder => {
+      const existing = map.get(reminder.date);
+      if (existing) {
+        existing.push(reminder);
+      } else {
+        map.set(reminder.date, [reminder]);
+      }
     });
+    map.forEach(list => list.sort((a, b) => a.time.localeCompare(b.time)));
+    return map;
+  }, [reminders]);
 
-    // Fade out completely while sliding out
-    slideOpacity.value = withTiming(0, { duration: 150 });
+  const scrollToIndex = useCallback(
+    (index: number, animated = true) => {
+      if (!horizontalListRef.current) return;
+      if (index < 0 || index >= weekDates.length) return;
+      isProgrammaticScroll.current = animated;
+      try {
+        horizontalListRef.current.scrollToIndex({ index, animated });
+        currentPageRef.current = index;
+      } catch (error) {
+        const offset = SCREEN_WIDTH * index;
+        horizontalListRef.current.scrollToOffset({ offset, animated });
+        currentPageRef.current = index;
+      }
+    },
+    [SCREEN_WIDTH, weekDates.length],
+  );
 
-    // After sliding out, change the date while invisible
-    setTimeout(() => {
-      setSelectedDate(newDate);
+  useEffect(() => {
+    if (currentIndex < 0) return;
+    if (currentPageRef.current === currentIndex) return;
+    scrollToIndex(currentIndex);
+  }, [currentIndex, scrollToIndex]);
 
-      // Position the new content on the opposite side (still invisible)
-      translateX.value = direction === 'left' ? SCREEN_WIDTH * 0.5 : -SCREEN_WIDTH * 0.5;
+  const handleDayPress = useCallback(
+    (date: string) => {
+      setSelectedDate(date);
+      const index = weekDates.findIndex(d => d.fullDate === date);
+      if (index >= 0) {
+        scrollToIndex(index);
+      }
+    },
+    [scrollToIndex, weekDates],
+  );
 
-      // Small delay to ensure React has rendered new content
-      setTimeout(() => {
-        // Slide in with spring bounce (same as drag gesture)
-        translateX.value = withSpring(0, {
-          damping: 15,
-          stiffness: 150,
-          mass: 0.8,
-          overshootClamping: false,
+  const triggerBounce = useCallback(
+    (direction: -1 | 0 | 1) => {
+      if (direction === 0 || isBounceAnimating.current) return;
+
+      const overshootDistance = Math.min(40, SCREEN_WIDTH * 0.07);
+      isBounceAnimating.current = true;
+
+      bounceTranslate.stopAnimation(() => {
+        bounceTranslate.setValue(0);
+        Animated.sequence([
+          Animated.timing(bounceTranslate, {
+            toValue: overshootDistance * direction,
+            duration: 110,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.spring(bounceTranslate, {
+            toValue: 0,
+            damping: 14,
+            stiffness: 180,
+            mass: 0.8,
+            velocity: 0,
+            overshootClamping: false,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          isBounceAnimating.current = false;
         });
-        slideOpacity.value = withTiming(1, { duration: 200 });
-      }, 16); // ~1 frame delay for render
-    }, 150);
-  };
-
-  // Helper function to handle gesture end
-  const handleGestureEnd = (translationX: number, velocityX: number) => {
-    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
-
-    // Calculate threshold (30% of screen width or fast swipe)
-    const swipeThreshold = SCREEN_WIDTH * 0.3;
-    const velocityThreshold = 500; // pixels per second
-
-    // Check if at boundaries
-    const isAtStart = currentIndex === 0;
-    const isAtEnd = currentIndex === weekDates.length - 1;
-
-    // Fast swipe detection
-    const isFastSwipeLeft = velocityX < -velocityThreshold;
-    const isFastSwipeRight = velocityX > velocityThreshold;
-
-    // Determine direction based on distance or velocity
-    const shouldGoNext = (translationX < -swipeThreshold || isFastSwipeLeft) && !isAtEnd;
-    const shouldGoPrev = (translationX > swipeThreshold || isFastSwipeRight) && !isAtStart;
-
-    if (shouldGoNext) {
-      animateToDate(weekDates[currentIndex + 1].fullDate);
-    } else if (shouldGoPrev) {
-      animateToDate(weekDates[currentIndex - 1].fullDate);
-    } else {
-      // Snap back to center
-      translateX.value = withSpring(0, {
-        damping: 15,
-        stiffness: 150,
-        mass: 0.8,
-        overshootClamping: false,
       });
-    }
-  };
+    },
+    [SCREEN_WIDTH, bounceTranslate],
+  );
 
-  // Rubber band effect for edge resistance
-  const applyRubberBand = (translation: number, isAtStart: boolean, isAtEnd: boolean) => {
-    'worklet';
-    const maxOverscroll = 80; // Maximum pixels allowed to drag past edge
-
-    // If dragging right at start, apply resistance
-    if (isAtStart && translation > 0) {
-      return maxOverscroll * (1 - Math.exp(-translation / maxOverscroll));
-    }
-
-    // If dragging left at end, apply resistance
-    if (isAtEnd && translation < 0) {
-      return -maxOverscroll * (1 - Math.exp(translation / maxOverscroll));
-    }
-
-    return translation;
-  };
-
-  // Gesture handler for interactive dragging between days
-  const panGesture = Gesture.Pan()
-    .activeOffsetX([-15, 15])  // Requires 15px horizontal movement
-    .failOffsetY([-10, 10])     // Fails if vertical movement exceeds 10px (for FlatList scrolling)
-    .enableTrackpadTwoFingerGesture(false)
-    .onStart(() => {
-      isDragging.value = true;
-    })
-    .onUpdate((event) => {
-      const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
-      const isAtStart = currentIndex === 0;
-      const isAtEnd = currentIndex === weekDates.length - 1;
-
-      // Apply rubber band effect at edges
-      translateX.value = applyRubberBand(event.translationX, isAtStart, isAtEnd);
-    })
-    .onEnd((event) => {
-      isDragging.value = false;
-      runOnJS(handleGestureEnd)(event.translationX, event.velocityX);
+  const handleScrollBeginDrag = useCallback(() => {
+    bounceTranslate.stopAnimation(() => {
+      bounceTranslate.setValue(0);
     });
+    isBounceAnimating.current = false;
+    isProgrammaticScroll.current = false;
+  }, [bounceTranslate]);
 
-  // Animated style for day sliding
-  const animatedContentStyle = useAnimatedStyle(() => ({
-    opacity: slideOpacity.value,
-    transform: [{ translateX: translateX.value }],
-  }));
+  const handleMomentumScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetX = event.nativeEvent.contentOffset.x;
+      const index = Math.round(offsetX / SCREEN_WIDTH);
+      if (index < 0 || index >= weekDates.length) return;
+
+      const previousIndex = currentPageRef.current;
+      currentPageRef.current = index;
+
+      const newDate = weekDates[index].fullDate;
+      const wasProgrammatic = isProgrammaticScroll.current;
+      if (wasProgrammatic && !isBounceAnimating.current) {
+        isProgrammaticScroll.current = false;
+      }
+      if (!wasProgrammatic && newDate !== selectedDate) {
+        setSelectedDate(newDate);
+      }
+
+      const direction: -1 | 0 | 1 = index > previousIndex ? 1 : index < previousIndex ? -1 : 0;
+      if (!wasProgrammatic) {
+        triggerBounce(direction);
+      }
+    },
+    [SCREEN_WIDTH, selectedDate, triggerBounce, weekDates],
+  );
+
+  const handleScrollToIndexFailed = useCallback(
+    (info: { index: number }) => {
+      const clampedIndex = Math.max(0, Math.min(info.index, weekDates.length - 1));
+      const offset = clampedIndex * SCREEN_WIDTH;
+      requestAnimationFrame(() => {
+        horizontalListRef.current?.scrollToOffset({ offset, animated: true });
+        currentPageRef.current = clampedIndex;
+      });
+    },
+    [SCREEN_WIDTH, weekDates.length],
+  );
 
   const handleWeekSelect = (year: number, week: number) => {
     const target = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
@@ -300,10 +319,6 @@ const MedCalendarScreen: React.FC = () => {
     });
     return unsubscribe;
   }, [navigation, selectedDate, route.params]);
-
-  const filteredReminders = reminders
-    .filter(reminder => reminder.date === selectedDate)
-    .sort((a, b) => a.time.localeCompare(b.time));
 
   const getDayStatusDots = (date: string) =>
     reminders
@@ -419,6 +434,46 @@ const MedCalendarScreen: React.FC = () => {
     );
   };
 
+  const renderDayPage = useCallback(
+    ({ item }: { item: WeekDate }) => {
+      const dayReminders = remindersByDate.get(item.fullDate) ?? [];
+      const takenCount = dayReminders.filter(r => r.status === 'taken').length;
+
+      return (
+        <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+          <MedicationDayStatsButton
+            date={item.fullDate}
+            takenCount={takenCount}
+            scheduledCount={dayReminders.length}
+          />
+
+          <FlatList
+            data={dayReminders}
+            keyExtractor={(reminder) => reminder.id}
+            renderItem={({ item: reminder }) => <ReminderCard item={reminder} />}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyListContainer}>
+                <Image
+                  source={require('/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png')}
+                  style={styles.emptyListImage}
+                  resizeMode="contain"
+                />
+                <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+                <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+              </View>
+            )}
+            contentContainerStyle={
+              dayReminders.length === 0 ? { flexGrow: 1, paddingBottom: 0 } : { paddingBottom: 0 }
+            }
+            nestedScrollEnabled
+            style={{ flex: 1 }}
+          />
+        </View>
+      );
+    },
+    [SCREEN_WIDTH, remindersByDate, ReminderCard],
+  );
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar
@@ -457,17 +512,17 @@ const MedCalendarScreen: React.FC = () => {
           {/* Week Dates */}
           <View style={styles.weekContainer}>
             <View style={styles.weekdayRow}>
-              {getWeekDates(weekOffset).map((day, index) => (
+              {weekDates.map((day, index) => (
                 <Text key={index} style={styles.weekdayText}>
                   {day.dayLabel}
                 </Text>
               ))}
             </View>
             <View style={styles.datesRow}>
-              {getWeekDates(weekOffset).map((day) => (
+              {weekDates.map((day) => (
                 <TouchableOpacity
                   key={day.fullDate}
-                  onPress={() => animateToDate(day.fullDate)}
+                  onPress={() => handleDayPress(day.fullDate)}
                   style={[styles.dayContainer, day.fullDate === selectedDate && styles.selectedDay]}
                 >
                   <Text
@@ -489,35 +544,24 @@ const MedCalendarScreen: React.FC = () => {
             </View>
           </View>
           
-          <GestureDetector gesture={panGesture}>
-            <ReanimatedAnimated.View style={[{ flex: 1 }, animatedContentStyle]}>
-              <MedicationDayStatsButton
-                date={selectedDate}
-                takenCount={filteredReminders.filter(r => r.status === 'taken').length}
-                scheduledCount={filteredReminders.length}
-              />
-
-            {/* Reminders List */}
+          <Animated.View style={{ flex: 1, transform: [{ translateX: bounceTranslate }] }}>
             <FlatList
-              data={filteredReminders}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <ReminderCard item={item} />}
-              ListEmptyComponent={() => (
-                <View style={styles.emptyListContainer}>
-                  <Image
-                    source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
-                    style={styles.emptyListImage}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-                  <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-                </View>
-              )}
-              // убираем лишний нижний отступ (TabNavigator сам занимает низ)
-              contentContainerStyle={{ paddingBottom: 0 }}
+              ref={horizontalListRef}
+              data={weekDates}
+              keyExtractor={(item) => item.fullDate}
+              horizontal
+              pagingEnabled
+              decelerationRate="fast"
+              initialScrollIndex={currentIndex >= 0 ? currentIndex : 0}
+              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+              showsHorizontalScrollIndicator={false}
+              onScrollBeginDrag={handleScrollBeginDrag}
+              onMomentumScrollEnd={handleMomentumScrollEnd}
+              onScrollToIndexFailed={handleScrollToIndexFailed}
+              renderItem={renderDayPage}
+              extraData={reminders}
             />
-            </ReanimatedAnimated.View>
-          </GestureDetector>
+          </Animated.View>
 
           {/* Speed Dial FAB */}
           {fabOpen && (
