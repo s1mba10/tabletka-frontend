@@ -78,6 +78,7 @@ const MedCalendarScreen: React.FC = () => {
   // Reanimated shared values for day sliding
   const isDragging = useSharedValue(false);
   const containerTranslateX = useSharedValue(0); // For container sliding during drag
+  const contentOpacity = useSharedValue(1); // For fading during date transition
 
   const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -113,13 +114,11 @@ const MedCalendarScreen: React.FC = () => {
   // Reset container position after date changes from drag animation
   useEffect(() => {
     if (isAnimatingRef.current) {
-      // Use double rAF to ensure React has fully painted the new layout
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          containerTranslateX.value = withTiming(0, { duration: 1 });
-          isAnimatingRef.current = false;
-        });
-      });
+      // Reset position instantly and fade back in
+      containerTranslateX.value = 0;
+      // Fade in the new content
+      contentOpacity.value = withTiming(1, { duration: 150 });
+      isAnimatingRef.current = false;
     }
   }, [selectedDate]);
 
@@ -190,7 +189,12 @@ const MedCalendarScreen: React.FC = () => {
         overshootClamping: false,
       }, (finished) => {
         if (finished) {
-          runOnJS(updateDateAndResetPosition)(weekDates[currentIndex + 1].fullDate);
+          // Fade out quickly before updating state
+          contentOpacity.value = withTiming(0, { duration: 80 }, (fadeFinished) => {
+            if (fadeFinished) {
+              runOnJS(updateDateAndResetPosition)(weekDates[currentIndex + 1].fullDate);
+            }
+          });
         }
       });
     } else if (shouldGoPrev) {
@@ -203,7 +207,12 @@ const MedCalendarScreen: React.FC = () => {
         overshootClamping: false,
       }, (finished) => {
         if (finished) {
-          runOnJS(updateDateAndResetPosition)(weekDates[currentIndex - 1].fullDate);
+          // Fade out quickly before updating state
+          contentOpacity.value = withTiming(0, { duration: 80 }, (fadeFinished) => {
+            if (fadeFinished) {
+              runOnJS(updateDateAndResetPosition)(weekDates[currentIndex - 1].fullDate);
+            }
+          });
         }
       });
     } else {
@@ -260,6 +269,7 @@ const MedCalendarScreen: React.FC = () => {
   // The container starts offset by -SCREEN_WIDTH to show the middle (current) day
   const animatedContainerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: -SCREEN_WIDTH + containerTranslateX.value }],
+    opacity: contentOpacity.value,
   }));
 
   const handleWeekSelect = (year: number, week: number) => {
