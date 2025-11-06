@@ -13,6 +13,7 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Easing,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -77,8 +78,7 @@ const MedCalendarScreen: React.FC = () => {
   const currentPageRef = useRef(0);
   const isProgrammaticScroll = useRef(false);
   const isBounceAnimating = useRef(false);
-  const bounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bounceResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bounceTranslate = useRef(new Animated.Value(0)).current;
 
   const FAB_SIZE = 60;
   const FAB_MARGIN = 16;
@@ -95,14 +95,15 @@ const MedCalendarScreen: React.FC = () => {
     }).start();
   }, [fabOpen, fabAnim]);
 
-  useEffect(() => () => {
-    if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current);
-    if (bounceResetTimeoutRef.current) clearTimeout(bounceResetTimeoutRef.current);
-    bounceTimeoutRef.current = null;
-    bounceResetTimeoutRef.current = null;
-    isBounceAnimating.current = false;
-    isProgrammaticScroll.current = false;
-  }, []);
+  useEffect(
+    () => () => {
+      bounceTranslate.stopAnimation();
+      bounceTranslate.setValue(0);
+      isBounceAnimating.current = false;
+      isProgrammaticScroll.current = false;
+    },
+    [bounceTranslate],
+  );
 
   const weekDates = getWeekDates(weekOffset);
   const currentIndex = useMemo(
@@ -160,47 +161,45 @@ const MedCalendarScreen: React.FC = () => {
   );
 
   const triggerBounce = useCallback(
-    (index: number, direction: -1 | 0 | 1) => {
-      if (!horizontalListRef.current || direction === 0 || isBounceAnimating.current) return;
+    (direction: -1 | 0 | 1) => {
+      if (direction === 0 || isBounceAnimating.current) return;
 
-      const baseOffset = index * SCREEN_WIDTH;
       const overshootDistance = Math.min(40, SCREEN_WIDTH * 0.07);
-      const overshootOffset = baseOffset + overshootDistance * direction;
-
-      if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current);
-      if (bounceResetTimeoutRef.current) clearTimeout(bounceResetTimeoutRef.current);
-
       isBounceAnimating.current = true;
-      isProgrammaticScroll.current = true;
 
-      horizontalListRef.current.scrollToOffset({ offset: overshootOffset, animated: true });
-
-      bounceTimeoutRef.current = setTimeout(() => {
-        horizontalListRef.current?.scrollToOffset({ offset: baseOffset, animated: true });
-        bounceTimeoutRef.current = null;
-
-        bounceResetTimeoutRef.current = setTimeout(() => {
-          isProgrammaticScroll.current = false;
+      bounceTranslate.stopAnimation(() => {
+        bounceTranslate.setValue(0);
+        Animated.sequence([
+          Animated.timing(bounceTranslate, {
+            toValue: overshootDistance * direction,
+            duration: 110,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.spring(bounceTranslate, {
+            toValue: 0,
+            damping: 14,
+            stiffness: 180,
+            mass: 0.8,
+            velocity: 0,
+            overshootClamping: false,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
           isBounceAnimating.current = false;
-          bounceResetTimeoutRef.current = null;
-        }, 220);
-      }, 160);
+        });
+      });
     },
-    [SCREEN_WIDTH],
+    [SCREEN_WIDTH, bounceTranslate],
   );
 
   const handleScrollBeginDrag = useCallback(() => {
-    if (bounceTimeoutRef.current) {
-      clearTimeout(bounceTimeoutRef.current);
-      bounceTimeoutRef.current = null;
-    }
-    if (bounceResetTimeoutRef.current) {
-      clearTimeout(bounceResetTimeoutRef.current);
-      bounceResetTimeoutRef.current = null;
-    }
+    bounceTranslate.stopAnimation(() => {
+      bounceTranslate.setValue(0);
+    });
     isBounceAnimating.current = false;
     isProgrammaticScroll.current = false;
-  }, []);
+  }, [bounceTranslate]);
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -222,7 +221,7 @@ const MedCalendarScreen: React.FC = () => {
 
       const direction: -1 | 0 | 1 = index > previousIndex ? 1 : index < previousIndex ? -1 : 0;
       if (!wasProgrammatic) {
-        triggerBounce(index, direction);
+        triggerBounce(direction);
       }
     },
     [SCREEN_WIDTH, selectedDate, triggerBounce, weekDates],
@@ -545,22 +544,24 @@ const MedCalendarScreen: React.FC = () => {
             </View>
           </View>
           
-          <FlatList
-            ref={horizontalListRef}
-            data={weekDates}
-            keyExtractor={(item) => item.fullDate}
-            horizontal
-            pagingEnabled
-            decelerationRate="fast"
-            initialScrollIndex={currentIndex >= 0 ? currentIndex : 0}
-            getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
-            showsHorizontalScrollIndicator={false}
-            onScrollBeginDrag={handleScrollBeginDrag}
-            onMomentumScrollEnd={handleMomentumScrollEnd}
-            onScrollToIndexFailed={handleScrollToIndexFailed}
-            renderItem={renderDayPage}
-            extraData={reminders}
-          />
+          <Animated.View style={{ flex: 1, transform: [{ translateX: bounceTranslate }] }}>
+            <FlatList
+              ref={horizontalListRef}
+              data={weekDates}
+              keyExtractor={(item) => item.fullDate}
+              horizontal
+              pagingEnabled
+              decelerationRate="fast"
+              initialScrollIndex={currentIndex >= 0 ? currentIndex : 0}
+              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+              showsHorizontalScrollIndicator={false}
+              onScrollBeginDrag={handleScrollBeginDrag}
+              onMomentumScrollEnd={handleMomentumScrollEnd}
+              onScrollToIndexFailed={handleScrollToIndexFailed}
+              renderItem={renderDayPage}
+              extraData={reminders}
+            />
+          </Animated.View>
 
           {/* Speed Dial FAB */}
           {fabOpen && (
