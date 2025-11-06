@@ -76,9 +76,8 @@ const MedCalendarScreen: React.FC = () => {
   const fabPressAnim = useRef(new Animated.Value(1)).current;
 
   // Reanimated shared values for day sliding
-  const slideOpacity = useSharedValue(1);
-  const translateX = useSharedValue(0);
   const isDragging = useSharedValue(false);
+  const containerTranslateX = useSharedValue(0); // For container sliding during drag
 
   const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -100,44 +99,38 @@ const MedCalendarScreen: React.FC = () => {
   const weekDates = getWeekDates(weekOffset);
   const rowRefs = useRef<Map<string, Swipeable>>(new Map());
 
+  // Helper to get adjacent dates for sliding effect
+  const getAdjacentDates = () => {
+    const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
+    return {
+      prevDate: currentIndex > 0 ? weekDates[currentIndex - 1].fullDate : null,
+      currentDate: selectedDate,
+      nextDate: currentIndex < weekDates.length - 1 ? weekDates[currentIndex + 1].fullDate : null,
+    };
+  };
+
   const animateToDate = (newDate: string) => {
     const currentIndex = weekDates.findIndex(d => d.fullDate === selectedDate);
     const newIndex = weekDates.findIndex(d => d.fullDate === newDate);
+
+    if (currentIndex === newIndex) return;
+
     const direction = newIndex > currentIndex ? 'left' : 'right';
+    const slideDistance = direction === 'left' ? -SCREEN_WIDTH : SCREEN_WIDTH;
 
-    // Simulate a drag-like slide effect
-    // First, slide out in the direction of the swipe
-    const slideOutDistance = direction === 'left' ? -SCREEN_WIDTH * 0.4 : SCREEN_WIDTH * 0.4;
-
-    translateX.value = withSpring(slideOutDistance, {
-      damping: 20,
-      stiffness: 180,
-      mass: 0.7,
-      overshootClamping: true,
+    // Animate the container to slide to the next/prev day
+    containerTranslateX.value = withSpring(slideDistance, {
+      damping: 15,
+      stiffness: 150,
+      mass: 0.8,
+      overshootClamping: false,
+    }, (finished) => {
+      if (finished) {
+        // After animation completes, update the date and reset position
+        runOnJS(setSelectedDate)(newDate);
+        containerTranslateX.value = 0; // Reset to center for next transition
+      }
     });
-
-    // Fade out completely while sliding out
-    slideOpacity.value = withTiming(0, { duration: 150 });
-
-    // After sliding out, change the date while invisible
-    setTimeout(() => {
-      setSelectedDate(newDate);
-
-      // Position the new content on the opposite side (still invisible)
-      translateX.value = direction === 'left' ? SCREEN_WIDTH * 0.5 : -SCREEN_WIDTH * 0.5;
-
-      // Small delay to ensure React has rendered new content
-      setTimeout(() => {
-        // Slide in with spring bounce (same as drag gesture)
-        translateX.value = withSpring(0, {
-          damping: 15,
-          stiffness: 150,
-          mass: 0.8,
-          overshootClamping: false,
-        });
-        slideOpacity.value = withTiming(1, { duration: 200 });
-      }, 16); // ~1 frame delay for render
-    }, 150);
   };
 
   // Helper function to handle gesture end
@@ -161,12 +154,36 @@ const MedCalendarScreen: React.FC = () => {
     const shouldGoPrev = (translationX > swipeThreshold || isFastSwipeRight) && !isAtStart;
 
     if (shouldGoNext) {
-      animateToDate(weekDates[currentIndex + 1].fullDate);
+      // Slide to next day
+      const slideDistance = -SCREEN_WIDTH;
+      containerTranslateX.value = withSpring(slideDistance, {
+        damping: 15,
+        stiffness: 150,
+        mass: 0.8,
+        overshootClamping: false,
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setSelectedDate)(weekDates[currentIndex + 1].fullDate);
+          containerTranslateX.value = 0; // Reset for next transition
+        }
+      });
     } else if (shouldGoPrev) {
-      animateToDate(weekDates[currentIndex - 1].fullDate);
+      // Slide to previous day
+      const slideDistance = SCREEN_WIDTH;
+      containerTranslateX.value = withSpring(slideDistance, {
+        damping: 15,
+        stiffness: 150,
+        mass: 0.8,
+        overshootClamping: false,
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setSelectedDate)(weekDates[currentIndex - 1].fullDate);
+          containerTranslateX.value = 0; // Reset for next transition
+        }
+      });
     } else {
       // Snap back to center
-      translateX.value = withSpring(0, {
+      containerTranslateX.value = withSpring(0, {
         damping: 15,
         stiffness: 150,
         mass: 0.8,
@@ -195,8 +212,8 @@ const MedCalendarScreen: React.FC = () => {
 
   // Gesture handler for interactive dragging between days
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-15, 15])  // Requires 15px horizontal movement
-    .failOffsetY([-10, 10])     // Fails if vertical movement exceeds 10px (for FlatList scrolling)
+    .activeOffsetX([-10, 10])  // Requires 10px horizontal movement (lower for more responsive)
+    .failOffsetY([-15, 15])     // Fails if vertical movement exceeds 15px (for FlatList scrolling)
     .enableTrackpadTwoFingerGesture(false)
     .onStart(() => {
       isDragging.value = true;
@@ -206,18 +223,18 @@ const MedCalendarScreen: React.FC = () => {
       const isAtStart = currentIndex === 0;
       const isAtEnd = currentIndex === weekDates.length - 1;
 
-      // Apply rubber band effect at edges
-      translateX.value = applyRubberBand(event.translationX, isAtStart, isAtEnd);
+      // Apply rubber band effect at edges for smooth, elastic feel
+      containerTranslateX.value = applyRubberBand(event.translationX, isAtStart, isAtEnd);
     })
     .onEnd((event) => {
       isDragging.value = false;
       runOnJS(handleGestureEnd)(event.translationX, event.velocityX);
     });
 
-  // Animated style for day sliding
-  const animatedContentStyle = useAnimatedStyle(() => ({
-    opacity: slideOpacity.value,
-    transform: [{ translateX: translateX.value }],
+  // Animated style for container that holds all three days
+  // The container starts offset by -SCREEN_WIDTH to show the middle (current) day
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: -SCREEN_WIDTH + containerTranslateX.value }],
   }));
 
   const handleWeekSelect = (year: number, week: number) => {
@@ -301,10 +318,6 @@ const MedCalendarScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, selectedDate, route.params]);
 
-  const filteredReminders = reminders
-    .filter(reminder => reminder.date === selectedDate)
-    .sort((a, b) => a.time.localeCompare(b.time));
-
   const getDayStatusDots = (date: string) =>
     reminders
       .filter(reminder => reminder.date === date)
@@ -352,6 +365,43 @@ const MedCalendarScreen: React.FC = () => {
       <Text style={styles.deleteText}>Удалить</Text>
     </RectButton>
   );
+
+  // Component to render content for a specific day
+  const DayContent: React.FC<{ date: string | null }> = ({ date }) => {
+    if (!date) return null;
+
+    const dayReminders = reminders
+      .filter(reminder => reminder.date === date)
+      .sort((a, b) => a.time.localeCompare(b.time));
+
+    return (
+      <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+        <MedicationDayStatsButton
+          date={date}
+          takenCount={dayReminders.filter(r => r.status === 'taken').length}
+          scheduledCount={dayReminders.length}
+        />
+
+        <FlatList
+          data={dayReminders}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <ReminderCard item={item} />}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyListContainer}>
+              <Image
+                source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
+                style={styles.emptyListImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
+              <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 0 }}
+        />
+      </View>
+    );
+  };
 
   const ReminderCard: React.FC<{ item: Reminder }> = ({ item }) => {
     const due = new Date(`${item.date}T${item.time}`);
@@ -490,32 +540,26 @@ const MedCalendarScreen: React.FC = () => {
           </View>
           
           <GestureDetector gesture={panGesture}>
-            <ReanimatedAnimated.View style={[{ flex: 1 }, animatedContentStyle]}>
-              <MedicationDayStatsButton
-                date={selectedDate}
-                takenCount={filteredReminders.filter(r => r.status === 'taken').length}
-                scheduledCount={filteredReminders.length}
-              />
+            <ReanimatedAnimated.View style={[{ flex: 1, overflow: 'hidden' }]}>
+              <ReanimatedAnimated.View
+                style={[
+                  {
+                    flex: 1,
+                    flexDirection: 'row',
+                    width: SCREEN_WIDTH * 3,
+                  },
+                  animatedContainerStyle
+                ]}
+              >
+                {/* Previous Day */}
+                <DayContent date={getAdjacentDates().prevDate} />
 
-            {/* Reminders List */}
-            <FlatList
-              data={filteredReminders}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <ReminderCard item={item} />}
-              ListEmptyComponent={() => (
-                <View style={styles.emptyListContainer}>
-                  <Image
-                    source={require("/Users/s1mba/PycharmProjects/tabletka-grok/frontend/MedTrackApp/assets/heart_pill.png")}
-                    style={styles.emptyListImage}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.emptyListText}>Нет напоминаний на этот день</Text>
-                  <Text style={styles.emptyListSubText}>Нажмите на + чтобы добавить</Text>
-                </View>
-              )}
-              // убираем лишний нижний отступ (TabNavigator сам занимает низ)
-              contentContainerStyle={{ paddingBottom: 0 }}
-            />
+                {/* Current Day */}
+                <DayContent date={getAdjacentDates().currentDate} />
+
+                {/* Next Day */}
+                <DayContent date={getAdjacentDates().nextDate} />
+              </ReanimatedAnimated.View>
             </ReanimatedAnimated.View>
           </GestureDetector>
 
